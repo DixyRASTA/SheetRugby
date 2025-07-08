@@ -24,26 +24,26 @@ function onOpen() {
           .addItem('Essai', 'recordEssai') // Fonction de Actions.gs
           .addItem('Transformation Réussie', 'recordTransformationReussie') // Fonction de Actions.gs
           .addItem('Transformation Manquée', 'recordTransformationManquee') // Fonction de Actions.gs
-          .addItem('Drop Réussi', 'recordDropReussi') // Fonction de votre Actions.gs
-          .addItem('Drop Manqué', 'recordDropManque') // Fonction de votre Actions.gs
-          .addItem('Pénalité Réussie', 'recordPenaliteReussie') // Si ça rapporte des points, ici
-          .addItem('Pénalité Manquée', 'recordPenaliteManquee') // Si ça rapporte des points, ici
-          .addItem('Essai de Pénalité', 'recordEssaiDePenalite') // Fonction de votre Sanctions.gs (mais rapporte des points)
+          .addItem('Drop Réussi', 'recordDropReussi') // Fonction de Actions.gs
+          .addItem('Drop Manqué', 'recordDropManque') // Fonction de Actions.gs
+          .addItem('Pénalité Réussie', 'recordPenaliteReussie') 
+          .addItem('Pénalité Manquée', 'recordPenaliteManquee') 
+          .addItem('Essai de Pénalité', 'recordEssaiDePenalite') // Fonction de Sanctions.gs (mais rapporte des points)
       )
       .addSeparator() 
       .addSubMenu(ui.createMenu('Fautes & Sanctions') // Renommé pour plus de clarté
           .addItem('Pénalité Tentée', 'recordPenaliteTentee') // Tentative de pénalité, gestion à suivre (Réussie/Manquée)
-          .addItem('Carton Blanc', 'recordCartonBlanc') // Fonction de votre Sanctions.gs
-          .addItem('Carton Jaune', 'recordCartonJaune') // Fonction de votre Sanctions.gs
-          .addItem('Carton Rouge', 'recordCartonRouge') // Fonction de votre Sanctions.gs
+          .addItem('Carton Blanc', 'recordCartonBlanc') // Fonction de Sanctions.gs
+          .addItem('Carton Jaune', 'recordCartonJaune') // Fonction de Sanctions.gs
+          .addItem('Carton Rouge', 'recordCartonRouge') // Fonction de Sanctions.gs
         )
       .addSeparator()
       .addSubMenu(ui.createMenu('Événements Divers') // Renommé pour englober plus de choses
-          .addItem('Arrêt du jeu', 'arretJeu') // Fonction de votre Interruption.gs
-          .addItem('Reprise du jeu', 'repriseJeu') // Fonction de votre Interruption.gs
-          .addItem('Ajouter un événement manuel', 'ajouterEvenementManuel') // Fonction de votre Evenements.gs
-          .addItem('Annuler dernier événement', 'annulerDernierEvenement') // Fonction de votre Evenements.gs (deleteLastEvent)
-          .addItem('Carton Bleu', 'recordCartonBleu') // Fonction de votre Sanctions.gs
+          .addItem('Arrêt du jeu', 'arretJeu') // Fonction d'Interruption.gs
+          .addItem('Reprise du jeu', 'repriseJeu') // Fonction d'Interruption.gs
+          .addItem('Ajouter un événement manuel', 'ajouterEvenementManuel') // Fonction de Evenements.gs
+          .addItem('Annuler dernier événement', 'annulerDernierEvenement') // Fonction de Evenements.gs (deleteLastEvent)
+          .addItem('Carton Bleu', 'recordCartonBleu') // Fonction de Evenements.gs ou Sanctions.gs selon la définition finale
         )
       .addToUi();
 }
