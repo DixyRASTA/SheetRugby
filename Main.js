@@ -63,7 +63,7 @@ function ouvrirTableauDeBord() {
  * Exécute 'updateSidebar' toutes les minutes pour rafraîchir le chronomètre.
  * Ne crée le déclencheur que s'il n'existe pas déjà pour 'updateSidebar'.
  */
- {
+ function createTimeDrivenTriggers(){
   const triggers = ScriptApp.getProjectTriggers();
   let triggerExists = false;
 
