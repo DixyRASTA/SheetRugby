@@ -96,11 +96,7 @@ function ouvrirTableauDeBord() {
 function updateSidebar() {
   const ui = SpreadsheetApp.getUi();
 
-  // Appelle TimeManager pour obtenir l'état du temps de jeu
-  const matchTimeState = getMatchTimeState(); // Appel à la fonction dans TimeManager.gs
-
-  // Préparer un objet d'état de match complet (sera enrichi plus tard)
-  // Pour l'instant, on se concentre sur le temps
+  const matchTimeState = getMatchTimeState();
   const matchState = {
     isTimerRunning: matchTimeState.isTimerRunning,
     currentMatchPhase: PropertiesService.getScriptProperties().getProperty('currentMatchPhase') || 'non_demarre',
@@ -120,85 +116,97 @@ function updateSidebar() {
     <head>
       <base target="_top">
       <style>
-        body { font-family: 'Arial', sans-serif; margin: 10px; background-color: #f4f4f4; color: #333; }
-        .card { background-color: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); padding: 15px; margin-bottom: 10px; }
-        h3 { color: #0056b3; margin-top: 0; }
-        .score { font-size: 2.2em; font-weight: bold; text-align: center; margin: 10px 0; color: #007bff; }
-        .time { font-size: 1.8em; font-weight: bold; text-align: center; color: #28a745; margin: 10px 0; }
-        .phase, .status { font-size: 1em; text-align: center; margin-bottom: 5px; color: #555; }
-        .button-container { display: flex; flex-direction: column; gap: 8px; margin-top: 15px; }
-        .button {
-          background-color: #007bff;
-          color: white;
-          padding: 10px 15px;
-          border: none;
-          border-radius: 5px;
-          cursor: pointer;
-          font-size: 1em;
-          width: 100%;
-          box-sizing: border-box;
-        }
-        .button:hover { background-color: #0056b3; }
-        .alert-message {
-            text-align: center;
-            margin-top: 10px;
-            font-weight: bold;
-            color: orange; /* Couleur d'alerte */
-        }
-        .event-history-item {
-            font-size: 0.9em;
-            margin-bottom: 3px;
-        }
-        .event-history-item strong {
-            color: #0056b3;
-        }
+        /* ... votre CSS existant ... */
       </style>
+      <script>
+        // Fonction pour demander la mise à jour de la sidebar au serveur
+        function requestSidebarUpdate() {
+          google.script.run
+            .withSuccessHandler(function(html) {
+              document.body.innerHTML = html; // Remplace le contenu du body par le nouveau HTML
+            })
+            .withFailureHandler(function(error) {
+              console.error("Erreur lors de la mise à jour de la sidebar :", error.message);
+            })
+            .getSidebarContent(); // Appel à la nouvelle fonction côté serveur
+        }
+
+        // Rafraîchir la sidebar toutes les 1 seconde (ou 1000 ms) pour une fluidité visuelle du chrono
+        // Le déclencheur Apps Script "toutes les minutes" est pour la persistance en cas de fermeture/réouverture.
+        // Ce setInterval est pour le rafraîchissement temps réel.
+        setInterval(requestSidebarUpdate, 1000); 
+      </script>
     </head>
     <body>
-      <div class="card">
-        <h3>Match Info</h3>
-        <div class="phase">Phase: ${matchState.currentMatchPhase.replace(/_/g, ' ').toUpperCase()}</div>
-        <div class="time">Chrono: ${matchState.tempsDeJeuFormatted}</div>
-        <div class="status">Statut Chrono: ${matchState.isTimerRunning ? 'EN COURS' : 'NON DÉMARRÉ'}</div>
-      </div>
-
-      <div class="card">
-        <h3>Score Actuel</h3>
-        <div class="score">${matchState.nomEquipeLocale} ${matchState.currentLocalScore} - ${matchState.currentVisitorScore} ${matchState.nomEquipeVisiteur}</div>
-      </div>
-      
-      ${matchState.alertMessage ? `<div class="alert-message">${matchState.alertMessage}</div>` : ''}
-      
       <div class="button-container">
-        <button class="button" onclick="google.script.run.initialiserFeuilleEtProprietes()">Initialiser Nouveau Match</button>
-        <button class="button" onclick="google.script.run.debutPremiereMiTemps()">Démarrer 1ère Mi-temps</button>
-        <button class="button" onclick="google.script.run.debutDeuxiemeMiTemps()">Démarrer 2ème Mi-temps</button>
         <button class="button" onclick="google.script.run.arretJeu()">Arrêter Jeu</button>
         <button class="button" onclick="google.script.run.repriseJeu()">Reprendre Jeu</button>
-        <button class="button" onclick="google.script.run.finDeMatch()">Fin de Match</button>
-        <button class="button" onclick="google.script.run.showCustomMenu()">Ouvrir Menu Actions</button>
-      </div>
-
-      <div class="card">
-        <h3>Derniers Événements</h3>
-        <div id="eventHistory">
-            ${matchState.derniersEvenements && matchState.derniersEvenements.length > 0 ?
-                matchState.derniersEvenements.map(event => `
-                    <p class="event-history-item"><strong>${event.temps_formatte}</strong> - ${event.equipe} : ${event.action} ${event.joueur ? `(${event.joueur})` : ''}</p>
-                `).join('')
-                : '<p class="event-history-item">Aucun événement enregistré.</p>'}
         </div>
-      </div>
 
-      <script>
-        // Aucun JavaScript complexe de chrono ici, tout est géré par le serveur
-        // Le rafraîchissement se fera par le déclencheur Apps Script.
-      </script>
-    </body>
+      </body>
     </html>
     `
   ).setTitle('Tableau de Bord Rugby').setHeight(650); 
 
   ui.showSidebar(htmlContent);
   Logger.log("Sidebar mise à jour.");
+}
+
+// NOUVELLE FONCTION à ajouter dans Main.gs
+/**
+ * Fonction appelée par le client (dans la sidebar) pour récupérer le contenu HTML mis à jour.
+ * Cela permet un rafraîchissement dynamique sans recharger la sidebar entière.
+ */
+function getSidebarContent() {
+  const matchTimeState = getMatchTimeState();
+  const matchState = {
+    isTimerRunning: matchTimeState.isTimerRunning,
+    currentMatchPhase: PropertiesService.getScriptProperties().getProperty('currentMatchPhase') || 'non_demarre',
+    tempsDeJeuFormatted: matchTimeState.tempsDeJeuFormatted,
+    currentLocalScore: PropertiesService.getScriptProperties().getProperty('currentScoreLocal') || '0',
+    currentVisitorScore: PropertiesService.getScriptProperties().getProperty('currentScoreVisiteur') || '0',
+    nomEquipeLocale: PropertiesService.getScriptProperties().getProperty('nomEquipeLocale') || 'Locale',
+    nomEquipeVisiteur: PropertiesService.getScriptProperties().getProperty('nomEquipeVisiteur') || 'Visiteur',
+    alertMessage: PropertiesService.getScriptProperties().getProperty('alertMessage') || '',
+    derniersEvenements: getLatestEvents()
+  };
+
+  // On renvoie juste le contenu du <body> pour le rafraîchissement partiel
+  return `
+    <div class="card">
+      <h3>Match Info</h3>
+      <div class="phase">Phase: ${matchState.currentMatchPhase.replace(/_/g, ' ').toUpperCase()}</div>
+      <div class="time">Chrono: ${matchState.tempsDeJeuFormatted}</div>
+      <div class="status">Statut Chrono: ${matchState.isTimerRunning ? 'EN COURS' : 'NON DÉMARRÉ'}</div>
+    </div>
+
+    <div class="card">
+      <h3>Score Actuel</h3>
+      <div class="score">${matchState.nomEquipeLocale} ${matchState.currentLocalScore} - ${matchState.currentVisitorScore} ${matchState.nomEquipeVisiteur}</div>
+    </div>
+    
+    ${matchState.alertMessage ? `<div class="alert-message">${matchState.alertMessage}</div>` : ''}
+    
+    <div class="button-container">
+      <button class="button" onclick="google.script.run.initialiserFeuilleEtProprietes()">Initialiser Nouveau Match</button>
+      <button class="button" onclick="google.script.run.debutPremiereMiTemps()">Démarrer 1ère Mi-temps</button>
+      <button class="button" onclick="google.script.run.finPremiereMiTemps()">Fin 1ère Mi-temps</button>
+      <button class="button" onclick="google.script.run.debutDeuxiemeMiTemps()">Démarrer 2ème Mi-temps</button>
+      <button class="button" onclick="google.script.run.arretJeu()">Arrêter Jeu</button>
+      <button class="button" onclick="google.script.run.repriseJeu()">Reprendre Jeu</button>
+      <button class="button" onclick="google.script.run.finDeMatch()">Fin de Match</button>
+      <button class="button" onclick="google.script.run.showCustomMenu()">Ouvrir Menu Actions</button>
+    </div>
+
+    <div class="card">
+      <h3>Derniers Événements</h3>
+      <div id="eventHistory">
+          ${matchState.derniersEvenements && matchState.derniersEvenements.length > 0 ?
+              matchState.derniersEvenements.map(event => `
+                  <p class="event-history-item"><strong>${event.temps_formatte}</strong> - ${event.equipe} : ${event.action} ${event.joueur ? `(${event.joueur})` : ''}</p>
+              `).join('')
+              : '<p class="event-history-item">Aucun événement enregistré.</p>'}
+      </div>
+    </div>
+  `;
 }
