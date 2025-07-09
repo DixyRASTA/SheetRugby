@@ -73,7 +73,7 @@ function getLatestEvents(count = 5) {
     // Inverser pour avoir le plus récent en premier dans la liste affichée
     eventData.reverse().forEach(row => { 
         derniersEvenements.push({
-            heure_capture: row[0], // Re-formatter si besoin ou prendre tel quel
+            heure_capture: Utilities.formatDate(new Date(row[0]), SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone(), "HH:mm:ss"),  // Forcer le formatage en HH:mm:ss à la lecture
             temps_formatte: row[1], // Déjà formaté par recordEvent
             equipe: row[2], 
             action: row[3], 
