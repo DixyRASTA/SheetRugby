@@ -110,7 +110,7 @@ function updateSidebar() {
     nomEquipeLocale: PropertiesService.getScriptProperties().getProperty('nomEquipeLocale') || 'Locale',
     nomEquipeVisiteur: PropertiesService.getScriptProperties().getProperty('nomEquipeVisiteur') || 'Visiteur',
     alertMessage: PropertiesService.getScriptProperties().getProperty('alertMessage') || '',
-    derniersEvenements: [] // Pour l'instant vide, sera géré par Evenements.gs plus tard
+    derniersEvenements: getLatestEvents() // Appel à la fonction dans Evenements.gs
   };
   
   const htmlContent = HtmlService.createHtmlOutput(

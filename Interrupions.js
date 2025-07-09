@@ -64,7 +64,11 @@ function debutPremiereMiTemps() {
   // NOTE: recordEvent n'est pas encore implémenté dans Evenements.gs. Cela générera une erreur pour l'instant.
   // Nous l'implémenterons ensuite !
   const matchTimeState = getMatchTimeState(); // Pour obtenir le temps formaté
-  recordEvent(new Date(), matchTimeState.tempsDeJeuFormatted, '', 'Coup d\'envoi 1ère MT', '', '', 0, 0, 'Début de la rencontre'); 
+  
+  const currentScoreLocal = parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10);
+  const currentScoreVisiteur = parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10);
+
+  recordEvent(new Date(), matchTimeState.tempsDeJeuFormatted, '', 'Coup d\'envoi 1ère MT', '', '', currentScoreLocal, currentScoreVisiteur, 'Début de la rencontre'); 
   
   updateSidebar(); // Mettre à jour la sidebar pour refléter le changement
   SpreadsheetApp.getUi().alert("1ère Mi-temps démarrée !", "Le match est en cours.", SpreadsheetApp.getUi().ButtonSet.OK);
@@ -75,7 +79,7 @@ function debutPremiereMiTemps() {
  * Met le chronomètre en pause et enregistre l'événement.
  */
 function finPremiereMiTemps() {
-  const scriptProperties = PropertiesService.getScriptProperties();
+  
   const currentPhase = scriptProperties.getProperty('currentMatchPhase');
 
   // Vérification de sécurité
@@ -91,7 +95,11 @@ function finPremiereMiTemps() {
 
   // Enregistrer l'événement "Fin 1ère MT"
   const matchTimeState = getMatchTimeState();
-  recordEvent(new Date(), matchTimeState.tempsDeJeuFormatted, '', 'Fin 1ère MT', '', '', 0, 0, 'Pause');
+  const scriptProperties = PropertiesService.getScriptProperties();
+  const currentScoreLocal = parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10);
+  const currentScoreVisiteur = parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10);
+     
+  recordEvent(new Date(), matchTimeState.tempsDeJeuFormatted, '', 'Fin 1ère MT', '', '', currentScoreLocal, currentScoreVisiteur, 'Pause');
 
   updateSidebar();
   SpreadsheetApp.getUi().alert("Fin de la 1ère mi-temps !", "Le jeu est en pause.", SpreadsheetApp.getUi().ButtonSet.OK);
@@ -102,7 +110,7 @@ function finPremiereMiTemps() {
  * Enregistre l'événement dans la feuille "Saisie".
  */
 function debutDeuxiemeMiTemps() {
-  const scriptProperties = PropertiesService.getScriptProperties();
+ 
   const currentPhase = scriptProperties.getProperty('currentMatchPhase');
 
   // Vérification de sécurité
@@ -118,7 +126,11 @@ function debutDeuxiemeMiTemps() {
 
   // Enregistrer l'événement "Coup d'envoi 2e MT"
   const matchTimeState = getMatchTimeState();
-  recordEvent(new Date(), matchTimeState.tempsDeJeuFormatted, '', 'Coup d\'envoi 2e MT', '', '', 0, 0, 'Reprise de la rencontre');
+  const scriptProperties = PropertiesService.getScriptProperties();
+  const currentScoreLocal = parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10);
+  const currentScoreVisiteur = parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10);
+  
+  recordEvent(new Date(), matchTimeState.tempsDeJeuFormatted, '', 'Coup d\'envoi 2e MT', '', '', currentScoreLocal, currentScoreVisiteur, 'Reprise de la rencontre');
 
   updateSidebar();
   SpreadsheetApp.getUi().alert("2ème Mi-temps démarrée !", "Le match est en cours.", SpreadsheetApp.getUi().ButtonSet.OK);
@@ -129,7 +141,7 @@ function debutDeuxiemeMiTemps() {
  * Arrête le chronomètre et enregistre l'événement.
  */
 function finDeMatch() {
-  const scriptProperties = PropertiesService.getScriptProperties();
+  
   const currentPhase = scriptProperties.getProperty('currentMatchPhase');
 
   // Vérification de sécurité
@@ -147,7 +159,11 @@ function finDeMatch() {
 
   // Enregistrer l'événement "Fin de Match"
   const matchTimeState = getMatchTimeState();
-  recordEvent(new Date(), matchTimeState.tempsDeJeuFormatted, '', 'Fin de Match', '', '', 0, 0, 'Fin de la rencontre');
+  const scriptProperties = PropertiesService.getScriptProperties();
+  const currentScoreLocal = parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10);
+  const currentScoreVisiteur = parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10);
+  
+  recordEvent(new Date(), matchTimeState.tempsDeJeuFormatted, '', 'Fin de Match', '', '', currentScoreLocal, currentScoreVisiteur, 'Fin de la rencontre');
 
   updateSidebar();
   SpreadsheetApp.getUi().alert("Match Terminé !", "La partie est terminée.", SpreadsheetApp.getUi().ButtonSet.OK);
@@ -159,7 +175,7 @@ function finDeMatch() {
  * Enregistre l'événement.
  */
 function arretJeu() {
-  const scriptProperties = PropertiesService.getScriptProperties();
+  
   const currentPhase = scriptProperties.getProperty('currentMatchPhase');
 
   // Vérification de sécurité
@@ -180,7 +196,11 @@ function arretJeu() {
 
   // Enregistrer l'événement "Arrêt du jeu"
   const matchTimeState = getMatchTimeState();
-  recordEvent(new Date(), matchTimeState.tempsDeJeuFormatted, '', 'Arrêt du jeu', '', '', 0, 0, 'Jeu arrêté');
+  const scriptProperties = PropertiesService.getScriptProperties();
+  const currentScoreLocal = parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10);
+  const currentScoreVisiteur = parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10);
+  
+  recordEvent(new Date(), matchTimeState.tempsDeJeuFormatted, '', 'Arrêt du jeu', '', '', currentScoreLocal, currentScoreVisiteur, 'Jeu arrêté');
 
   updateSidebar();
   SpreadsheetApp.getUi().alert("Jeu Arrêté !", "Le chronomètre est en pause.", SpreadsheetApp.getUi().ButtonSet.OK);
@@ -191,7 +211,7 @@ function arretJeu() {
  * Enregistre l'événement.
  */
 function repriseJeu() {
-  const scriptProperties = PropertiesService.getScriptProperties();
+ 
   const currentPhase = scriptProperties.getProperty('currentMatchPhase');
 
   // Vérification de sécurité
@@ -212,7 +232,11 @@ function repriseJeu() {
 
   // Enregistrer l'événement "Reprise du jeu"
   const matchTimeState = getMatchTimeState();
-  recordEvent(new Date(), matchTimeState.tempsDeJeuFormatted, '', 'Reprise du jeu', '', '', 0, 0, 'Jeu repris');
+  const scriptProperties = PropertiesService.getScriptProperties();
+  const currentScoreLocal = parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10);
+  const currentScoreVisiteur = parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10);
+  
+  recordEvent(new Date(), matchTimeState.tempsDeJeuFormatted, '', 'Reprise du jeu', '', '', currentScoreLocal, currentScoreVisiteur, 'Jeu repris');
 
   updateSidebar();
   SpreadsheetApp.getUi().alert("Jeu Repris !", "Le chronomètre redémarre.", SpreadsheetApp.getUi().ButtonSet.OK);
