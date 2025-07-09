@@ -52,34 +52,35 @@ function recordEvent(timestamp, gameTime, team, action, player, scoreLocal, scor
  * @param {number} count Le nombre d'événements à récupérer.
  * @returns {Array<Object>} Un tableau d'objets représentant les événements.
  */
+
 function getLatestEvents(count = 5) {
   const feuilleSaisie = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Saisie");
   const derniersEvenements = [];
   
-  if (!feuilleSaisie || feuilleSaisie.getLastRow() < 3) { // Moins de 3 lignes = juste les en-têtes ou vide
+  if (!feuilleSaisie || feuilleSaisie.getLastRow() < 3) { 
     return derniersEvenements;
   }
 
   const lastRow = feuilleSaisie.getLastRow();
-  const dataStartRow = 3; // Les données commencent à la ligne 3 (après les deux lignes d'en-tête)
+  const dataStartRow = 3;
   const numRowsAvailable = lastRow - dataStartRow + 1;
 
   if (numRowsAvailable > 0) {
     const numRowsToFetch = Math.min(count, numRowsAvailable); 
-    // Récupérer les données depuis la dernière ligne vers le haut
     const eventDataRange = feuilleSaisie.getRange(lastRow - numRowsToFetch + 1, 1, numRowsToFetch, 8); 
-    const eventData = eventDataRange.getValues();
+    
+    // NOUVEAU : Utiliser getDisplayValues() pour obtenir les valeurs telles qu'affichées (formatées)
+    const eventData = eventDataRange.getDisplayValues(); 
 
-    // Inverser pour avoir le plus récent en premier dans la liste affichée
     eventData.reverse().forEach(row => { 
         derniersEvenements.push({
-            heure_capture: Utilities.formatDate(new Date(row[0]), SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone(), "HH:mm:ss"),  // Forcer le formatage en HH:mm:ss à la lecture
-            temps_formatte: row[1], // Déjà formaté par recordEvent
+            heure_capture: row[0], // row[0] devrait maintenant être une chaîne "HH:mm:ss"
+            temps_formatte: row[1], 
             equipe: row[2], 
             action: row[3], 
             joueur: row[4], 
-            scoreLocal: row[5],
-            scoreVisiteur: row[6],
+            scoreLocal: row[5], // Attention: getDisplayValues() renvoie des chaînes pour les nombres aussi
+            scoreVisiteur: row[6], // Il faudra les parseInt() si on les utilise comme des nombres ailleurs
             remarque: row[7]
         });
     });
