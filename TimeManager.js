@@ -13,23 +13,23 @@ function getMatchTimeState() {
   const currentMatchPhase = scriptProperties.getProperty('currentMatchPhase') || 'non_demarre';
 
   let tempsDeJeuMs = 0;
-  const matchStartTimeMs = parseInt(scriptProperties.getProperty('matchStartTimeMs') || '0', 10);
-  const totalPausedTimeMs = parseInt(scriptProperties.getProperty('totalPausedTimeMs') || '0', 10);
-  const lastKnownGameTimeMs = parseInt(scriptProperties.getProperty('lastKnownGameTimeMs') || '0', 10);
+  const gameTimeAtLastPause = parseInt(scriptProperties.getProperty('gameTimeAtLastPause') || '0', 10);
+  const matchStartTime = parseInt(scriptProperties.getProperty('matchStartTime') || '0', 10);
 
   if (isTimerRunning) {
     const now = new Date().getTime();
-    tempsDeJeuMs = (now - matchStartTimeMs) - totalPausedTimeMs;
+    tempsDeJeuMs = gameTimeAtLastPause + (now - matchStartTime);
     if (tempsDeJeuMs < 0) tempsDeJeuMs = 0; // S'assurer que le temps n'est pas négatif
   } else {
-    tempsDeJeuMs = lastKnownGameTimeMs; // Utilise le dernier temps de jeu enregistré
+    tempsDeJeuMs = gameTimeAtLastPause; // Si le chrono est arrêté, on affiche le temps figé à la dernière pause
   }
 
-  // Ajuster tempsDeJeuMs à 0 si la phase est 'non_demarre' ou 'mi_temps' (début de mi-temps)
+  // Ajuster tempsDeJeuMs à 0 si la phase est 'non_demarre' ou 'mi_temps'
   // ou si le match est terminé, utiliser le temps final enregistré
   if (currentMatchPhase === 'non_demarre' || currentMatchPhase === 'mi_temps') {
     tempsDeJeuMs = 0;
   } else if (currentMatchPhase === 'fin_de_match') {
+    // Si le match est terminé, on affiche le temps final qui a été figé
     tempsDeJeuMs = parseInt(scriptProperties.getProperty('finalDisplayedTimeMs') || '0', 10);
   }
 
@@ -41,24 +41,25 @@ function getMatchTimeState() {
 }
 
 /**
- * Démarre le chronomètre du match.
- * Enregistre le temps de début et met le statut du chrono à "en cours".
+ * Démarre le chronomètre du match (ou le reprend après une pause).
+ * Enregistre le temps de début de la période de jeu en cours.
  */
 function startMatchTimer() {
   const scriptProperties = PropertiesService.getScriptProperties();
-  const now = new Date().getTime();
-  const totalPausedTimeMs = parseInt(scriptProperties.getProperty('totalPausedTimeMs') || '0', 10);
+  const isTimerRunning = scriptProperties.getProperty('isTimerRunning') === 'true';
 
-  // Le nouveau temps de début est le temps actuel moins le temps total passé en pause.
-  // Cela permet au chrono de reprendre là où il s'est arrêté.
-  scriptProperties.setProperty('matchStartTimeMs', now - totalPausedTimeMs);
-  scriptProperties.setProperty('isTimerRunning', 'true');
-  Logger.log("Chronomètre démarré.");
+  if (!isTimerRunning) {
+    scriptProperties.setProperty('matchStartTime', new Date().getTime().toString());
+    scriptProperties.setProperty('isTimerRunning', 'true');
+    Logger.log("Chronomètre démarré.");
+  } else {
+    Logger.log("Le chronomètre est déjà en cours.");
+  }
 }
 
 /**
  * Met le chronomètre du match en pause.
- * Enregistre le temps de jeu actuel et met le statut du chrono à "arrêté".
+ * Calcule et enregistre le temps de jeu accumulé jusqu'à cette pause.
  */
 function pauseMatchTimer() {
   const scriptProperties = PropertiesService.getScriptProperties();
@@ -66,18 +67,15 @@ function pauseMatchTimer() {
 
   if (isTimerRunning) {
     const now = new Date().getTime();
-    const matchStartTimeMs = parseInt(scriptProperties.getProperty('matchStartTimeMs') || '0', 10);
-    const totalPausedTimeMs = parseInt(scriptProperties.getProperty('totalPausedTimeMs') || '0', 10);
+    const matchStartTime = parseInt(scriptProperties.getProperty('matchStartTime') || '0', 10);
+    const gameTimeAtLastPause = parseInt(scriptProperties.getProperty('gameTimeAtLastPause') || '0', 10);
 
-    // Calcule le temps de jeu écoulé jusqu'à cette pause
-    const currentElapsedTimeMs = (now - matchStartTimeMs) - totalPausedTimeMs;
+    // Ajoute le temps écoulé depuis le dernier démarrage/reprise au temps accumulé
+    const newGameTimeAtLastPause = gameTimeAtLastPause + (now - matchStartTime);
+    scriptProperties.setProperty('gameTimeAtLastPause', newGameTimeAtLastPause.toString());
     
-    // Met à jour le temps de pause total pour la prochaine reprise
-    scriptProperties.setProperty('totalPausedTimeMs', totalPausedTimeMs + (now - (matchStartTimeMs + totalPausedTimeMs)));
-    
-    scriptProperties.setProperty('lastKnownGameTimeMs', currentElapsedTimeMs); // Enregistre le temps de jeu au moment de la pause
     scriptProperties.setProperty('isTimerRunning', 'false');
-    Logger.log("Chronomètre mis en pause. Temps de jeu: " + formatMillisecondsToHMS(currentElapsedTimeMs));
+    Logger.log("Chronomètre mis en pause. Temps de jeu accumulé: " + formatMillisecondsToHMS(newGameTimeAtLastPause));
   } else {
     Logger.log("Le chronomètre n'est pas en cours, impossible de le mettre en pause.");
   }
@@ -85,25 +83,10 @@ function pauseMatchTimer() {
 
 /**
  * Reprend le chronomètre du match après une pause.
- * Ajuste le temps de début pour continuer le décompte.
+ * C'est la même logique que startMatchTimer, mais on la sépare pour la clarté.
  */
 function resumeMatchTimer() {
-  const scriptProperties = PropertiesService.getScriptProperties();
-  const isTimerRunning = scriptProperties.getProperty('isTimerRunning') === 'true';
-
-  if (!isTimerRunning) {
-    const now = new Date().getTime();
-    const lastKnownGameTimeMs = parseInt(scriptProperties.getProperty('lastKnownGameTimeMs') || '0', 10);
-    
-    // Ajuste le temps de début pour que le chrono continue à partir de lastKnownGameTimeMs
-    // Le nouveau matchStartTimeMs est le temps actuel moins le temps de jeu déjà écoulé
-    scriptProperties.setProperty('matchStartTimeMs', now - lastKnownGameTimeMs);
-    scriptProperties.setProperty('isTimerRunning', 'true');
-    scriptProperties.setProperty('totalPausedTimeMs', '0'); // Réinitialise le temps de pause pour le prochain calcul
-    Logger.log("Chronomètre repris.");
-  } else {
-    Logger.log("Le chronomètre est déjà en cours, impossible de le reprendre.");
-  }
+  startMatchTimer(); // Réutilise la fonction startMatchTimer pour la reprise
 }
 
 /**
@@ -113,9 +96,8 @@ function resumeMatchTimer() {
 function resetMatchTimer() {
   const scriptProperties = PropertiesService.getScriptProperties();
   scriptProperties.setProperty('isTimerRunning', 'false');
-  scriptProperties.setProperty('matchStartTimeMs', '0');
-  scriptProperties.setProperty('totalPausedTimeMs', '0');
-  scriptProperties.setProperty('lastKnownGameTimeMs', '0');
+  scriptProperties.setProperty('gameTimeAtLastPause', '0');
+  scriptProperties.setProperty('matchStartTime', '0'); // Point de départ pour le prochain démarrage
   scriptProperties.setProperty('finalDisplayedTimeMs', '0'); // S'assurer que le temps final est aussi remis à zéro
   Logger.log("Chronomètre réinitialisé.");
 }
