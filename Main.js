@@ -10,45 +10,143 @@
 function onOpen() {
   const ui = SpreadsheetApp.getUi();
   ui.createMenu('Match Rugby')
-      .addItem('Ouvrir Tableau de Bord', 'ouvrirTableauDeBord') // Bouton pour ouvrir la sidebar
+      .addItem('Ouvrir Tableau de Bord', 'ouvrirTableauDeBord')
       .addSeparator()
-      .addItem('Initialiser le match', 'initialiserFeuilleEtProprietes') // Réinitialise les données (scores à 0, chrono à 0, phase "non_demarre")
-      .addSeparator() 
       .addSubMenu(ui.createMenu('Phases de Match')
-          .addItem('Coup d\'envoi 1ère MT', 'debutPremiereMiTemps') // Fonction de Interruption.gs
-          .addItem('Fin 1ère MT', 'finPremiereMiTemps') // Fonction de Interruption.gs
-          .addItem('Coup d\'envoi 2e MT', 'debutDeuxiemeMiTemps') // Fonction de Interruption.gs
-          .addItem('Fin de Match', 'finDeMatch') // Fonction de Interruption.gs
-      )
+          .addItem('Initialiser Nouveau Match', 'initialiserFeuilleEtProprietes')
+          .addItem('Coup d\'envoi 1ère MT', 'debutPremiereMiTemps')
+          .addItem('Fin 1ère MT', 'finPremiereMiTemps')
+          .addItem('Coup d\'envoi 2ème MT', 'debutDeuxiemeMiTemps')
+          .addItem('Arrêter Jeu (Pause)', 'arretJeu')
+          .addItem('Reprendre Jeu', 'repriseJeu')
+          .addItem('Fin de Match', 'finDeMatch'))
       .addSeparator()
-      .addSubMenu(ui.createMenu('Réalisations (points)') // Renommé pour plus de clarté
-          .addItem('Essai', 'recordEssai') // Fonction de Actions.gs
-          .addItem('Transformation Réussie', 'recordTransformationReussie') // Fonction de Actions.gs
-          .addItem('Transformation Manquée', 'recordTransformationManquee') // Fonction de Actions.gs
-          .addItem('Drop Réussi', 'recordDropReussi') // Fonction de Actions.gs
-          .addItem('Drop Manqué', 'recordDropManque') // Fonction de Actions.gs
-          .addItem('Pénalité Réussie', 'recordPenaliteReussie') 
-          .addItem('Pénalité Manquée', 'recordPenaliteManquee') 
-          .addItem('Essai de Pénalité', 'recordEssaiDePenalite') // Fonction de Sanctions.gs (mais rapporte des points)
-      )
-      .addSeparator() 
-      .addSubMenu(ui.createMenu('Fautes & Sanctions') // Renommé pour plus de clarté
-          .addItem('Pénalité Tentée', 'recordPenaliteTentee') // Tentative de pénalité, gestion à suivre (Réussie/Manquée)
-          .addItem('Carton Blanc', 'recordCartonBlanc') // Fonction de Sanctions.gs
-          .addItem('Carton Jaune', 'recordCartonJaune') // Fonction de Sanctions.gs
-          .addItem('Carton Rouge', 'recordCartonRouge') // Fonction de Sanctions.gs
-        )
+      .addItem('Actions de Match...', 'showCustomMenu') // <-- NOUVEAU : pour ouvrir le menu d'actions détaillé
       .addSeparator()
-      .addSubMenu(ui.createMenu('Événements Divers') // Renommé pour englober plus de choses
-          .addItem('Arrêt du jeu', 'arretJeu') // Fonction d'Interruption.gs
-          .addItem('Reprise du jeu', 'repriseJeu') // Fonction d'Interruption.gs
-          .addItem('Ajouter un événement manuel', 'ajouterEvenementManuel') // Fonction de Evenements.gs
-          .addItem('Annuler dernier événement', 'annulerDernierEvenement') // Fonction de Evenements.gs (deleteLastEvent)
-          .addItem('Carton Bleu', 'recordCartonBleu') // Fonction de Evenements.gs ou Sanctions.gs selon la définition finale
-        )
+      .addItem('Annuler dernier événement (attention!)', 'deleteLastEvent') // Fonction de Evenements.gs
       .addToUi();
+
+  // Assure la création du déclencheur au premier chargement si le menu est déjà affiché.
+  // Cela n'affichera pas la sidebar immédiatement, il faut cliquer sur "Ouvrir Tableau de Bord".
+  // createTimeDrivenTriggers(); // On ne l'appelle plus ici directement pour éviter la sidebar au démarrage de chaque feuille
 }
 
+// NOUVELLE FONCTION à ajouter dans Main.gs (après onOpen(), par exemple)
+
+/**
+ * Affiche un menu personnalisé pour les actions de match (scores, cartons, remplacements).
+ * Chaque élément du menu appellera une fonction correspondante dans ScoreManager.gs.
+ */
+function showCustomMenu() {
+  const ui = SpreadsheetApp.getUi();
+  const teamPromptResult = ui.prompt(
+      'Action de Match',
+      'Choisissez l\'équipe concernée (Locale ou Visiteur) ou laissez vide pour une action neutre :',
+      ui.ButtonSet.OK_CANCEL
+  );
+
+  if (teamPromptResult.getSelectedButton() === ui.Button.CANCEL) {
+    return; // L'utilisateur a annulé
+  }
+
+  const team = teamPromptResult.getResponseText().trim(); // 'Locale', 'Visiteur', ou vide
+
+  const actionMenu = ui.createMenu('Actions de Match');
+
+  // Sous-menu des scores
+  actionMenu.addSubMenu(ui.createMenu('Score')
+      .addItem('Essai Locale (5 pts)', 'addScoreLocaleEssai')
+      .addItem('Transformation Locale (2 pts)', 'addScoreLocaleTransfo')
+      .addItem('Pénalité Locale (3 pts)', 'addScoreLocalePenalite')
+      .addItem('Drop Locale (3 pts)', 'addScoreLocaleDrop')
+      .addSeparator()
+      .addItem('Essai Visiteur (5 pts)', 'addScoreVisiteurEssai')
+      .addItem('Transformation Visiteur (2 pts)', 'addScoreVisiteurTransfo')
+      .addItem('Pénalité Visiteur (3 pts)', 'addScoreVisiteurPenalite')
+      .addItem('Drop Visiteur (3 pts)', 'addScoreVisiteurDrop')
+  );
+
+  // Sous-menu des cartons
+  actionMenu.addSubMenu(ui.createMenu('Cartons')
+      .addItem('Carton Jaune', 'handleCardPrompt')
+      .addItem('Carton Rouge', 'handleCardPrompt')
+  );
+
+  // Sous-menu des remplacements
+  actionMenu.addItem('Remplacement...', 'handleSubstitutionPrompt');
+  
+  actionMenu.addToUi(); // Affiche le nouveau menu flottant
+}
+
+// NOUVELLES FONCTIONS D'ASSISTANT pour les prompts d'utilisateur (à ajouter dans Main.gs)
+// Ces fonctions recueillent les informations via des boîtes de dialogue et appellent ScoreManager.gs
+
+function addScoreLocaleEssai() { addScore('Locale', 'Essai', 5, promptForPlayer()); }
+function addScoreLocaleTransfo() { addScore('Locale', 'Transformation', 2, promptForPlayer()); }
+function addScoreLocalePenalite() { addScore('Locale', 'Pénalité', 3, promptForPlayer()); }
+function addScoreLocaleDrop() { addScore('Locale', 'Drop', 3, promptForPlayer()); }
+
+function addScoreVisiteurEssai() { addScore('Visiteur', 'Essai', 5, promptForPlayer()); }
+function addScoreVisiteurTransfo() { addScore('Visiteur', 'Transformation', 2, promptForPlayer()); }
+function addScoreVisiteurPenalite() { addScore('Visiteur', 'Pénalité', 3, promptForPlayer()); }
+function addScoreVisiteurDrop() { addScore('Visiteur', 'Drop', 3, promptForPlayer()); }
+
+function handleCardPrompt() {
+  const ui = SpreadsheetApp.getUi();
+  const cardTypeResult = ui.prompt(
+      'Type de Carton',
+      'Entrez le type de carton (Jaune ou Rouge) :',
+      ui.ButtonSet.OK_CANCEL
+  );
+  if (cardTypeResult.getSelectedButton() === ui.Button.CANCEL || !cardTypeResult.getResponseText().trim()) return;
+  const cardType = cardTypeResult.getResponseText().trim();
+
+  const player = promptForPlayer();
+  if (!player) return; // L'utilisateur a annulé
+
+  const teamPromptResult = ui.prompt(
+      'Équipe du joueur',
+      'Équipe (Locale ou Visiteur) du joueur qui reçoit le carton :',
+      ui.ButtonSet.OK_CANCEL
+  );
+  if (teamPromptResult.getSelectedButton() === ui.Button.CANCEL || !teamPromptResult.getResponseText().trim()) return;
+  const team = teamPromptResult.getResponseText().trim();
+
+  handleCard(team, `Carton ${cardType}`, player);
+}
+
+function handleSubstitutionPrompt() {
+  const ui = SpreadsheetApp.getUi();
+  const playerOut = ui.prompt('Remplacement', 'Nom du joueur sortant :', ui.ButtonSet.OK_CANCEL);
+  if (playerOut.getSelectedButton() === ui.Button.CANCEL || !playerOut.getResponseText().trim()) return;
+
+  const playerIn = ui.prompt('Remplacement', 'Nom du joueur entrant :', ui.ButtonSet.OK_CANCEL);
+  if (playerIn.getSelectedButton() === ui.Button.CANCEL || !playerIn.getResponseText().trim()) return;
+
+  const teamPromptResult = ui.prompt(
+      'Équipe du remplacement',
+      'Équipe (Locale ou Visiteur) :',
+      ui.ButtonSet.OK_CANCEL
+  );
+  if (teamPromptResult.getSelectedButton() === ui.Button.CANCEL || !teamPromptResult.getResponseText().trim()) return;
+  const team = teamPromptResult.getResponseText().trim();
+
+  handleSubstitution(team, playerOut.getResponseText().trim(), playerIn.getResponseText().trim());
+}
+
+// Fonction utilitaire pour demander le nom du joueur
+function promptForPlayer() {
+  const ui = SpreadsheetApp.getUi();
+  const playerResult = ui.prompt(
+      'Nom du Joueur',
+      'Entrez le nom du joueur (laissez vide si non applicable) :',
+      ui.ButtonSet.OK_CANCEL
+  );
+  if (playerResult.getSelectedButton() === ui.Button.CANCEL) {
+    return ''; // L'utilisateur a annulé
+  }
+  return playerResult.getResponseText().trim();
+}
 /**
  * Ouvre le tableau de bord (sidebar) du match.
  * Cette fonction est appelée via le menu personnalisé.
