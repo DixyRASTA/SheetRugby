@@ -57,7 +57,7 @@ function promptForTeam() {
   const ui = SpreadsheetApp.getUi();
   const teamChoice = ui.alert(
       'Équipe concernée',
-      'Quelle équipe est concernée ?',
+      'Quelle équipe est concernée ?\n\nOui = Locale\nNon = Visiteur',
       ui.ButtonSet.YES_NO_CANCEL // YES pour Locale, NO pour Visiteur
   );
 
