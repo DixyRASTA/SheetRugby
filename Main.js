@@ -43,26 +43,6 @@ function onOpen() {
       .addToUi();
 }
 
-// SUPPRIMÉE : La fonction handleCardPrompt() n'est plus nécessaire dans Main.gs
-// (elle était là pour l'ancienne logique des prompts de cartons)
-/*
-function handleCardPrompt() {
-  // ... (ancien code) ...
-}
-*/
-
-// La fonction promptForPlayer() dans Main.gs est maintenant dupliquée dans Sanctions.gs.
-// Pour l'instant on peut la laisser si d'autres fonctions dans Main.gs l'utilisent,
-// mais à terme il faudrait la déplacer dans un fichier 'Utils.gs' si elle est partagée.
-// Pour les tests actuels, ce n'est pas bloquant.
-
-  // Assure la création du déclencheur au premier chargement si le menu est déjà affiché.
-  // Cela n'affichera pas la sidebar immédiatement, il faut cliquer sur "Ouvrir Tableau de Bord".
-  // createTimeDrivenTriggers(); // On ne l'appelle plus ici directement pour éviter la sidebar au démarrage de chaque feuille
-}
-
-// NOUVELLE FONCTION à ajouter dans Main.gs (après onOpen(), par exemple)
-
 /**
  * Affiche un menu personnalisé pour les actions de match (scores, cartons, remplacements).
  * Chaque élément du menu appellera une fonction correspondante dans ScoreManager.gs.
@@ -123,94 +103,6 @@ function addScoreVisiteurTransfo() { addScore('Visiteur', 'Transformation', 2, p
 function addScoreVisiteurPenalite() { addScore('Visiteur', 'Pénalité', 3, promptForPlayer()); }
 function addScoreVisiteurDrop() { addScore('Visiteur', 'Drop', 3, promptForPlayer()); }
 
-// MODIFIÉ : Ordre des questions pour les cartons et suppression de la demande de type ici.
-// La fonction appelée par le menu sera 'handleCardPrompt', et elle demandera le type
-// MODIFIÉ : handleCardPrompt pour l'ordre et la non-obligatoriété du joueur
-function handleCardPrompt() {
-  const ui = SpreadsheetApp.getUi();
-
-  // 1. Demander le type de carton (Jaune ou Rouge)
-  const cardTypeChoice = ui.alert(
-      'Carton : Type',
-      'Quel type de carton ?',
-      ui.ButtonSet.YES_NO_CANCEL // YES pour Jaune, NO pour Rouge
-  );
-
-  let cardType = '';
-  if (cardTypeChoice === ui.Button.YES) {
-    cardType = 'Jaune';
-  } else if (cardTypeChoice === ui.Button.NO) {
-    cardType = 'Rouge';
-  } else {
-    return; // Annulé
-  }
-
-  // 2. Demander l'équipe (Locale ou Visiteur)
-  const teamChoice = ui.alert(
-      'Carton : Équipe',
-      'Quelle équipe est sanctionnée ?',
-      ui.ButtonSet.YES_NO_CANCEL // YES pour Locale, NO pour Visiteur
-  );
-
-  let team = '';
-  if (teamChoice === ui.Button.YES) {
-    team = 'Locale';
-  } else if (teamChoice === ui.Button.NO) {
-    team = 'Visiteur';
-  } else {
-    return; // Annulé
-  }
-
-  // 3. Demander le nom du joueur (non bloquant)
-  const playerResult = ui.prompt(
-      'Carton : Joueur (Optionnel)',
-      'Nom ou numéro du joueur (laisser vide si inconnu) :',
-      ui.ButtonSet.OK_CANCEL
-  );
-  let player = '';
-  if (playerResult.getSelectedButton() === ui.Button.OK) {
-    player = playerResult.getResponseText().trim();
-  }
-  // Si l'utilisateur clique sur CANCEL ou laisse vide, player restera '' ou sera ignoré, c'est non bloquant.
-
-  // Appel à la fonction handleCard qui est maintenant dans Sanctions.gs
-  handleCard(team, `Carton ${cardType}`, player);
-}
-
-// Suppression de la fonction handleSubstitutionPrompt qui n'est plus nécessaire si on ne gère pas les remplacements.
-
-//function handleSubstitutionPrompt() {
-//  const ui = SpreadsheetApp.getUi();
-//  const playerOut = ui.prompt('Remplacement', 'Nom du joueur sortant :', ui.ButtonSet.OK_CANCEL);
-//  if (playerOut.getSelectedButton() === ui.Button.CANCEL || !playerOut.getResponseText().trim()) return;
-
-//  const playerIn = ui.prompt('Remplacement', 'Nom du joueur entrant :', ui.ButtonSet.OK_CANCEL);
-//  if (playerIn.getSelectedButton() === ui.Button.CANCEL || !playerIn.getResponseText().trim()) return;
-
-//  const teamPromptResult = ui.prompt(
-//     'Équipe du remplacement',
-//      'Équipe (Locale ou Visiteur) :',
-//      ui.ButtonSet.OK_CANCEL
-//  );
-//  if (teamPromptResult.getSelectedButton() === ui.Button.CANCEL || !teamPromptResult.getResponseText().trim()) return;
-//  const team = teamPromptResult.getResponseText().trim();
-
-//  handleSubstitution(team, playerOut.getResponseText().trim(), playerIn.getResponseText().trim());
-//}
-
-// Fonction utilitaire pour demander le nom du joueur
-function promptForPlayer() {
-  const ui = SpreadsheetApp.getUi();
-  const playerResult = ui.prompt(
-      'Nom du Joueur',
-      'Entrez le nom du joueur (laissez vide si non applicable) :',
-      ui.ButtonSet.OK_CANCEL
-  );
-  if (playerResult.getSelectedButton() === ui.Button.CANCEL) {
-    return ''; // L'utilisateur a annulé
-  }
-  return playerResult.getResponseText().trim();
-}
 /**
  * Ouvre le tableau de bord (sidebar) du match.
  * Cette fonction est appelée via le menu personnalisé.

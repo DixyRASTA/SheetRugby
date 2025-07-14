@@ -38,3 +38,17 @@ function formatMinutesToHMS(minutes) {
   const pad = (num) => num.toString().padStart(2, '0');
   return `${pad(hours)}:${pad(mins)}:${pad(secs)}`; 
 }
+
+// Fonction utilitaire pour demander le nom du joueur
+function promptForPlayer() {
+  const ui = SpreadsheetApp.getUi();
+  const playerResult = ui.prompt(
+      'Nom du Joueur',
+      'Entrez le nom du joueur (laissez vide si non applicable) :',
+      ui.ButtonSet.OK_CANCEL
+  );
+  if (playerResult.getSelectedButton() === ui.Button.CANCEL) {
+    return ''; // L'utilisateur a annulé
+  }
+  return playerResult.getResponseText().trim();
+}
