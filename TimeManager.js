@@ -80,28 +80,23 @@ function getMatchTimeState() {
   const matchStartTime = parseInt(scriptProperties.getProperty('matchStartTime') || '0', 10);
 
   // LOGIQUE DE RÉAJUSTEMENT ET CALCUL DU TEMPS DE JEU
-  if (isTimerRunning) {
-    const now = new Date().getTime();
-    // Le temps de jeu est le temps accumulé PRÉCÉDEMMENT (gameTimeAtLastPause)
-    // plus le temps écoulé depuis la dernière mise en marche (now - matchStartTime)
-    tempsDeJeuMs = gameTimeAtLastPause + (now - matchStartTime);
-    if (tempsDeJeuMs < 0) tempsDeJeuMs = 0; // Sécurité pour éviter les temps négatifs
-  } else {
-    // Si le chrono n'est PAS en cours, le temps de jeu est simplement le temps accumulé jusqu'à la dernière pause
-    tempsDeJeuMs = gameTimeAtLastPause;
-  }
-
-  // Gérer les cas où le chrono doit être à 0 ou à un temps final
-  if (currentMatchPhase === 'non_demarre' || currentMatchPhase === 'mi_temps') {
-    tempsDeJeuMs = 0; // Dans ces phases, le chrono affiché est 0
-    // On s'assure que les propriétés internes reflètent bien un état "non couru" pour ces phases
-    scriptProperties.setProperty('isTimerRunning', 'false');
+ // --- NOUVELLE LOGIQUE POUR LES PHASES SPÉCIFIQUES ---
+  if (currentMatchPhase === 'non_demarre') {
+    tempsDeJeuMs = 0; // Au tout début, le chrono est à zéro
+    scriptProperties.setProperty('isTimerRunning', 'false'); // Assurer l'arrêt
     scriptProperties.setProperty('gameTimeAtLastPause', '0');
     scriptProperties.setProperty('matchStartTime', '0');
+    scriptProperties.setProperty('finalDisplayedTimeMs', '0'); // Reset du temps final aussi
+  } else if (currentMatchPhase === 'mi_temps') {
+    // Lors de la mi-temps, le temps de jeu affiché doit être le temps final de la 1ère MT.
+    // Ce temps a été sauvegardé dans gameTimeAtLastPause par pauseMatchTimer() appelée juste avant la transition.
+    // Donc on ne change rien à tempsDeJeuMs calculé ci-dessus, il contient déjà gameTimeAtLastPause.
+    scriptProperties.setProperty('isTimerRunning', 'false'); // Assurer l'arrêt
   } else if (currentMatchPhase === 'fin_de_match') {
+    // En fin de match, on affiche le temps final du match.
+    // Ce temps a été sauvegardé dans finalDisplayedTimeMs par finDeMatch().
     tempsDeJeuMs = parseInt(scriptProperties.getProperty('finalDisplayedTimeMs') || '0', 10);
-    // Assurer que le chrono est arrêté
-    scriptProperties.setProperty('isTimerRunning', 'false');
+    scriptProperties.setProperty('isTimerRunning', 'false'); // Assurer l'arrêt
   }
 
   return {
