@@ -59,27 +59,8 @@ function handleCard(team, cardType, player, remark = '') {
   updateSidebar();
 }
 
-/**
- * Gère un remplacement de joueur.
- * @param {string} team 'Locale' ou 'Visiteur'.
- * @param {string} playerOut Le nom du joueur sortant.
- * @param {string} playerIn Le nom du joueur entrant.
- * @param {string} [remark=''] Remarque additionnelle (optionnel).
- */
-function handleSubstitution(team, playerOut, playerIn, remark = '') {
-  const scriptProperties = PropertiesService.getScriptProperties();
-  const currentLocalScore = parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10);
-  const currentVisitorScore = parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10);
+// Suppression de handleSubstitution qui n'est plus nécessaire
 
-  const action = `Remplacement: ${playerOut} par ${playerIn}`;
-  const matchTimeState = getMatchTimeState();
-  recordEvent(new Date(), matchTimeState.tempsDeJeuFormatted, team, action, `${playerOut} > ${playerIn}`, currentLocalScore, currentVisitorScore, remark);
-
-  Logger.log(`${team}: Remplacement - ${playerOut} sort, ${playerIn} entre.`);
-  SpreadsheetApp.getUi().alert("Remplacement", `${team}: ${playerOut} sort, ${playerIn} entre.`, SpreadsheetApp.getUi().ButtonSet.OK);
-
-  updateSidebar();
-}
 
 // NOTE: Plus tard, nous pourrons ajouter des fonctions pour gérer des événements plus complexes
 // comme les pénalités manquées, les en-avant, les mêlées, etc., si besoin.
