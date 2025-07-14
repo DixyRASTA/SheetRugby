@@ -79,8 +79,17 @@ function getMatchTimeState() {
   const gameTimeAtLastPause = parseInt(scriptProperties.getProperty('gameTimeAtLastPause') || '0', 10);
   const matchStartTime = parseInt(scriptProperties.getProperty('matchStartTime') || '0', 10);
 
-  // LOGIQUE DE RÉAJUSTEMENT ET CALCUL DU TEMPS DE JEU
- // --- NOUVELLE LOGIQUE POUR LES PHASES SPÉCIFIQUES ---
+  // LOGIQUE DE CALCUL DU TEMPS DE JEU
+  if (isTimerRunning) {
+    const now = new Date().getTime();
+    tempsDeJeuMs = gameTimeAtLastPause + (now - matchStartTime);
+    if (tempsDeJeuMs < 0) tempsDeJeuMs = 0; // Sécurité
+  } else {
+    // Si le chrono n'est PAS en cours, le temps de jeu est simplement le temps accumulé jusqu'à la dernière pause.
+    tempsDeJeuMs = gameTimeAtLastPause;
+  }
+
+  // --- NOUVELLE LOGIQUE POUR LES PHASES SPÉCIFIQUES ---
   if (currentMatchPhase === 'non_demarre') {
     tempsDeJeuMs = 0; // Au tout début, le chrono est à zéro
     scriptProperties.setProperty('isTimerRunning', 'false'); // Assurer l'arrêt
@@ -88,13 +97,11 @@ function getMatchTimeState() {
     scriptProperties.setProperty('matchStartTime', '0');
     scriptProperties.setProperty('finalDisplayedTimeMs', '0'); // Reset du temps final aussi
   } else if (currentMatchPhase === 'mi_temps') {
-    // Lors de la mi-temps, le temps de jeu affiché doit être le temps final de la 1ère MT.
-    // Ce temps a été sauvegardé dans gameTimeAtLastPause par pauseMatchTimer() appelée juste avant la transition.
-    // Donc on ne change rien à tempsDeJeuMs calculé ci-dessus, il contient déjà gameTimeAtLastPause.
+    // Pendant la mi-temps, on affiche le temps RÉEL de fin de 1ère MT (celui qui a été stocké par pauseMatchTimer).
+    // tempsDeJeuMs contient déjà gameTimeAtLastPause, qui est ce temps réel. Donc pas de changement ici.
     scriptProperties.setProperty('isTimerRunning', 'false'); // Assurer l'arrêt
   } else if (currentMatchPhase === 'fin_de_match') {
     // En fin de match, on affiche le temps final du match.
-    // Ce temps a été sauvegardé dans finalDisplayedTimeMs par finDeMatch().
     tempsDeJeuMs = parseInt(scriptProperties.getProperty('finalDisplayedTimeMs') || '0', 10);
     scriptProperties.setProperty('isTimerRunning', 'false'); // Assurer l'arrêt
   }

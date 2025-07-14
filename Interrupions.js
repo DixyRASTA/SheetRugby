@@ -91,19 +91,20 @@ function finPremiereMiTemps() {
     return;
   }
 
+   pauseMatchTimer(); // Cette fonction met à jour gameTimeAtLastPause avec le temps RÉEL de la 1ère MT (ex: 43:00)
+                     // C'est ce temps réel que nous voulons enregistrer pour l'événement "Fin 1ère MT".
+  
+  const matchTimeState = getMatchTimeState(); // Récupère l'état avec le temps réel de fin de 1ère MT
   scriptProperties.setProperty('currentMatchPhase', 'mi_temps');
-  pauseMatchTimer(); // Appel à la fonction dans TimeManager.gs
   scriptProperties.setProperty('alertMessage', '');
-
-  // Enregistrer l'événement "Fin 1ère MT"
-  const matchTimeState = getMatchTimeState();
-  // On utilise la variable scriptProperties déjà déclarée
+  
+  // Enregistrer l'événement "Fin 1ère MT" avec le temps de jeu RÉEL accumulé
   const currentScoreLocal = parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10);
   const currentScoreVisiteur = parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10);
-  recordEvent(new Date(), matchTimeState.tempsDeJeuFormatted, '', 'Fin 1ère MT', '', '', currentScoreLocal, currentScoreVisiteur, 'Pause');
+  recordEvent(new Date(), matchTimeState.tempsDeJeuFormatted, '', 'Fin 1ère MT', '', '', currentScoreLocal, currentScoreVisiteur, 'Mi-temps');
 
   updateSidebar();
-  SpreadsheetApp.getUi().alert("Fin de la 1ère mi-temps !", "Le jeu est en pause.", SpreadsheetApp.getUi().ButtonSet.OK);
+  SpreadsheetApp.getUi().alert("Mi-temps", "La 1ère mi-temps est terminée.", SpreadsheetApp.getUi().ButtonSet.OK);
 }
 
 /**
@@ -122,21 +123,27 @@ function debutDeuxiemeMiTemps() {
     return;
   }
 
+  // Ici, le chrono DOIT reprendre à partir du temps accumulé à la fin de la 1ère MT.
+  // startMatchTimer() va utiliser gameTimeAtLastPause qui contient déjà le temps de la 1ère MT.
+  // NOUVEAU : Forcer le temps de jeu accumulé à 40 minutes (2400000 ms) pour le début de la 2ème MT.
+  const QUARANTE_MINUTES_MS = 40 * 60 * 1000;
+  scriptProperties.setProperty('gameTimeAtLastPause', QUARANTE_MINUTES_MS.toString());
+  
   scriptProperties.setProperty('currentMatchPhase', 'deuxieme_mi_temps');
-  resumeMatchTimer(); // Appel à la fonction dans TimeManager.gs
+  startMatchTimer(); // startMatchTimer va utiliser le gameTimeAtLastPause que l'on vient de forcer à 40 minutes.
   scriptProperties.setProperty('alertMessage', '');
 
-  // Enregistrer l'événement "Coup d'envoi 2e MT"
-  const matchTimeState = getMatchTimeState();
-  // On utilise la variable scriptProperties déjà déclarée
-  const currentScoreLocal = parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10);
-  const currentScoreVisiteur = parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10);
-  
-  recordEvent(new Date(), matchTimeState.tempsDeJeuFormatted, '', 'Coup d\'envoi 2e MT', '', '', currentScoreLocal, currentScoreVisiteur, 'Reprise de la rencontre');
+  // Pour l'événement, on veut afficher 40:00:00
+  const matchTimeState = getMatchTimeState(); // Cette fonction va maintenant calculer à partir des 40 minutes
+  recordEvent(new Date(), matchTimeState.tempsDeJeuFormatted, '', 'Coup d\'envoi 2ème MT', '', 
+              parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10), 
+              parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10), 
+              'Reprise');
 
   updateSidebar();
-  SpreadsheetApp.getUi().alert("2ème Mi-temps démarrée !", "Le match est en cours.", SpreadsheetApp.getUi().ButtonSet.OK);
+  SpreadsheetApp.getUi().alert("Coup d'envoi 2ème mi-temps !", "Le jeu a repris.", SpreadsheetApp.getUi().ButtonSet.OK);
 }
+  
 
 /**
  * Met fin au match.
@@ -154,22 +161,21 @@ function finDeMatch() {
     return;
   }
 
-  scriptProperties.setProperty('currentMatchPhase', 'fin_de_match');
-  pauseMatchTimer(); // Arrête le chrono
-  // Enregistrer le temps final affiché pour la permanence
-  scriptProperties.setProperty('finalDisplayedTimeMs', getMatchTimeState().tempsDeJeuMs.toString());
-  scriptProperties.setProperty('alertMessage', '');
-
-  // Enregistrer l'événement "Fin de Match"
+  pauseMatchTimer(); // Arrête le chrono et met à jour gameTimeAtLastPause
+  
   const matchTimeState = getMatchTimeState();
-  // On utilise la variable scriptProperties déjà déclarée
+  // NOUVEAU : Enregistrer le temps final du match
+  scriptProperties.setProperty('finalDisplayedTimeMs', matchTimeState.tempsDeJeuMs.toString());
+  scriptProperties.setProperty('currentMatchPhase', 'fin_de_match');
+  scriptProperties.setProperty('alertMessage', 'Match Terminé !');
+
+  // Enregistrer l'événement "Fin de Match" avec le temps final
   const currentScoreLocal = parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10);
   const currentScoreVisiteur = parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10);
-  
-  recordEvent(new Date(), matchTimeState.tempsDeJeuFormatted, '', 'Fin de Match', '', '', currentScoreLocal, currentScoreVisiteur, 'Fin de la rencontre');
+  recordEvent(new Date(), matchTimeState.tempsDeJeuFormatted, '', 'Fin de Match', '', '', currentScoreLocal, currentScoreVisiteur, 'Fin');
 
   updateSidebar();
-  SpreadsheetApp.getUi().alert("Match Terminé !", "La partie est terminée.", SpreadsheetApp.getUi().ButtonSet.OK);
+  SpreadsheetApp.getUi().alert("Fin du Match !", "Le match est terminé.", SpreadsheetApp.getUi().ButtonSet.OK);
 }
 
 
