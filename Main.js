@@ -99,23 +99,7 @@ function addScoreVisiteurDrop() { addScore('Visiteur', 'Drop', 3, promptForPlaye
 function handleCardPrompt() {
   const ui = SpreadsheetApp.getUi();
 
-  // 1. Demander l'équipe (choix plus guidé)
-  const teamChoice = ui.alert(
-      'Carton : Équipe',
-      'Quelle équipe est sanctionnée ?',
-      ui.ButtonSet.YES_NO_CANCEL // YES pour Locale, NO pour Visiteur
-  );
-
-  let team = '';
-  if (teamChoice === ui.Button.YES) {
-    team = 'Locale';
-  } else if (teamChoice === ui.Button.NO) {
-    team = 'Visiteur';
-  } else {
-    return; // Annulé
-  }
-
-  // 2. Demander le type de carton
+  // 1. Demander le type de carton (Jaune ou Rouge)
   const cardTypeChoice = ui.alert(
       'Carton : Type',
       'Quel type de carton ?',
@@ -127,6 +111,22 @@ function handleCardPrompt() {
     cardType = 'Jaune';
   } else if (cardTypeChoice === ui.Button.NO) {
     cardType = 'Rouge';
+  } else {
+    return; // Annulé
+  }
+
+  // 2. Demander l'équipe (Locale ou Visiteur)
+  const teamChoice = ui.alert(
+      'Carton : Équipe',
+      'Quelle équipe est sanctionnée ?',
+      ui.ButtonSet.YES_NO_CANCEL // YES pour Locale, NO pour Visiteur
+  );
+
+  let team = '';
+  if (teamChoice === ui.Button.YES) {
+    team = 'Locale';
+  } else if (teamChoice === ui.Button.NO) {
+    team = 'Visiteur';
   } else {
     return; // Annulé
   }
@@ -143,7 +143,7 @@ function handleCardPrompt() {
   }
   // Si l'utilisateur clique sur CANCEL ou laisse vide, player restera '' ou sera ignoré, c'est non bloquant.
 
-  // Appel à ScoreManager
+  // Appel à la fonction handleCard qui est maintenant dans Sanctions.gs
   handleCard(team, `Carton ${cardType}`, player);
 }
 
