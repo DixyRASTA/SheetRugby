@@ -95,32 +95,56 @@ function addScoreVisiteurDrop() { addScore('Visiteur', 'Drop', 3, promptForPlaye
 
 // MODIFIÉ : Ordre des questions pour les cartons et suppression de la demande de type ici.
 // La fonction appelée par le menu sera 'handleCardPrompt', et elle demandera le type
+// MODIFIÉ : handleCardPrompt pour l'ordre et la non-obligatoriété du joueur
 function handleCardPrompt() {
   const ui = SpreadsheetApp.getUi();
 
-  // 1. Demander l'équipe
-  const teamPromptResult = ui.prompt(
+  // 1. Demander l'équipe (choix plus guidé)
+  const teamChoice = ui.alert(
       'Carton : Équipe',
-      'Équipe (Locale ou Visiteur) du joueur qui reçoit le carton :',
-      ui.ButtonSet.OK_CANCEL
+      'Quelle équipe est sanctionnée ?',
+      ui.ButtonSet.YES_NO_CANCEL // YES pour Locale, NO pour Visiteur
   );
-  if (teamPromptResult.getSelectedButton() === ui.Button.CANCEL || !teamPromptResult.getResponseText().trim()) return;
-  const team = teamPromptResult.getResponseText().trim();
 
-  // 2. Demander le nom du joueur
-  const player = promptForPlayer(); // Réutilise la fonction existante
-  if (!player) return; // L'utilisateur a annulé ou laissé vide
+  let team = '';
+  if (teamChoice === ui.Button.YES) {
+    team = 'Locale';
+  } else if (teamChoice === ui.Button.NO) {
+    team = 'Visiteur';
+  } else {
+    return; // Annulé
+  }
 
-  // 3. Demander le type de carton
-  const cardTypeResult = ui.prompt(
+  // 2. Demander le type de carton
+  const cardTypeChoice = ui.alert(
       'Carton : Type',
-      'Entrez le type de carton (Jaune ou Rouge) :',
+      'Quel type de carton ?',
+      ui.ButtonSet.YES_NO_CANCEL // YES pour Jaune, NO pour Rouge
+  );
+
+  let cardType = '';
+  if (cardTypeChoice === ui.Button.YES) {
+    cardType = 'Jaune';
+  } else if (cardTypeChoice === ui.Button.NO) {
+    cardType = 'Rouge';
+  } else {
+    return; // Annulé
+  }
+
+  // 3. Demander le nom du joueur (non bloquant)
+  const playerResult = ui.prompt(
+      'Carton : Joueur (Optionnel)',
+      'Nom ou numéro du joueur (laisser vide si inconnu) :',
       ui.ButtonSet.OK_CANCEL
   );
-  if (cardTypeResult.getSelectedButton() === ui.Button.CANCEL || !cardTypeResult.getResponseText().trim()) return;
-  const cardType = cardTypeResult.getResponseText().trim(); // Ce sera "Jaune" ou "Rouge"
+  let player = '';
+  if (playerResult.getSelectedButton() === ui.Button.OK) {
+    player = playerResult.getResponseText().trim();
+  }
+  // Si l'utilisateur clique sur CANCEL ou laisse vide, player restera '' ou sera ignoré, c'est non bloquant.
 
-  handleCard(team, `Carton ${cardType}`, player); // Appel à ScoreManager
+  // Appel à ScoreManager
+  handleCard(team, `Carton ${cardType}`, player);
 }
 
 // Suppression de la fonction handleSubstitutionPrompt qui n'est plus nécessaire si on ne gère pas les remplacements.
