@@ -7,6 +7,8 @@
  * Fonction appelée automatiquement à l'ouverture de la feuille Google Sheet.
  * Ajoute les menus personnalisés pour un accès facile aux scripts.
  */
+// Dans Main.gs
+
 function onOpen() {
   const ui = SpreadsheetApp.getUi();
   ui.createMenu('Match Rugby')
@@ -21,10 +23,38 @@ function onOpen() {
           .addItem('Reprendre Jeu', 'repriseJeu')
           .addItem('Fin de Match', 'finDeMatch'))
       .addSeparator()
-      .addItem('Actions de Match...', 'showCustomMenu') // <-- NOUVEAU : pour ouvrir le menu d'actions détaillé
+      .addSubMenu(ui.createMenu('Actions de Match') // Renomme le sous-menu existant
+          .addItem('Essai Locale (5 pts)', 'addScoreLocaleEssai')
+          .addItem('Transformation Locale (2 pts)', 'addScoreLocaleTransfo')
+          .addItem('Pénalité Locale (3 pts)', 'addScoreLocalePenalite')
+          .addItem('Drop Locale (3 pts)', 'addScoreLocaleDrop')
+          .addSeparator()
+          .addItem('Essai Visiteur (5 pts)', 'addScoreVisiteurEssai')
+          .addItem('Transformation Visiteur (2 pts)', 'addScoreVisiteurTransfo')
+          .addItem('Pénalité Visiteur (3 pts)', 'addScoreVisiteurPenalite')
+          .addItem('Drop Visiteur (3 pts)', 'addScoreVisiteurDrop'))
       .addSeparator()
-      .addItem('Annuler dernier événement (attention!)', 'deleteLastEvent') // Fonction de Evenements.gs
+      .addSubMenu(ui.createMenu('Sanctions') // <-- NOUVEAU SOUS-MENU SANCTIONS
+          .addItem('Carton Jaune...', 'recordCartonJaunePrompt')
+          .addItem('Carton Rouge...', 'recordCartonRougePrompt'))
+          // Tu pourras ajouter recordPenaliteSifflee ici plus tard si besoin
+      .addSeparator()
+      .addItem('Annuler dernier événement (attention!)', 'deleteLastEvent')
       .addToUi();
+}
+
+// SUPPRIMÉE : La fonction handleCardPrompt() n'est plus nécessaire dans Main.gs
+// (elle était là pour l'ancienne logique des prompts de cartons)
+/*
+function handleCardPrompt() {
+  // ... (ancien code) ...
+}
+*/
+
+// La fonction promptForPlayer() dans Main.gs est maintenant dupliquée dans Sanctions.gs.
+// Pour l'instant on peut la laisser si d'autres fonctions dans Main.gs l'utilisent,
+// mais à terme il faudrait la déplacer dans un fichier 'Utils.gs' si elle est partagée.
+// Pour les tests actuels, ce n'est pas bloquant.
 
   // Assure la création du déclencheur au premier chargement si le menu est déjà affiché.
   // Cela n'affichera pas la sidebar immédiatement, il faut cliquer sur "Ouvrir Tableau de Bord".
