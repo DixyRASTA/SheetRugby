@@ -205,7 +205,7 @@ function arretJeu() {
   const currentScoreVisiteur = parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10);
   
   // Assure-toi que les scores sont passés même si l'action n'est pas un score
-  recordEvent(new Date(), matchTimeState.tempsDeJeuFormatted, '', 'Arrêt du jeu', '', '', currentScoreLocal, currentScoreVisiteur, '');
+  recordEvent(new Date(), matchTimeState.tempsDeJeuFormatted, '', 'Arrêt du jeu', '', currentScoreLocal, currentScoreVisiteur, '');
 
   updateSidebar();
   SpreadsheetApp.getUi().alert("Jeu arrêté", "Le chronomètre est en pause.", SpreadsheetApp.getUi().ButtonSet.OK);
@@ -239,7 +239,7 @@ function repriseJeu() {
   const currentScoreVisiteur = parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10);
   
   // Assure-toi que les scores sont passés même si l'action n'est pas un score
-  recordEvent(new Date(), matchTimeState.tempsDeJeuFormatted, '', 'Reprise du jeu', '', '', currentScoreLocal, currentScoreVisiteur, '');
+  recordEvent(new Date(), matchTimeState.tempsDeJeuFormatted, '', 'Reprise du jeu', '', currentScoreLocal, currentScoreVisiteur, '');
 
   updateSidebar();
   SpreadsheetApp.getUi().alert("Reprise du jeu", "Le chronomètre est en cours.", SpreadsheetApp.getUi().ButtonSet.OK);
