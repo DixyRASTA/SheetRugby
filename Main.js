@@ -39,17 +39,18 @@ function onOpen() {
  */
 function showCustomMenu() {
   const ui = SpreadsheetApp.getUi();
-  const teamPromptResult = ui.prompt(
-      'Action de Match',
-      'Choisissez l\'équipe concernée (Locale ou Visiteur) ou laissez vide pour une action neutre :',
-      ui.ButtonSet.OK_CANCEL
-  );
+  // On ne demande plus l'équipe ici, on le gérera dans les sous-menus spécifiques si besoin.
+  //const teamPromptResult = ui.prompt(
+  //  'Action de Match',
+  //   'Choisissez l\'équipe concernée (Locale ou Visiteur) ou laissez vide pour une action neutre :',
+  //  ui.ButtonSet.OK_CANCEL
+  //);
 
-  if (teamPromptResult.getSelectedButton() === ui.Button.CANCEL) {
-    return; // L'utilisateur a annulé
-  }
+  //if (teamPromptResult.getSelectedButton() === ui.Button.CANCEL) {
+  //  return; // L'utilisateur a annulé
+  //}
 
-  const team = teamPromptResult.getResponseText().trim(); // 'Locale', 'Visiteur', ou vide
+  //const team = teamPromptResult.getResponseText().trim(); // 'Locale', 'Visiteur', ou vide
 
   const actionMenu = ui.createMenu('Actions de Match');
 
@@ -67,16 +68,17 @@ function showCustomMenu() {
   );
 
   // Sous-menu des cartons
-  actionMenu.addSubMenu(ui.createMenu('Cartons')
-      .addItem('Carton Jaune', 'handleCardPrompt')
-      .addItem('Carton Rouge', 'handleCardPrompt')
-  );
-
-  // Sous-menu des remplacements
-  actionMenu.addItem('Remplacement...', 'handleSubstitutionPrompt');
+  actionMenu.addItem('Carton...', 'handleCardPrompt'); // Simplifié pour appeler directement le prompt
+  // Remplacement retiré pour le moment
+  //    .addItem('Carton Jaune', 'handleCardPrompt')
+  //    .addItem('Carton Rouge', 'handleCardPrompt')
+  //actionMenu.addItem('Remplacement...', 'handleSubstitutionPrompt'); 
   
   actionMenu.addToUi(); // Affiche le nouveau menu flottant
 }
+// Fonctions d'assistant pour les prompts d'utilisateur (à ajouter dans Main.gs)
+// (Les addScore... restent inchangées, elles appellent déjà addScore directement)
+// ... Laissez toutes vos fonctions addScoreLocaleEssai, etc. INCHANGÉES ...
 
 // NOUVELLES FONCTIONS D'ASSISTANT pour les prompts d'utilisateur (à ajouter dans Main.gs)
 // Ces fonctions recueillent les informations via des boîtes de dialogue et appellent ScoreManager.gs
@@ -91,48 +93,56 @@ function addScoreVisiteurTransfo() { addScore('Visiteur', 'Transformation', 2, p
 function addScoreVisiteurPenalite() { addScore('Visiteur', 'Pénalité', 3, promptForPlayer()); }
 function addScoreVisiteurDrop() { addScore('Visiteur', 'Drop', 3, promptForPlayer()); }
 
+// MODIFIÉ : Ordre des questions pour les cartons et suppression de la demande de type ici.
+// La fonction appelée par le menu sera 'handleCardPrompt', et elle demandera le type
 function handleCardPrompt() {
   const ui = SpreadsheetApp.getUi();
-  const cardTypeResult = ui.prompt(
-      'Type de Carton',
-      'Entrez le type de carton (Jaune ou Rouge) :',
-      ui.ButtonSet.OK_CANCEL
-  );
-  if (cardTypeResult.getSelectedButton() === ui.Button.CANCEL || !cardTypeResult.getResponseText().trim()) return;
-  const cardType = cardTypeResult.getResponseText().trim();
 
-  const player = promptForPlayer();
-  if (!player) return; // L'utilisateur a annulé
-
+  // 1. Demander l'équipe
   const teamPromptResult = ui.prompt(
-      'Équipe du joueur',
+      'Carton : Équipe',
       'Équipe (Locale ou Visiteur) du joueur qui reçoit le carton :',
       ui.ButtonSet.OK_CANCEL
   );
   if (teamPromptResult.getSelectedButton() === ui.Button.CANCEL || !teamPromptResult.getResponseText().trim()) return;
   const team = teamPromptResult.getResponseText().trim();
 
-  handleCard(team, `Carton ${cardType}`, player);
-}
+  // 2. Demander le nom du joueur
+  const player = promptForPlayer(); // Réutilise la fonction existante
+  if (!player) return; // L'utilisateur a annulé ou laissé vide
 
-function handleSubstitutionPrompt() {
-  const ui = SpreadsheetApp.getUi();
-  const playerOut = ui.prompt('Remplacement', 'Nom du joueur sortant :', ui.ButtonSet.OK_CANCEL);
-  if (playerOut.getSelectedButton() === ui.Button.CANCEL || !playerOut.getResponseText().trim()) return;
-
-  const playerIn = ui.prompt('Remplacement', 'Nom du joueur entrant :', ui.ButtonSet.OK_CANCEL);
-  if (playerIn.getSelectedButton() === ui.Button.CANCEL || !playerIn.getResponseText().trim()) return;
-
-  const teamPromptResult = ui.prompt(
-      'Équipe du remplacement',
-      'Équipe (Locale ou Visiteur) :',
+  // 3. Demander le type de carton
+  const cardTypeResult = ui.prompt(
+      'Carton : Type',
+      'Entrez le type de carton (Jaune ou Rouge) :',
       ui.ButtonSet.OK_CANCEL
   );
-  if (teamPromptResult.getSelectedButton() === ui.Button.CANCEL || !teamPromptResult.getResponseText().trim()) return;
-  const team = teamPromptResult.getResponseText().trim();
+  if (cardTypeResult.getSelectedButton() === ui.Button.CANCEL || !cardTypeResult.getResponseText().trim()) return;
+  const cardType = cardTypeResult.getResponseText().trim(); // Ce sera "Jaune" ou "Rouge"
 
-  handleSubstitution(team, playerOut.getResponseText().trim(), playerIn.getResponseText().trim());
+  handleCard(team, `Carton ${cardType}`, player); // Appel à ScoreManager
 }
+
+// Suppression de la fonction handleSubstitutionPrompt qui n'est plus nécessaire si on ne gère pas les remplacements.
+
+//function handleSubstitutionPrompt() {
+//  const ui = SpreadsheetApp.getUi();
+//  const playerOut = ui.prompt('Remplacement', 'Nom du joueur sortant :', ui.ButtonSet.OK_CANCEL);
+//  if (playerOut.getSelectedButton() === ui.Button.CANCEL || !playerOut.getResponseText().trim()) return;
+
+//  const playerIn = ui.prompt('Remplacement', 'Nom du joueur entrant :', ui.ButtonSet.OK_CANCEL);
+//  if (playerIn.getSelectedButton() === ui.Button.CANCEL || !playerIn.getResponseText().trim()) return;
+
+//  const teamPromptResult = ui.prompt(
+//     'Équipe du remplacement',
+//      'Équipe (Locale ou Visiteur) :',
+//      ui.ButtonSet.OK_CANCEL
+//  );
+//  if (teamPromptResult.getSelectedButton() === ui.Button.CANCEL || !teamPromptResult.getResponseText().trim()) return;
+//  const team = teamPromptResult.getResponseText().trim();
+
+//  handleSubstitution(team, playerOut.getResponseText().trim(), playerIn.getResponseText().trim());
+//}
 
 // Fonction utilitaire pour demander le nom du joueur
 function promptForPlayer() {
