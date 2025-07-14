@@ -46,6 +46,7 @@ function initialiserFeuilleEtProprietes() {
  * Enregistre l'événement dans la feuille "Saisie".
  */
 function debutPremiereMiTemps() {
+
   const scriptProperties = PropertiesService.getScriptProperties();
   const currentPhase = scriptProperties.getProperty('currentMatchPhase');
   
@@ -79,7 +80,8 @@ function debutPremiereMiTemps() {
  * Met le chronomètre en pause et enregistre l'événement.
  */
 function finPremiereMiTemps() {
-  
+
+  const scriptProperties = PropertiesService.getScriptProperties(); // Déclaration unique de scriptProperties au début de la fonction
   const currentPhase = scriptProperties.getProperty('currentMatchPhase');
 
   // Vérification de sécurité
@@ -95,10 +97,9 @@ function finPremiereMiTemps() {
 
   // Enregistrer l'événement "Fin 1ère MT"
   const matchTimeState = getMatchTimeState();
-  const scriptProperties = PropertiesService.getScriptProperties();
+  // On utilise la variable scriptProperties déjà déclarée
   const currentScoreLocal = parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10);
   const currentScoreVisiteur = parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10);
-     
   recordEvent(new Date(), matchTimeState.tempsDeJeuFormatted, '', 'Fin 1ère MT', '', '', currentScoreLocal, currentScoreVisiteur, 'Pause');
 
   updateSidebar();
@@ -110,7 +111,8 @@ function finPremiereMiTemps() {
  * Enregistre l'événement dans la feuille "Saisie".
  */
 function debutDeuxiemeMiTemps() {
- 
+
+  const scriptProperties = PropertiesService.getScriptProperties(); // Déclaration unique de scriptProperties au début de la fonction
   const currentPhase = scriptProperties.getProperty('currentMatchPhase');
 
   // Vérification de sécurité
@@ -126,7 +128,7 @@ function debutDeuxiemeMiTemps() {
 
   // Enregistrer l'événement "Coup d'envoi 2e MT"
   const matchTimeState = getMatchTimeState();
-  const scriptProperties = PropertiesService.getScriptProperties();
+  // On utilise la variable scriptProperties déjà déclarée
   const currentScoreLocal = parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10);
   const currentScoreVisiteur = parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10);
   
@@ -141,7 +143,8 @@ function debutDeuxiemeMiTemps() {
  * Arrête le chronomètre et enregistre l'événement.
  */
 function finDeMatch() {
-  
+
+  const scriptProperties = PropertiesService.getScriptProperties(); // Déclaration unique de scriptProperties au début de la fonction
   const currentPhase = scriptProperties.getProperty('currentMatchPhase');
 
   // Vérification de sécurité
@@ -159,7 +162,7 @@ function finDeMatch() {
 
   // Enregistrer l'événement "Fin de Match"
   const matchTimeState = getMatchTimeState();
-  const scriptProperties = PropertiesService.getScriptProperties();
+  // On utilise la variable scriptProperties déjà déclarée
   const currentScoreLocal = parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10);
   const currentScoreVisiteur = parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10);
   
@@ -175,7 +178,8 @@ function finDeMatch() {
  * Enregistre l'événement.
  */
 function arretJeu() {
-  
+
+  const scriptProperties = PropertiesService.getScriptProperties(); // Déclaration unique de scriptProperties au début de la fonction
   const currentPhase = scriptProperties.getProperty('currentMatchPhase');
 
   // Vérification de sécurité
@@ -196,7 +200,7 @@ function arretJeu() {
 
   // Enregistrer l'événement "Arrêt du jeu"
   const matchTimeState = getMatchTimeState();
-  const scriptProperties = PropertiesService.getScriptProperties();
+  // On utilise la variable scriptProperties déjà déclarée
   const currentScoreLocal = parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10);
   const currentScoreVisiteur = parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10);
   
@@ -211,7 +215,7 @@ function arretJeu() {
  * Enregistre l'événement.
  */
 function repriseJeu() {
- 
+  const scriptProperties = PropertiesService.getScriptProperties(); // Déclaration unique de scriptProperties au début de la fonction
   const currentPhase = scriptProperties.getProperty('currentMatchPhase');
 
   // Vérification de sécurité
@@ -232,7 +236,7 @@ function repriseJeu() {
 
   // Enregistrer l'événement "Reprise du jeu"
   const matchTimeState = getMatchTimeState();
-  const scriptProperties = PropertiesService.getScriptProperties();
+  // On utilise la variable scriptProperties déjà déclarée
   const currentScoreLocal = parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10);
   const currentScoreVisiteur = parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10);
   
