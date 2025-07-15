@@ -21,6 +21,16 @@ function recordEvent(timestamp, gameTime, team, action, player, scoreLocal, scor
     return;
   }
 
+  // Convertion 'Locale'/'Visiteur' en nom d'équipe réel
+  let teamNameForRecord = '';
+  if (team === 'Locale') {
+    teamNameForRecord = getLocalTeamName();
+  } else if (team === 'Visiteur') {
+    teamNameForRecord = getVisitorTeamName();
+  } else {
+    teamNameForRecord = ''; // Pour les événements sans équipe spécifique (ex: arrêt jeu)
+  }
+
   // Obtenir les scores actuels pour s'assurer qu'ils sont bien enregistrés
   // (même si les paramètres sont passés, c'est une bonne pratique de les récupérer au dernier moment)
   const scriptProperties = PropertiesService.getScriptProperties();
@@ -35,7 +45,7 @@ function recordEvent(timestamp, gameTime, team, action, player, scoreLocal, scor
   const rowData = [
     formattedTimestamp, // A
     gameTime,           // B
-    team,               // C
+    teamNameForRecord,  // C
     action,             // D
     player,             // E
     scoreLocal !== undefined ? scoreLocal : currentScoreLocal, // F (Utiliser le paramètre ou le score actuel)

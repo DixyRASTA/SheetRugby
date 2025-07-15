@@ -51,20 +51,24 @@ function recordSanctionEvent(team, sanctionType, player = '') {
 
 /**
  * Demande à l'utilisateur de choisir l'équipe (Locale ou Visiteur).
- * @returns {string|null} 'Locale', 'Visiteur' ou null si annulé.
+ * Affiche les noms réels des équipes.
+ * @returns {string|null} 'Locale', 'Visiteur' (les chaînes génériques pour la logique interne) ou null si annulé.
  */
 function promptForTeam() {
   const ui = SpreadsheetApp.getUi();
+  const localTeam = getLocalTeamName(); // Récupère le nom réel de l'équipe Locale
+  const visitorTeam = getVisitorTeamName(); // Récupère le nom réel de l'équipe Visiteur
+
   const teamChoice = ui.alert(
       'Équipe concernée',
-      'Quelle équipe est concernée ?\n\nOui = Locale\nNon = Visiteur',
-      ui.ButtonSet.YES_NO_CANCEL // YES pour Locale, NO pour Visiteur
+      `Quelle équipe est concernée ?\n\nOui = ${localTeam}\nNon = ${visitorTeam}`, // <-- MODIFIÉ ICI
+      ui.ButtonSet.YES_NO_CANCEL
   );
 
-  if (teamChoice === ui.Button.YES) {
-    return 'Locale';
+ if (teamChoice === ui.Button.YES) {
+    return 'Locale'; // Retourne 'Locale' pour la logique interne
   } else if (teamChoice === ui.Button.NO) {
-    return 'Visiteur';
+    return 'Visiteur'; // Retourne 'Visiteur' pour la logique interne
   } else {
     return null; // Annulé
   }

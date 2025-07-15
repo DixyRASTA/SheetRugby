@@ -8,22 +8,29 @@
  * Appelé lors de l'initialisation d'un nouveau match.
  */
 function initialiserFeuilleEtProprietes() {
-  const scriptProperties = PropertiesService.getScriptProperties();
+  const ui = SpreadsheetApp.getUi();
+  const response = ui.alert(
+      'Initialiser Nouveau Match',
+      'Ceci va effacer toutes les données du match précédent et réinitialiser le chronomètre. Êtes-vous sûr ?',
+      ui.ButtonSet.YES_NO
+  );
+
+  if (response === ui.Button.YES) {
+    const scriptProperties = PropertiesService.getScriptProperties();
+    scriptProperties.deleteAllProperties(); // Efface toutes les propriétés existantes
+
+ // Réinitialisation des propriétés de base
+    scriptProperties.setProperty('currentScoreLocal', '0');
+    scriptProperties.setProperty('currentScoreVisiteur', '0');
+    scriptProperties.setProperty('currentMatchPhase', 'non_demarre');
+    scriptProperties.setProperty('alertMessage', 'Match non démarré.');
+    scriptProperties.setProperty('previousMatchPhase', 'non_demarre'); // Initialisation de la phase précédente
 
   // Réinitialiser les propriétés du chrono
   resetMatchTimer(); // Appel à la fonction dans TimeManager.gs
 
-  // Réinitialiser les scores et noms d'équipes (valeurs par défaut)
-  scriptProperties.setProperty('currentScoreLocal', '0');
-  scriptProperties.setProperty('currentScoreVisiteur', '0');
-  scriptProperties.setProperty('nomEquipeLocale', 'Locale'); // Peut être remplacé par un nom dynamique plus tard
-  scriptProperties.setProperty('nomEquipeVisiteur', 'Visiteur'); // Peut être remplacé par un nom dynamique plus tard
-
-  // Réinitialiser la phase du match
-  scriptProperties.setProperty('currentMatchPhase', 'non_demarre'); // Nouvelle partie, non démarrée
-
-  // Réinitialiser les alertes
-  scriptProperties.setProperty('alertMessage', '');
+   // Charge les noms des équipes
+  loadTeamNames(); // Appel à la fonction dans TeamManger.gs
 
   // Effacer la feuille "Saisie" sauf les deux premières lignes d'en-tête
   try {
@@ -39,7 +46,9 @@ function initialiserFeuilleEtProprietes() {
 
   updateSidebar(); // Mettre à jour la sidebar pour refléter l'initialisation
   SpreadsheetApp.getUi().alert("Match initialisé", "Un nouveau match a été initialisé. Vous pouvez démarrer la 1ère mi-temps.", SpreadsheetApp.getUi().ButtonSet.OK);
+  }
 }
+
 
 /**
  * Démarre la première mi-temps du match et lance le chronomètre.
