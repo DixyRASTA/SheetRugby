@@ -2,7 +2,7 @@
  * @file Gère la lecture et le stockage des noms des équipes.
  */
 
-const SHEET_NAME_EQUIPES = "Équipes"; // Nom de la feuille où sont les noms des équipes
+const SHEET_NAME_EQUIPES = "Equipes"; // Nom de la feuille où sont les noms des équipes
 
 /**
  * Lit les noms des équipes (Locale et Visiteur) depuis la feuille "Équipes"
