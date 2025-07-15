@@ -24,7 +24,9 @@ function addScoreLocaleEssai() {
     return;
   }
 
-  // Stocker la phase actuelle avant de passer en "awaiting_conversion"
+  // IMPORTANT : Récupérer le temps de jeu ACTUEL avant de changer la phase
+  const currentRunningTimeMs = getMatchTimeState().tempsDeJeuMs; 
+
   scriptProperties.setProperty('previousMatchPhase', currentPhase);
   scriptProperties.setProperty('currentMatchPhase', 'awaiting_conversion');
   scriptProperties.setProperty('teamAwaitingKick', 'Locale'); // Indique que l'équipe Locale doit tenter la transformation
@@ -34,7 +36,7 @@ function addScoreLocaleEssai() {
   currentScore += ESSAI_POINTS;
   scriptProperties.setProperty('currentScoreLocal', currentScore.toString());
 
-  const matchTimeState = getMatchTimeState();
+  const matchTimeState = getMatchTimeState(); // Cette fois, getMatchTimeState retournera le temps figé
   recordEvent(new Date(), matchTimeState.tempsDeJeuFormatted, 'Locale', 'Essai', '', currentScore, parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10), '');
   
   updateSidebar();
@@ -60,6 +62,9 @@ function addScoreVisiteurEssai() {
     return;
   }
 
+  // IMPORTANT : Récupérer le temps de jeu ACTUEL avant de changer la phase
+  const currentRunningTimeMs = getMatchTimeState().tempsDeJeuMs; 
+
   scriptProperties.setProperty('previousMatchPhase', currentPhase);
   scriptProperties.setProperty('currentMatchPhase', 'awaiting_conversion');
   scriptProperties.setProperty('teamAwaitingKick', 'Visiteur'); // Indique que l'équipe Visiteur doit tenter la transformation
@@ -69,7 +74,7 @@ function addScoreVisiteurEssai() {
   currentScore += ESSAI_POINTS;
   scriptProperties.setProperty('currentScoreVisiteur', currentScore.toString());
 
-  const matchTimeState = getMatchTimeState();
+  const matchTimeState = getMatchTimeState(); // Cette fois, getMatchTimeState retournera le temps figé
   recordEvent(new Date(), matchTimeState.tempsDeJeuFormatted, 'Visiteur', 'Essai', '', parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10), currentScore, '');
   
   updateSidebar();
@@ -95,6 +100,9 @@ function addScoreLocalePenalite() {
     ui.alert("Match non démarré", "Veuillez démarrer le match avant d'ajouter un score.", ui.ButtonSet.OK);
     return;
   }
+
+  // IMPORTANT : Récupérer le temps de jeu ACTUEL avant de changer la phase
+  const currentRunningTimeMs = getMatchTimeState().tempsDeJeuMs; 
 
   scriptProperties.setProperty('previousMatchPhase', currentPhase);
   scriptProperties.setProperty('currentMatchPhase', 'awaiting_penalty_kick'); // Nouveau statut
@@ -132,6 +140,9 @@ function addScoreVisiteurPenalite() {
     ui.alert("Match non démarré", "Veuillez démarrer le match avant d'ajouter un score.", ui.ButtonSet.OK);
     return;
   }
+
+    // IMPORTANT : Récupérer le temps de jeu ACTUEL avant de changer la phase
+  const currentRunningTimeMs = getMatchTimeState().tempsDeJeuMs; 
 
   scriptProperties.setProperty('previousMatchPhase', currentPhase);
   scriptProperties.setProperty('currentMatchPhase', 'awaiting_penalty_kick'); // Nouveau statut

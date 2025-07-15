@@ -44,6 +44,13 @@ function resetMatchTimer() {
   Logger.log("Chronomètre réinitialisé.");
 }
 
+/**
+ * Reprend le chronomètre du match après une pause.
+ * C'est la même logique que startMatchTimer, mais on la sépare pour la clarté.
+ */
+function resumeMatchTimer() {
+  startMatchTimer(); // Réutilise la fonction startMatchTimer pour la reprise
+}
 
 /**
  * Calcule le temps de jeu écoulé et la phase actuelle du match.
@@ -57,32 +64,27 @@ function getMatchTimeState() {
   const gameTimeAtLastPause = parseInt(scriptProperties.getProperty('gameTimeAtLastPause') || '0', 10);
   const alertMessage = scriptProperties.getProperty('alertMessage') || '';
 
-  let tempsDeJeuMs = 0; // Initialisation par défaut
+  let tempsDeJeuMs; // Initialisation par défaut
 
-  // 1. Logique pour les phases de "temps figé" (prioritaire)
-  if (currentPhase === 'awaiting_conversion' || currentPhase === 'awaiting_penalty_kick') {
-    const gameTimeAtEventMs = parseInt(scriptProperties.getProperty('gameTimeAtEventMs') || '0', 10);
-    tempsDeJeuMs = gameTimeAtEventMs; // Fige le temps à celui de l'événement
-  }
-  // 2. Si le chrono est en cours et qu'on n'est PAS dans une phase de temps figé
-  else if (isTimerRunning && startTime > 0) {
+  // 1. Déterminer le temps de base en fonction de l'état du chrono (en cours ou en pause normale)
+  if (isTimerRunning && startTime > 0) {
     const currentTime = new Date().getTime();
     tempsDeJeuMs = gameTimeAtLastPause + (currentTime - startTime);
-    if (tempsDeJeuMs < 0) tempsDeJeuMs = 0; // Sécurité pour éviter les temps négatifs
-  }
-  // 3. Si le chrono n'est PAS en cours (pause normale, non démarré, fin de match)
-  else {
+    if (tempsDeJeuMs < 0) tempsDeJeuMs = 0; // Sécurité
+  } else {
     tempsDeJeuMs = gameTimeAtLastPause;
   }
 
-  // 4. Logique spécifique pour les phases de match finales ou initiales (peut surcharger si nécessaire)
+  // 2. Surcharger le temps si le match est dans une phase spécifique (non_demarre, gel du temps, fin_de_match)
   if (currentPhase === 'non_demarre') {
     tempsDeJeuMs = 0; // Au tout début, le chrono est à zéro
+  } else if (currentPhase === 'awaiting_conversion' || currentPhase === 'awaiting_penalty_kick') {
+    const gameTimeAtEventMs = parseInt(scriptProperties.getProperty('gameTimeAtEventMs') || '0', 10);
+    tempsDeJeuMs = gameTimeAtEventMs; // Fige le temps à celui de l'événement
   } else if (currentPhase === 'fin_de_match') {
     tempsDeJeuMs = parseInt(scriptProperties.getProperty('finalDisplayedTimeMs') || '0', 10);
   }
-  // 'mi_temps' ne nécessite pas de traitement spécial ici car `gameTimeAtLastPause` est déjà le bon temps.
-
+  // La phase 'mi_temps' utilise implicitement `gameTimeAtLastPause`, ce qui est correct.
 
   return {
     isTimerRunning: isTimerRunning,
@@ -93,12 +95,3 @@ function getMatchTimeState() {
     message: alertMessage
   };
 }
-
-/**
- * Reprend le chronomètre du match après une pause.
- * C'est la même logique que startMatchTimer, mais on la sépare pour la clarté.
- */
-function resumeMatchTimer() {
-  startMatchTimer(); // Réutilise la fonction startMatchTimer pour la reprise
-}
-

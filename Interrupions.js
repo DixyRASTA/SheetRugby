@@ -3,6 +3,8 @@
  * Appelle TimeManager pour manipuler le chronomètre et Evenements pour enregistrer les actions.
  */
 
+// Dans Interruptions.gs
+
 /**
  * Réinitialise toutes les propriétés du match à leur état initial.
  * Appelé lors de l'initialisation d'un nouveau match.
@@ -10,47 +12,57 @@
 function initialiserFeuilleEtProprietes() {
   const ui = SpreadsheetApp.getUi();
   const response = ui.alert(
-      'Initialiser Nouveau Match',
-      'Ceci va effacer toutes les données du match précédent et réinitialiser le chronomètre. Êtes-vous sûr ?',
-      ui.ButtonSet.YES_NO
+    'Initialiser Nouveau Match',
+    'Ceci va effacer toutes les données du match précédent et réinitialiser le chronomètre. Êtes-vous sûr ?',
+    ui.ButtonSet.YES_NO
   );
 
   if (response === ui.Button.YES) {
     const scriptProperties = PropertiesService.getScriptProperties();
-    scriptProperties.deleteAllProperties(); // Efface toutes les propriétés existantes
+    // TRÈS IMPORTANT : REMPLACER scriptProperties.deleteAllProperties();
+    // par une initialisation explicite de toutes les propriétés nécessaires.
+    // Cela garantit un état propre et prévisible.
 
- // Réinitialisation des propriétés de base
+    // Réinitialisation des propriétés de base du match
     scriptProperties.setProperty('currentScoreLocal', '0');
     scriptProperties.setProperty('currentScoreVisiteur', '0');
     scriptProperties.setProperty('currentMatchPhase', 'non_demarre');
     scriptProperties.setProperty('alertMessage', 'Match non démarré.');
-    scriptProperties.setProperty('previousMatchPhase', 'non_demarre'); // Initialisation de la phase précédente
-
-  // Réinitialiser les propriétés du chrono
-  resetMatchTimer(); // Appel à la fonction dans TimeManager.gs
-
-   // Charge les noms des équipes
-  loadTeamNames(); // Appel à la fonction dans TeamManger.gs
+    scriptProperties.setProperty('previousMatchPhase', 'non_demarre');
     
-  scriptProperties.setProperty('currentMatchPhase', 'non_demarre');
-  scriptProperties.setProperty('alertMessage', '');
+    // Réinitialisation des propriétés spécifiques au coup d'envoi et aux phases de gel du temps
+    scriptProperties.setProperty('kickoffTeam1stHalf', ''); 
+    scriptProperties.setProperty('kickoffTeam2ndHalf', ''); 
+    scriptProperties.setProperty('teamAwaitingKick', ''); 
+    scriptProperties.setProperty('gameTimeAtEventMs', '0'); // Réinitialise le temps figé
 
-  // Effacer la feuille "Saisie" sauf les deux premières lignes d'en-tête
-  try {
-    const feuilleSaisie = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Saisie");
-    if (feuilleSaisie && feuilleSaisie.getLastRow() > 2) {
-      feuilleSaisie.getRange(3, 1, feuilleSaisie.getLastRow() - 2, feuilleSaisie.getLastColumn()).clearContent();
-      Logger.log("Feuille 'Saisie' réinitialisée.");
+    // Réinitialiser les propriétés du chrono via la fonction dédiée
+    // Cette fonction s'assure que 'isTimerRunning', 'startTime', 'gameTimeAtLastPause', 'finalDisplayedTimeMs' sont à '0'/'false'
+    resetMatchTimer(); 
+
+    // Charge les noms des équipes (cette fonction gère ses propres propriétés)
+    loadTeamNames(); 
+
+    // Effacer la feuille "Saisie" sauf les deux premières lignes d'en-tête
+    try {
+      const feuilleSaisie = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Saisie");
+      if (feuilleSaisie && feuilleSaisie.getLastRow() > 2) {
+        feuilleSaisie.getRange(3, 1, feuilleSaisie.getLastRow() - 2, feuilleSaisie.getLastColumn()).clearContent();
+        Logger.log("Feuille 'Saisie' réinitialisée.");
+      }
+    } catch (e) {
+      Logger.log("Erreur lors de la réinitialisation de la feuille 'Saisie': " + e.message);
+      SpreadsheetApp.getUi().alert("Erreur", "Impossible de réinitialiser la feuille 'Saisie'. Vérifiez son nom ou ses permissions.", SpreadsheetApp.getUi().ButtonSet.OK);
     }
-  } catch (e) {
-    Logger.log("Erreur lors de la réinitialisation de la feuille 'Saisie': " + e.message);
-    SpreadsheetApp.getUi().alert("Erreur", "Impossible de réinitialiser la feuille 'Saisie'. Vérifiez son nom ou ses permissions.", SpreadsheetApp.getUi().ButtonSet.OK);
-  }
 
-  updateSidebar(); // Mettre à jour la sidebar pour refléter l'initialisation
-  SpreadsheetApp.getUi().alert("Match initialisé", "Un nouveau match a été initialisé. Vous pouvez démarrer la 1ère mi-temps.", SpreadsheetApp.getUi().ButtonSet.OK);
+    updateSidebar(); // Mettre à jour la sidebar pour refléter l'initialisation
+    ui.alert("Match initialisé", "Un nouveau match a été initialisé. Vous pouvez démarrer la 1ère mi-temps.", ui.ButtonSet.OK);
   }
 }
+
+// Les fonctions debutPremiereMiTemps, finPremiereMiTemps, debutDeuxiemeMiTemps,
+// arretJeu, repriseJeu, finDeMatch restent telles que définies dans nos dernières discussions.
+// Elles devraient fonctionner correctement avec des propriétés bien initialisées.
 
 
 /**
