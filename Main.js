@@ -44,6 +44,31 @@ function onOpen() {
 }
 
 /**
+ * Fonction utilitaire pour demander quelle équipe donne le coup d'envoi.
+ * @returns {string|null} 'Locale', 'Visiteur' ou null si annulé.
+ */
+function promptForKickOffTeam() {
+  const ui = SpreadsheetApp.getUi();
+  const localTeam = getLocalTeamName();
+  const visitorTeam = getVisitorTeamName();
+
+  const teamChoice = ui.alert(
+      'Coup d\'envoi',
+      `Quelle équipe donne le coup d'envoi ?\n\nOui = ${localTeam}\nNon = ${visitorTeam}`,
+      ui.ButtonSet.YES_NO_CANCEL
+  );
+
+  if (teamChoice === ui.Button.YES) {
+    return 'Locale';
+  } else if (teamChoice === ui.Button.NO) {
+    return 'Visiteur';
+  } else {
+    return null; // Annulé
+  }
+}
+
+
+/**
  * Affiche un menu personnalisé pour les actions de match (scores, cartons, remplacements).
  * Chaque élément du menu appellera une fonction correspondante dans ScoreManager.gs.
  */

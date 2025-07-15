@@ -32,6 +32,22 @@ function initialiserFeuilleEtProprietes() {
    // Charge les noms des équipes
   loadTeamNames(); // Appel à la fonction dans TeamManger.gs
 
+   // Demander et stocker l'équipe qui donne le coup d'envoi de la 1ère MT
+    const kickoffTeam1stHalf = promptForKickOffTeam();
+    if (!kickoffTeam1stHalf) {
+        ui.alert("Annulation", "L'initialisation du match a été annulée car l'équipe du coup d'envoi n'a pas été sélectionnée.");
+        scriptProperties.deleteAllProperties(); // Annuler l'initialisation si pas de choix
+        updateSidebar();
+        return;
+    }
+    scriptProperties.setProperty('kickoffTeam1stHalf', kickoffTeam1stHalf);
+    // Calculer et stocker l'équipe qui aura le coup d'envoi de la 2nde MT (l'inverse)
+    const kickoffTeam2ndHalf = (kickoffTeam1stHalf === 'Locale') ? 'Visiteur' : 'Locale';
+    scriptProperties.setProperty('kickoffTeam2ndHalf', kickoffTeam2ndHalf);
+    
+    scriptProperties.setProperty('currentMatchPhase', 'non_demarre');
+    scriptProperties.setProperty('alertMessage', '');
+
   // Effacer la feuille "Saisie" sauf les deux premières lignes d'en-tête
   try {
     const feuilleSaisie = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Saisie");
@@ -71,18 +87,19 @@ function debutPremiereMiTemps() {
   scriptProperties.setProperty('alertMessage', ''); // Efface le message d'alerte s'il y en avait un
 
   // Enregistrer l'événement "Coup d'envoi" dans la feuille "Saisie"
-  // NOTE: recordEvent n'est pas encore implémenté dans Evenements.gs. Cela générera une erreur pour l'instant.
-  // Nous l'implémenterons ensuite !
   const matchTimeState = getMatchTimeState(); // Pour obtenir le temps formaté
-  
-  const currentScoreLocal = parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10);
-  const currentScoreVisiteur = parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10);
+  const kickoffTeam = scriptProperties.getProperty('kickoffTeam1stHalf') || ''; // Récupère l'équipe qui donne le coup d'envoi
 
-  recordEvent(new Date(), matchTimeState.tempsDeJeuFormatted, '', 'Coup d\'envoi 1ère MT', '', currentScoreLocal, currentScoreVisiteur, 'Début de la rencontre'); 
+  // Enregistrement de l'événement "Coup d'envoi 1ère MT"
+  recordEvent(new Date(), matchTimeState.tempsDeJeuFormatted, kickoffTeam, 'Coup d\'envoi 1ère MT', '', 
+              parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10), 
+              parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10), 
+              ''); // La remarque sera l'équipe qui donne le coup d'envoi
   
-  updateSidebar(); // Mettre à jour la sidebar pour refléter le changement
-  SpreadsheetApp.getUi().alert("1ère Mi-temps démarrée !", "Le match est en cours.", SpreadsheetApp.getUi().ButtonSet.OK);
+  updateSidebar();
+  SpreadsheetApp.getUi().alert("Coup d'envoi 1ère mi-temps !", "Le match a commencé.", SpreadsheetApp.getUi().ButtonSet.OK);
 }
+
 
 /**
  * Arrête le jeu pour la fin de la première mi-temps.
@@ -142,17 +159,18 @@ function debutDeuxiemeMiTemps() {
   startMatchTimer(); // startMatchTimer va utiliser le gameTimeAtLastPause que l'on vient de forcer à 40 minutes.
   scriptProperties.setProperty('alertMessage', '');
 
-  // Pour l'événement, on veut afficher 40:00:00
   const matchTimeState = getMatchTimeState(); // Cette fonction va maintenant calculer à partir des 40 minutes
-  recordEvent(new Date(), matchTimeState.tempsDeJeuFormatted, '', 'Coup d\'envoi 2ème MT', '', 
+  const kickoffTeam = scriptProperties.getProperty('kickoffTeam2ndHalf') || ''; // Récupère l'équipe qui donne le coup d'envoi de la 2ème MT
+  
+  // Enregistrement de l'événement "Coup d'envoi 2ème MT"
+  recordEvent(new Date(), matchTimeState.tempsDeJeuFormatted, kickoffTeam, 'Coup d\'envoi 2ème MT', '', 
               parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10), 
               parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10), 
-              'Reprise');
+              ''); // La remarque sera l'équipe qui donne le coup d'envoi
 
   updateSidebar();
   SpreadsheetApp.getUi().alert("Coup d'envoi 2ème mi-temps !", "Le jeu a repris.", SpreadsheetApp.getUi().ButtonSet.OK);
 }
-  
 
 /**
  * Met fin au match.
