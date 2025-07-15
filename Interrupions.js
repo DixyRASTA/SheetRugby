@@ -101,7 +101,7 @@ function finPremiereMiTemps() {
   // Enregistrer l'événement "Fin 1ère MT" avec le temps de jeu RÉEL accumulé
   const currentScoreLocal = parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10);
   const currentScoreVisiteur = parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10);
-  recordEvent(new Date(), matchTimeState.tempsDeJeuFormatted, '', 'Fin 1ère MT', '', '', currentScoreLocal, currentScoreVisiteur, 'Mi-temps');
+  recordEvent(new Date(), matchTimeState.tempsDeJeuFormatted, '', 'Fin 1ère MT', '', currentScoreLocal, currentScoreVisiteur, 'Mi-temps');
 
   updateSidebar();
   SpreadsheetApp.getUi().alert("Mi-temps", "La 1ère mi-temps est terminée.", SpreadsheetApp.getUi().ButtonSet.OK);
