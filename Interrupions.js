@@ -69,7 +69,7 @@ function debutPremiereMiTemps() {
   const currentScoreLocal = parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10);
   const currentScoreVisiteur = parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10);
 
-  recordEvent(new Date(), matchTimeState.tempsDeJeuFormatted, '', 'Coup d\'envoi 1ère MT', '', '', currentScoreLocal, currentScoreVisiteur, 'Début de la rencontre'); 
+  recordEvent(new Date(), matchTimeState.tempsDeJeuFormatted, '', 'Coup d\'envoi 1ère MT', '', currentScoreLocal, currentScoreVisiteur, 'Début de la rencontre'); 
   
   updateSidebar(); // Mettre à jour la sidebar pour refléter le changement
   SpreadsheetApp.getUi().alert("1ère Mi-temps démarrée !", "Le match est en cours.", SpreadsheetApp.getUi().ButtonSet.OK);
@@ -172,7 +172,7 @@ function finDeMatch() {
   // Enregistrer l'événement "Fin de Match" avec le temps final
   const currentScoreLocal = parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10);
   const currentScoreVisiteur = parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10);
-  recordEvent(new Date(), matchTimeState.tempsDeJeuFormatted, '', 'Fin de Match', '', '', currentScoreLocal, currentScoreVisiteur, 'Fin');
+  recordEvent(new Date(), matchTimeState.tempsDeJeuFormatted, '', 'Fin de Match', '', currentScoreLocal, currentScoreVisiteur, 'Fin');
 
   updateSidebar();
   SpreadsheetApp.getUi().alert("Fin du Match !", "Le match est terminé.", SpreadsheetApp.getUi().ButtonSet.OK);
