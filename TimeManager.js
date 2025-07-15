@@ -65,50 +65,40 @@ function resetMatchTimer() {
   Logger.log("Chronomètre réinitialisé.");
 }
 
+// Dans TimeManager.gs
+
 /**
- * Récupère l'état actuel du chronomètre du match.
- * Calcule le temps de jeu écoulé en fonction des propriétés stockées.
- * @returns {Object} Un objet contenant l'état du chrono (isTimerRunning, tempsDeJeuMs, tempsDeJeuFormatted).
+ * Calcule le temps de jeu écoulé et la phase actuelle du match.
+ * @returns {{tempsDeJeuMs: number, tempsDeJeuFormatted: string, phase: string, message: string}} L'état actuel du temps et du match.
  */
 function getMatchTimeState() {
   const scriptProperties = PropertiesService.getScriptProperties();
-  const isTimerRunning = scriptProperties.getProperty('isTimerRunning') === 'true';
-  const currentMatchPhase = scriptProperties.getProperty('currentMatchPhase') || 'non_demarre';
-
-  let tempsDeJeuMs = 0;
+  const currentPhase = scriptProperties.getProperty('currentMatchPhase') || 'non_demarre';
+  const startTime = parseInt(scriptProperties.getProperty('startTime') || '0', 10);
   const gameTimeAtLastPause = parseInt(scriptProperties.getProperty('gameTimeAtLastPause') || '0', 10);
-  const matchStartTime = parseInt(scriptProperties.getProperty('matchStartTime') || '0', 10);
+  const alertMessage = scriptProperties.getProperty('alertMessage') || '';
 
-  // LOGIQUE DE CALCUL DU TEMPS DE JEU
-  if (isTimerRunning) {
-    const now = new Date().getTime();
-    tempsDeJeuMs = gameTimeAtLastPause + (now - matchStartTime);
-    if (tempsDeJeuMs < 0) tempsDeJeuMs = 0; // Sécurité
-  } else {
-    // Si le chrono n'est PAS en cours, le temps de jeu est simplement le temps accumulé jusqu'à la dernière pause.
-    tempsDeJeuMs = gameTimeAtLastPause;
+  let tempsDeJeuMs = gameTimeAtLastPause; // Temps de base pour les phases non démarrées/en pause
+
+  // NOUVEAU : Si on est en attente d'un coup de pied, utiliser le temps enregistré à l'événement
+  if (currentPhase === 'awaiting_conversion' || currentPhase === 'awaiting_penalty_kick') {
+    const gameTimeAtEventMs = parseInt(scriptProperties.getProperty('gameTimeAtEventMs') || '0', 10);
+    tempsDeJeuMs = gameTimeAtEventMs; // Fige le temps à celui de l'événement
+  } else if (startTime > 0) { // Si le chronomètre est en cours
+    const currentTime = new Date().getTime();
+    tempsDeJeuMs = gameTimeAtLastPause + (currentTime - startTime);
   }
 
-  // --- NOUVELLE LOGIQUE POUR LES PHASES SPÉCIFIQUES ---
-  if (currentMatchPhase === 'non_demarre') {
-    tempsDeJeuMs = 0; // Au tout début, le chrono est à zéro
-    scriptProperties.setProperty('isTimerRunning', 'false'); // Assurer l'arrêt
-    scriptProperties.setProperty('gameTimeAtLastPause', '0');
-    scriptProperties.setProperty('matchStartTime', '0');
-    scriptProperties.setProperty('finalDisplayedTimeMs', '0'); // Reset du temps final aussi
-  } else if (currentMatchPhase === 'mi_temps') {
-    // Pendant la mi-temps, on affiche le temps RÉEL de fin de 1ère MT (celui qui a été stocké par pauseMatchTimer).
-    // tempsDeJeuMs contient déjà gameTimeAtLastPause, qui est ce temps réel. Donc pas de changement ici.
-    scriptProperties.setProperty('isTimerRunning', 'false'); // Assurer l'arrêt
-  } else if (currentMatchPhase === 'fin_de_match') {
-    // En fin de match, on affiche le temps final du match.
-    tempsDeJeuMs = parseInt(scriptProperties.getProperty('finalDisplayedTimeMs') || '0', 10);
-    scriptProperties.setProperty('isTimerRunning', 'false'); // Assurer l'arrêt
-  }
+  // Conversion en format MM:SS
+  const totalSeconds = Math.floor(tempsDeJeuMs / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  const tempsDeJeuFormatted = Utilities.formatString('%02d:%02d', minutes, seconds);
 
   return {
-    isTimerRunning: isTimerRunning,
     tempsDeJeuMs: tempsDeJeuMs,
-    tempsDeJeuFormatted: formatMillisecondsToHMS(tempsDeJeuMs)
+    tempsDeJeuFormatted: tempsDeJeuFormatted,
+    phase: currentPhase,
+    message: alertMessage
   };
 }
