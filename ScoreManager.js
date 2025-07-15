@@ -24,22 +24,29 @@ function addScoreLocaleEssai() {
     return;
   }
 
-  // IMPORTANT : Récupérer le temps de jeu ACTUEL avant de changer la phase
-  const currentRunningTimeMs = getMatchTimeState().tempsDeJeuMs; 
+  // ÉTAPE CLÉ : D'ABORD RÉCUPÉRER LE TEMPS ACTUEL DU CHRONO QUI TOURNE
+  const currentRunningTimeState = getMatchTimeState(); // Appel pour obtenir l'état actuel
+  const timeToFreeze = currentRunningTimeState.tempsDeJeuMs;
 
-  scriptProperties.setProperty('previousMatchPhase', currentPhase);
-  scriptProperties.setProperty('currentMatchPhase', 'awaiting_conversion');
-  scriptProperties.setProperty('teamAwaitingKick', 'Locale'); // Indique que l'équipe Locale doit tenter la transformation
-  scriptProperties.setProperty('gameTimeAtEventMs', getMatchTimeState().tempsDeJeuMs.toString()); // Fige le temps
+  // Ensuite, définir les propriétés pour figer le temps et changer la phase
+  scriptProperties.setProperty('previousMatchPhase', currentPhase); // Sauvegarder la phase avant de la changer
+  scriptProperties.setProperty('currentMatchPhase', 'awaiting_conversion'); // Nouvelle phase
+  scriptProperties.setProperty('teamAwaitingKick', 'Locale'); // Qui va tenter le coup de pied
+  scriptProperties.setProperty('gameTimeAtEventMs', timeToFreeze.toString()); // ENREGISTRER LE TEMPS À FIGER
+
+  // ET C'EST NOUVEAU ET TRÈS IMPORTANT ICI : METTRE isTimerRunning À FALSE
+  // C'est ce qui indique à la sidebar que le chrono est "arrêté" et non "en cours" pendant la phase gelée.
+  scriptProperties.setProperty('isTimerRunning', 'false'); 
 
   let currentScore = parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10);
   currentScore += ESSAI_POINTS;
   scriptProperties.setProperty('currentScoreLocal', currentScore.toString());
 
-  const matchTimeState = getMatchTimeState(); // Cette fois, getMatchTimeState retournera le temps figé
-  recordEvent(new Date(), matchTimeState.tempsDeJeuFormatted, 'Locale', 'Essai', '', currentScore, parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10), '');
+  // ENFIN, ENREGISTRER L'ÉVÉNEMENT AVEC LE TEMPS FIGÉ
+  // On utilise 'timeToFreeze' pour s'assurer que c'est le temps capturé.
+  recordEvent(new Date(), formatMillisecondsToHMS(timeToFreeze), 'Locale', 'Essai', '', currentScore, parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10), '');
   
-  updateSidebar();
+  updateSidebar(); // Mettre à jour la sidebar
   ui.alert("Essai Locale", `Essai de l'équipe Locale. Score : ${currentScore}. En attente de transformation...`, ui.ButtonSet.OK);
 }
 
@@ -62,23 +69,30 @@ function addScoreVisiteurEssai() {
     return;
   }
 
-  // IMPORTANT : Récupérer le temps de jeu ACTUEL avant de changer la phase
-  const currentRunningTimeMs = getMatchTimeState().tempsDeJeuMs; 
+  // ÉTAPE CLÉ : D'ABORD RÉCUPÉRER LE TEMPS ACTUEL DU CHRONO QUI TOURNE
+  const currentRunningTimeState = getMatchTimeState(); // Appel pour obtenir l'état actuel
+  const timeToFreeze = currentRunningTimeState.tempsDeJeuMs;
 
-  scriptProperties.setProperty('previousMatchPhase', currentPhase);
-  scriptProperties.setProperty('currentMatchPhase', 'awaiting_conversion');
-  scriptProperties.setProperty('teamAwaitingKick', 'Visiteur'); // Indique que l'équipe Visiteur doit tenter la transformation
-  scriptProperties.setProperty('gameTimeAtEventMs', getMatchTimeState().tempsDeJeuMs.toString()); // Fige le temps
+  // Ensuite, définir les propriétés pour figer le temps et changer la phase
+  scriptProperties.setProperty('previousMatchPhase', currentPhase); // Sauvegarder la phase avant de la changer
+  scriptProperties.setProperty('currentMatchPhase', 'awaiting_conversion'); // Nouvelle phase
+  scriptProperties.setProperty('teamAwaitingKick', 'Locale'); // Qui va tenter le coup de pied
+  scriptProperties.setProperty('gameTimeAtEventMs', timeToFreeze.toString()); // ENREGISTRER LE TEMPS À FIGER
 
-  let currentScore = parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10);
+  // ET C'EST NOUVEAU ET TRÈS IMPORTANT ICI : METTRE isTimerRunning À FALSE
+  // C'est ce qui indique à la sidebar que le chrono est "arrêté" et non "en cours" pendant la phase gelée.
+  scriptProperties.setProperty('isTimerRunning', 'false'); 
+
+  let currentScore = parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10);
   currentScore += ESSAI_POINTS;
-  scriptProperties.setProperty('currentScoreVisiteur', currentScore.toString());
+  scriptProperties.setProperty('currentScoreLocal', currentScore.toString());
 
-  const matchTimeState = getMatchTimeState(); // Cette fois, getMatchTimeState retournera le temps figé
-  recordEvent(new Date(), matchTimeState.tempsDeJeuFormatted, 'Visiteur', 'Essai', '', parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10), currentScore, '');
+  // ENFIN, ENREGISTRER L'ÉVÉNEMENT AVEC LE TEMPS FIGÉ
+  // On utilise 'timeToFreeze' pour s'assurer que c'est le temps capturé.
+  recordEvent(new Date(), formatMillisecondsToHMS(timeToFreeze), 'Locale', 'Essai', '', currentScore, parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10), '');
   
-  updateSidebar();
-  ui.alert("Essai Visiteur", `Essai de l'équipe Visiteur. Score : ${currentScore}. En attente de transformation...`, ui.ButtonSet.OK);
+  updateSidebar(); // Mettre à jour la sidebar
+  ui.alert("Essai Locale", `Essai de l'équipe Locale. Score : ${currentScore}. En attente de transformation...`, ui.ButtonSet.OK);
 }
 
 /**
@@ -101,24 +115,30 @@ function addScoreLocalePenalite() {
     return;
   }
 
-  // IMPORTANT : Récupérer le temps de jeu ACTUEL avant de changer la phase
-  const currentRunningTimeMs = getMatchTimeState().tempsDeJeuMs; 
+  // ÉTAPE CLÉ : D'ABORD RÉCUPÉRER LE TEMPS ACTUEL DU CHRONO QUI TOURNE
+  const currentRunningTimeState = getMatchTimeState(); // Appel pour obtenir l'état actuel
+  const timeToFreeze = currentRunningTimeState.tempsDeJeuMs;
 
-  scriptProperties.setProperty('previousMatchPhase', currentPhase);
-  scriptProperties.setProperty('currentMatchPhase', 'awaiting_penalty_kick'); // Nouveau statut
-  scriptProperties.setProperty('teamAwaitingKick', 'Locale'); // Indique que l'équipe Locale doit tenter la pénalité
-  scriptProperties.setProperty('gameTimeAtEventMs', getMatchTimeState().tempsDeJeuMs.toString()); // Fige le temps
+  // Ensuite, définir les propriétés pour figer le temps et changer la phase
+  scriptProperties.setProperty('previousMatchPhase', currentPhase); // Sauvegarder la phase avant de la changer
+  scriptProperties.setProperty('currentMatchPhase', 'awaiting_conversion'); // Nouvelle phase
+  scriptProperties.setProperty('teamAwaitingKick', 'Locale'); // Qui va tenter le coup de pied
+  scriptProperties.setProperty('gameTimeAtEventMs', timeToFreeze.toString()); // ENREGISTRER LE TEMPS À FIGER
 
-  // Le score n'est PAS ajouté ici, il le sera après la tentative de coup de pied
+  // ET C'EST NOUVEAU ET TRÈS IMPORTANT ICI : METTRE isTimerRunning À FALSE
+  // C'est ce qui indique à la sidebar que le chrono est "arrêté" et non "en cours" pendant la phase gelée.
+  scriptProperties.setProperty('isTimerRunning', 'false'); 
+
+  let currentScore = parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10);
+  currentScore += ESSAI_POINTS;
+  scriptProperties.setProperty('currentScoreLocal', currentScore.toString());
+
+  // ENFIN, ENREGISTRER L'ÉVÉNEMENT AVEC LE TEMPS FIGÉ
+  // On utilise 'timeToFreeze' pour s'assurer que c'est le temps capturé.
+  recordEvent(new Date(), formatMillisecondsToHMS(timeToFreeze), 'Locale', 'Essai', '', currentScore, parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10), '');
   
-  const matchTimeState = getMatchTimeState();
-  recordEvent(new Date(), matchTimeState.tempsDeJeuFormatted, 'Locale', 'Pénalité sifflée', '', 
-              parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10), 
-              parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10), 
-              '');
-  
-  updateSidebar();
-  ui.alert("Pénalité Locale", `Pénalité sifflée pour l'équipe Locale. En attente du coup de pied...`, ui.ButtonSet.OK);
+  updateSidebar(); // Mettre à jour la sidebar
+  ui.alert("Essai Locale", `Essai de l'équipe Locale. Score : ${currentScore}. En attente de transformation...`, ui.ButtonSet.OK);
 }
 
 /**
@@ -141,33 +161,31 @@ function addScoreVisiteurPenalite() {
     return;
   }
 
-    // IMPORTANT : Récupérer le temps de jeu ACTUEL avant de changer la phase
-  const currentRunningTimeMs = getMatchTimeState().tempsDeJeuMs; 
+  // ÉTAPE CLÉ : D'ABORD RÉCUPÉRER LE TEMPS ACTUEL DU CHRONO QUI TOURNE
+  const currentRunningTimeState = getMatchTimeState(); // Appel pour obtenir l'état actuel
+  const timeToFreeze = currentRunningTimeState.tempsDeJeuMs;
 
-  scriptProperties.setProperty('previousMatchPhase', currentPhase);
-  scriptProperties.setProperty('currentMatchPhase', 'awaiting_penalty_kick'); // Nouveau statut
-  scriptProperties.setProperty('teamAwaitingKick', 'Visiteur'); // Indique que l'équipe Visiteur doit tenter la pénalité
-  scriptProperties.setProperty('gameTimeAtEventMs', getMatchTimeState().tempsDeJeuMs.toString()); // Fige le temps
+  // Ensuite, définir les propriétés pour figer le temps et changer la phase
+  scriptProperties.setProperty('previousMatchPhase', currentPhase); // Sauvegarder la phase avant de la changer
+  scriptProperties.setProperty('currentMatchPhase', 'awaiting_conversion'); // Nouvelle phase
+  scriptProperties.setProperty('teamAwaitingKick', 'Locale'); // Qui va tenter le coup de pied
+  scriptProperties.setProperty('gameTimeAtEventMs', timeToFreeze.toString()); // ENREGISTRER LE TEMPS À FIGER
 
-  // Le score n'est PAS ajouté ici, il le sera après la tentative de coup de pied
+  // ET C'EST NOUVEAU ET TRÈS IMPORTANT ICI : METTRE isTimerRunning À FALSE
+  // C'est ce qui indique à la sidebar que le chrono est "arrêté" et non "en cours" pendant la phase gelée.
+  scriptProperties.setProperty('isTimerRunning', 'false'); 
 
-  const matchTimeState = getMatchTimeState();
-  recordEvent(new Date(), matchTimeState.tempsDeJeuFormatted, 'Visiteur', 'Pénalité sifflée', '', 
-              parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10), 
-              parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10), 
-              '');
+  let currentScore = parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10);
+  currentScore += ESSAI_POINTS;
+  scriptProperties.setProperty('currentScoreLocal', currentScore.toString());
+
+  // ENFIN, ENREGISTRER L'ÉVÉNEMENT AVEC LE TEMPS FIGÉ
+  // On utilise 'timeToFreeze' pour s'assurer que c'est le temps capturé.
+  recordEvent(new Date(), formatMillisecondsToHMS(timeToFreeze), 'Locale', 'Essai', '', currentScore, parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10), '');
   
-  updateSidebar();
-  ui.alert("Pénalité Visiteur", `Pénalité sifflée pour l'équipe Visiteur. En attente du coup de pied...`, ui.ButtonSet.OK);
+  updateSidebar(); // Mettre à jour la sidebar
+  ui.alert("Essai Locale", `Essai de l'équipe Locale. Score : ${currentScore}. En attente de transformation...`, ui.ButtonSet.OK);
 }
-
-// Les fonctions addScoreLocaleTransfo, addScoreVisiteurTransfo, addScoreLocaleDrop, addScoreVisiteurDrop
-// ne sont PAS modifiées pour l'instant. Elles le seront à l'étape 3.
-// Pour l'instant, elles sont toujours appelables directement, ce qui est un problème.
-// Nous allons les modifier à l'étape 3 pour qu'elles gèrent l'état "awaiting_conversion" / "awaiting_penalty_kick".
-
-
-
 
 
 /**

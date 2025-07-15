@@ -70,18 +70,18 @@ function getMatchTimeState() {
 
   let tempsDeJeuMs; // Variable pour le temps de jeu en millisecondes
 
-  // Logique principale de calcul du temps
-  if (isTimerRunning && startTime > 0) {
+  // 1. Déterminer le temps de base en fonction de l'état du chrono
+  if (isTimerRunning && startTime > 0) { // Cette condition sera FAUSSE si isTimerRunning est false
     const currentTime = new Date().getTime();
     tempsDeJeuMs = gameTimeAtLastPause + (currentTime - startTime);
     if (tempsDeJeuMs < 0) tempsDeJeuMs = 0; // Sécurité pour éviter les temps négatifs
   } else {
     // Si le chrono n'est pas en cours (en pause, non démarré, fin de match),
     // le temps affiché est le temps accumulé jusqu'à la dernière pause.
-    tempsDeJeuMs = gameTimeAtLastPause;
+    tempsDeJeuMs = gameTimeAtLastPause; // Si pas en cours, prend le temps accumulé
   }
 
-  // Surcharge du temps pour des phases spécifiques (priorité sur le calcul précédent)
+  // 2. Surcharge du temps pour des phases spécifiques (priorité sur le calcul précédent)
   if (currentPhase === 'non_demarre') {
     tempsDeJeuMs = 0; // Au tout début, le chrono est à zéro
   } else if (currentPhase === 'awaiting_conversion' || currentPhase === 'awaiting_penalty_kick') {
