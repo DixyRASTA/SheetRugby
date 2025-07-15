@@ -216,39 +216,33 @@ function finDeMatch() {
 }
 
 
+// Dans Interruptions.gs
+
 /**
- * Met le jeu en pause (arrêt temporaire du chrono).
- * Enregistre l'événement.
+ * Arrête le jeu (mise en pause du chronomètre).
  */
 function arretJeu() {
+  const scriptProperties = PropertiesService.getScriptProperties();
+  const ui = SpreadsheetApp.getUi(); // Assurez-vous d'avoir l'objet UI
 
-  const scriptProperties = PropertiesService.getScriptProperties(); // Déclaration unique de scriptProperties au début de la fonction
-  const currentPhase = scriptProperties.getProperty('currentMatchPhase');
+  const currentPhaseBeforeArret = scriptProperties.getProperty('currentMatchPhase');
+  Logger.log("arretJeu - Début. Phase actuelle: " + currentPhaseBeforeArret);
 
-  // Vérification de sécurité
-  if (currentPhase !== 'premiere_mi_temps' && currentPhase !== 'deuxieme_mi_temps') {
-    scriptProperties.setProperty('alertMessage', 'Le jeu n\'est pas en cours.');
-    updateSidebar();
-    return;
+  if (currentPhaseBeforeArret === 'premiere_mi_temps' || currentPhaseBeforeArret === 'deuxieme_mi_temps') {
+    scriptProperties.setProperty('previousMatchPhase', currentPhaseBeforeArret); // Stocke la phase avant la pause
+    scriptProperties.setProperty('currentMatchPhase', 'pause'); // Définit la nouvelle phase comme "pause"
+    pauseMatchTimer(); // Met le chronomètre en pause
+
+    scriptProperties.setProperty('alertMessage', 'Jeu arrêté.');
+    Logger.log("arretJeu - Jeu mis en pause. currentMatchPhase: " + scriptProperties.getProperty('currentMatchPhase') + ", previousMatchPhase: " + scriptProperties.getProperty('previousMatchPhase'));
+
+  } else {
+    scriptProperties.setProperty('alertMessage', 'Le jeu n\'est pas en cours pour être arrêté.');
+    Logger.log("arretJeu - Impossible d'arrêter. Phase actuelle: " + currentPhaseBeforeArret);
   }
-  
-  pauseMatchTimer(); // Met le chrono en pause
-
-  scriptProperties.setProperty('currentMatchPhase', 'jeu_arrete');
-  scriptProperties.setProperty('alertMessage', 'Jeu arrêté.');
-
-  const matchTimeState = getMatchTimeState();
-  const currentScoreLocal = parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10);
-  const currentScoreVisiteur = parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10);
-  
-  // Assure-toi que les scores sont passés même si l'action n'est pas un score
-  recordEvent(new Date(), matchTimeState.tempsDeJeuFormatted, '', 'Arrêt du jeu', '', currentScoreLocal, currentScoreVisiteur, '');
-
   updateSidebar();
-  SpreadsheetApp.getUi().alert("Jeu arrêté", "Le chronomètre est en pause.", SpreadsheetApp.getUi().ButtonSet.OK);
+  ui.alert("Jeu Arrêté", scriptProperties.getProperty('alertMessage'), ui.ButtonSet.OK); // Ajout d'une alerte pour confirmation
 }
-
-// Dans Interruptions.gs
 
 /**
  * Reprend le jeu après une pause.
@@ -256,23 +250,31 @@ function arretJeu() {
  */
 function repriseJeu() {
   const scriptProperties = PropertiesService.getScriptProperties();
-  const ui = SpreadsheetApp.getUi(); // Assurez-vous d'avoir l'objet UI
+  const ui = SpreadsheetApp.getUi();
 
-  const currentPhase = scriptProperties.getProperty('currentMatchPhase');
+  const currentPhaseAtStartOfReprise = scriptProperties.getProperty('currentMatchPhase');
   const previousPhase = scriptProperties.getProperty('previousMatchPhase');
 
-  if (currentPhase === 'pause') {
+  Logger.log("repriseJeu - Début. currentPhase (au moment du clic): " + currentPhaseAtStartOfReprise + ", previousPhase: " + previousPhase);
+
+  if (currentPhaseAtStartOfReprise === 'pause') {
     // Restaure la phase précédente (avant la pause), par défaut à 'premiere_mi_temps' si indéfini.
-    // C'est important pour que getMatchTimeState sache dans quelle phase on est.
-    scriptProperties.setProperty('currentMatchPhase', previousPhase || 'premiere_mi_temps'); 
+    const phaseToResumeTo = previousPhase || 'premiere_mi_temps';
+    scriptProperties.setProperty('currentMatchPhase', phaseToResumeTo); 
+    
     resumeMatchTimer(); // Appelle la fonction de TimeManager pour relancer le chrono
-    scriptProperties.setProperty('alertMessage', ''); // Efface le message d'alerte
+    scriptProperties.setProperty('alertMessage', ''); 
+    Logger.log("repriseJeu - Jeu repris. currentMatchPhase: " + scriptProperties.getProperty('currentMatchPhase') + 
+               ", isTimerRunning: " + scriptProperties.getProperty('isTimerRunning') + 
+               ", startTime: " + scriptProperties.getProperty('startTime') + 
+               ", gameTimeAtLastPause: " + scriptProperties.getProperty('gameTimeAtLastPause'));
 
     updateSidebar();
-    ui.alert("Reprise du jeu", "Le jeu a repris.", ui.ButtonSet.OK); // Confirmation à l'utilisateur
+    ui.alert("Reprise du jeu", "Le jeu a repris.", ui.ButtonSet.OK);
 
   } else {
     scriptProperties.setProperty('alertMessage', 'Le jeu n\'est pas en pause pour être repris.');
+    Logger.log("repriseJeu - Impossible de reprendre. Phase actuelle: " + currentPhaseAtStartOfReprise);
     updateSidebar();
     ui.alert("Impossible de reprendre", "Le jeu n'est pas en pause.", ui.ButtonSet.OK);
   }
