@@ -3,6 +3,7 @@
  * Gère l'interface utilisateur (sidebar, menus) et orchestre les appels aux autres managers.
  */
 
+
 /**
  * Fonction appelée automatiquement à l'ouverture de la feuille Google Sheet.
  * Ajoute les menus personnalisés pour un accès facile aux scripts.
@@ -13,22 +14,25 @@ function onOpen() {
       .addItem('Ouvrir Tableau de Bord', 'ouvrirTableauDeBord')
       .addSeparator()
       .addSubMenu(ui.createMenu('Phases de Match')
-          .addItem('Initialiser Nouveau Match', 'Interruptions.initialiserFeuilleEtProprietes') // Appelle la fonction dans Interruptions.gs
-          .addItem('Coup d\'envoi 1ère MT', 'Interruptions.debutPremiereMiTemps')
-          .addItem('Fin 1ère MT', 'Interruptions.finPremiereMiTemps')
-          .addItem('Coup d\'envoi 2ème MT', 'Interruptions.debutDeuxiemeMiTemps')
-          .addItem('Arrêter Jeu (Pause)', 'Interruptions.arretJeu')
-          .addItem('Reprendre Jeu', 'Interruptions.repriseJeu')
-          .addItem('Fin de Match', 'Interruptions.finDeMatch'))
+          .addItem('Initialiser Nouveau Match', 'Interruptions.initialiserFeuilleEtProprietes') // <-- CORRIGÉ
+          .addItem('Coup d\'envoi 1ère MT', 'Interruptions.debutPremiereMiTemps') // <-- CORRIGÉ
+          .addItem('Fin 1ère MT', 'Interruptions.finPremiereMiTemps') // <-- CORRIGÉ
+          .addItem('Coup d\'envoi 2ème MT', 'Interruptions.debutDeuxiemeMiTemps') // <-- CORRIGÉ
+          .addItem('Arrêter Jeu (Pause)', 'Interruptions.arretJeu') // <-- CORRIGÉ
+          .addItem('Reprendre Jeu', 'Interruptions.repriseJeu') // <-- CORRIGÉ
+          .addItem('Fin de Match', 'Interruptions.finDeMatch')) // <-- CORRIGÉ
       .addSeparator()
-      // --- MODIFICATION CRUCIALE ICI : Un seul item pour toutes les actions de score/sanction via showCustomMenu ---
-      .addItem('Ajouter Action (Score/Carton/Drop...)', 'showCustomMenu') // Cet item appelle showCustomMenu
-      // Les anciens sous-menus "Actions de Match" et "Sanctions" avec des items directs sont supprimés ici
-      // car showCustomMenu gère déjà le prompt pour toutes ces actions.
+      // Un seul item pour toutes les actions de score/sanction via showCustomMenu
+      .addItem('Ajouter Action (Score/Carton/Drop...)', 'showCustomMenu')
       .addSeparator()
-      .addItem('Annuler dernier événement (attention!)', 'Evenements.deleteLastEvent') // Précise le fichier Evenements.gs
+      .addItem('Annuler dernier événement (attention!)', 'Evenements.deleteLastEvent') // Déjà correct
       .addToUi();
 }
+
+// Assurez-vous que la fonction showCustomMenu() est bien définie dans Main.gs
+// et qu'elle contient tous les 'case' pour les scores et les cartons,
+// appelant les fonctions de ScoreManager.gs et Sanctions.gs comme discuté précédemment.
+// ... (le reste de Main.gs, y compris showCustomMenu, promptForKickOffTeam, updateSidebar, getSidebarContent) ...
 
 // Assurez-vous que la fonction showCustomMenu() est bien définie dans Main.gs
 // et qu'elle contient tous les 'case' pour les scores et les cartons,
