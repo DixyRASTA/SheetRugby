@@ -66,24 +66,32 @@ function promptForKickOffTeam() {
   }
 }
 
+// Dans Main.gs
+
 /**
- * Affiche un menu personnalisé pour les actions de match (scores, cartons, remplacements).
- * Cette fonction est appelée par showCustomMenu() ou directement par les menus.
+ * Affiche un menu personnalisé pour les actions de match (scores, cartons).
+ * Cette fonction est appelée par le menu "Actions de Match...".
  */
 function showCustomMenu() {
   const ui = SpreadsheetApp.getUi();
   const result = ui.prompt(
     'Menu Actions',
-    'Sélectionnez une action de jeu :',
+    'Sélectionnez une action de jeu (ex: essai locale, transfo locale reussie, carton jaune) :', // Ajout d'exemples pour guider l'utilisateur
     ui.ButtonSet.OK_CANCEL
   );
 
   if (result.getSelectedButton() === ui.Button.OK) {
-    const action = result.getResponseText().toLowerCase();
+    const action = result.getResponseText().toLowerCase().trim(); // Ajout de .trim() pour enlever les espaces accidentels
     switch (action) {
-      // ... (autres cas existants comme Essai Local) ...
+      // --- CAS POUR LES ESSAIS ---
+      case 'essai locale':
+        ScoreManager.addScoreLocaleEssai();
+        break;
+      case 'essai visiteur':
+        ScoreManager.addScoreVisiteurEssai();
+        break;
 
-      // --- NOUVEAUX CAS POUR LA TRANSFORMATION ---
+      // --- CAS POUR LES TRANSFORMATIONS ---
       case 'transfo locale reussie':
         ScoreManager.addScoreLocaleTransfo(true);
         break;
@@ -97,7 +105,7 @@ function showCustomMenu() {
         ScoreManager.addScoreVisiteurTransfo(false);
         break;
 
-      // --- NOUVEAUX CAS POUR LES PÉNALITÉS ---
+      // --- CAS POUR LES PÉNALITÉS ---
       case 'penalite locale reussie':
         ScoreManager.addScoreLocalePenaliteReussie();
         break;
@@ -105,28 +113,35 @@ function showCustomMenu() {
         ScoreManager.addScoreLocalePenaliteManquee();
         break;
       case 'penalite visiteur reussie':
-        ScoreManager.addScoreVisiteurPenaliteReussie(); // Tu devras créer cette fonction
+        ScoreManager.addScoreVisiteurPenaliteReussie();
         break;
       case 'penalite visiteur manquee':
-        ScoreManager.addScoreVisiteurPenaliteManquee(); // Tu devras créer cette fonction
+        ScoreManager.addScoreVisiteurPenaliteManquee();
         break;
 
-      // --- NOUVEAUX CAS POUR LES DROPS ---
-      case 'drop locale': // On considère qu'un drop est toujours réussi par défaut s'il est enregistré
+      // --- CAS POUR LES DROPS ---
+      case 'drop locale':
         ScoreManager.addScoreLocaleDrop();
         break;
       case 'drop visiteur':
-        ScoreManager.addScoreVisiteurDrop(); // Tu devras créer cette fonction
+        ScoreManager.addScoreVisiteurDrop();
+        break;
+
+      // --- CAS POUR LES CARTONS (qui appellent Sanctions.gs) ---
+      case 'carton jaune': // L'utilisateur tape "carton jaune"
+        Sanctions.recordCartonJaunePrompt(); // Appelle la fonction qui gère les prompts pour le carton
+        break;
+      case 'carton rouge': // L'utilisateur tape "carton rouge"
+        Sanctions.recordCartonRougePrompt(); // Appelle la fonction qui gère les prompts pour le carton
         break;
 
       default:
-        ui.alert('Action Inconnue', 'L\'action "' + action + '" n\'est pas reconnue.', ui.ButtonSet.OK);
+        ui.alert('Action Inconnue', 'L\'action "' + action + '" n\'est pas reconnue. Veuillez vérifier la saisie.', ui.ButtonSet.OK);
         break;
     }
   }
   updateSidebar(); // Assurez-vous que la sidebar est mise à jour après l'action
 }
-
 
 /**
  * Génère et affiche le contenu HTML de la sidebar.
