@@ -4,6 +4,69 @@
  */
 
 /**
+ * Fonction appelée automatiquement à l'ouverture de la feuille Google Sheet.
+ * Ajoute les menus personnalisés pour un accès facile aux scripts.
+ */
+function onOpen() {
+  const ui = SpreadsheetApp.getUi();
+  ui.createMenu('Match Rugby')
+      .addItem('Ouvrir Tableau de Bord', 'ouvrirTableauDeBord')
+      .addSeparator()
+      .addSubMenu(ui.createMenu('Phases de Match')
+          .addItem('Initialiser Nouveau Match', 'initialiserFeuilleEtProprietes')
+          .addItem('Coup d\'envoi 1ère MT', 'debutPremiereMiTemps')
+          .addItem('Fin 1ère MT', 'finPremiereMiTemps')
+          .addItem('Coup d\'envoi 2ème MT', 'debutDeuxiemeMiTemps')
+          .addItem('Arrêter Jeu (Pause)', 'arretJeu')
+          .addItem('Reprendre Jeu', 'repriseJeu')
+          .addItem('Fin de Match', 'finDeMatch'))
+      .addSeparator()
+      .addSubMenu(ui.createMenu('Actions de Match') // Renomme le sous-menu existant
+          .addItem('Essai Locale (5 pts)', 'addScoreLocaleEssai')
+          .addItem('Transformation Locale (2 pts)', 'addScoreLocaleTransfo')
+          .addItem('Pénalité Locale (3 pts)', 'addScoreLocalePenalite')
+          .addItem('Drop Locale (3 pts)', 'addScoreLocaleDrop')
+          .addSeparator()
+          .addItem('Essai Visiteur (5 pts)', 'addScoreVisiteurEssai')
+          .addItem('Transformation Visiteur (2 pts)', 'addScoreVisiteurTransfo')
+          .addItem('Pénalité Visiteur (3 pts)', 'addScoreVisiteurPenalite')
+          .addItem('Drop Visiteur (3 pts)', 'addScoreVisiteurDrop'))
+      .addSeparator()
+      .addSubMenu(ui.createMenu('Sanctions') // <-- NOUVEAU SOUS-MENU SANCTIONS
+          .addItem('Carton Jaune...', 'recordCartonJaunePrompt')
+          .addItem('Carton Rouge...', 'recordCartonRougePrompt'))
+          // Tu pourras ajouter recordPenaliteSifflee ici plus tard si besoin
+      .addSeparator()
+      .addItem('Annuler dernier événement (attention!)', 'deleteLastEvent')
+      .addToUi();
+}
+
+
+/**
+ * Fonction utilitaire pour demander quelle équipe donne le coup d'envoi.
+ * @returns {string|null} 'Locale', 'Visiteur' ou null si annulé.
+ */
+function promptForKickOffTeam() {
+  const ui = SpreadsheetApp.getUi();
+  const localTeam = getLocalTeamName();
+  const visitorTeam = getVisitorTeamName();
+
+  const teamChoice = ui.alert(
+      'Coup d\'envoi',
+      `Quelle équipe donne le coup d'envoi ?\n\nOui = ${localTeam}\nNon = ${visitorTeam}`,
+      ui.ButtonSet.YES_NO_CANCEL
+  );
+
+  if (teamChoice === ui.Button.YES) {
+    return 'Locale';
+  } else if (teamChoice === ui.Button.NO) {
+    return 'Visiteur';
+  } else {
+    return null; // Annulé
+  }
+}
+
+/**
  * Affiche un menu personnalisé pour les actions de match (scores, cartons, remplacements).
  * Cette fonction est appelée par showCustomMenu() ou directement par les menus.
  */
@@ -64,83 +127,6 @@ function showCustomMenu() {
   updateSidebar(); // Assurez-vous que la sidebar est mise à jour après l'action
 }
 
-
-/**
- * Fonction utilitaire pour demander quelle équipe donne le coup d'envoi.
- * @returns {string|null} 'Locale', 'Visiteur' ou null si annulé.
- */
-function promptForKickOffTeam() {
-  const ui = SpreadsheetApp.getUi();
-  const localTeam = getLocalTeamName();
-  const visitorTeam = getVisitorTeamName();
-
-  const teamChoice = ui.alert(
-      'Coup d\'envoi',
-      `Quelle équipe donne le coup d'envoi ?\n\nOui = ${localTeam}\nNon = ${visitorTeam}`,
-      ui.ButtonSet.YES_NO_CANCEL
-  );
-
-  if (teamChoice === ui.Button.YES) {
-    return 'Locale';
-  } else if (teamChoice === ui.Button.NO) {
-    return 'Visiteur';
-  } else {
-    return null; // Annulé
-  }
-}
-
-/**
- * Affiche un menu personnalisé pour les actions de match (scores, cartons, remplacements).
- * Chaque élément du menu appellera une fonction correspondante dans ScoreManager.gs.
- */
-function showCustomMenu() {
-  const ui = SpreadsheetApp.getUi();
-  // On ne demande plus l'équipe ici, on le gérera dans les sous-menus spécifiques si besoin.
-  //const teamPromptResult = ui.prompt(
-  //  'Action de Match',
-  //   'Choisissez l\'équipe concernée (Locale ou Visiteur) ou laissez vide pour une action neutre :',
-  //  ui.ButtonSet.OK_CANCEL
-  //);
-
-  //if (teamPromptResult.getSelectedButton() === ui.Button.CANCEL) {
-  //  return; // L'utilisateur a annulé
-  //}
-
-  //const team = teamPromptResult.getResponseText().trim(); // 'Locale', 'Visiteur', ou vide
-
-  const actionMenu = ui.createMenu('Actions de Match');
-
-  // Sous-menu des scores
-  actionMenu.addSubMenu(ui.createMenu('Score')
-      .addItem('Essai Locale (5 pts)', 'addScoreLocaleEssai')
-      .addItem('Transformation Locale (2 pts)', 'addScoreLocaleTransfo')
-      .addItem('Pénalité Locale (3 pts)', 'addScoreLocalePenalite')
-      .addItem('Drop Locale (3 pts)', 'addScoreLocaleDrop')
-      .addSeparator()
-      .addItem('Essai Visiteur (5 pts)', 'addScoreVisiteurEssai')
-      .addItem('Transformation Visiteur (2 pts)', 'addScoreVisiteurTransfo')
-      .addItem('Pénalité Visiteur (3 pts)', 'addScoreVisiteurPenalite')
-      .addItem('Drop Visiteur (3 pts)', 'addScoreVisiteurDrop')
-  );
-
-  // Sous-menu des cartons
-  actionMenu.addItem('Carton...', 'handleCardPrompt'); // Simplifié pour appeler directement le prompt
-  // Remplacement retiré pour le moment
-  //    .addItem('Carton Jaune', 'handleCardPrompt')
-  //    .addItem('Carton Rouge', 'handleCardPrompt')
-  //actionMenu.addItem('Remplacement...', 'handleSubstitutionPrompt'); 
-  
-  actionMenu.addToUi(); // Affiche le nouveau menu flottant
-}
-
-/**
- * Ouvre le tableau de bord (sidebar) du match.
- * Cette fonction est appelée via le menu personnalisé.
- */
-function ouvrirTableauDeBord() {
-  updateSidebar(); // Appelle la fonction qui génère et affiche la sidebar
-  createTimeDrivenTriggers(); // S'assure que le déclencheur de rafraîchissement est créé
-}
 
 /**
  * Génère et affiche le contenu HTML de la sidebar.
