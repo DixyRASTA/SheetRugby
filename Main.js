@@ -13,33 +13,28 @@ function onOpen() {
       .addItem('Ouvrir Tableau de Bord', 'ouvrirTableauDeBord')
       .addSeparator()
       .addSubMenu(ui.createMenu('Phases de Match')
-          .addItem('Initialiser Nouveau Match', 'initialiserFeuilleEtProprietes')
-          .addItem('Coup d\'envoi 1ère MT', 'debutPremiereMiTemps')
-          .addItem('Fin 1ère MT', 'finPremiereMiTemps')
-          .addItem('Coup d\'envoi 2ème MT', 'debutDeuxiemeMiTemps')
-          .addItem('Arrêter Jeu (Pause)', 'arretJeu')
-          .addItem('Reprendre Jeu', 'repriseJeu')
-          .addItem('Fin de Match', 'finDeMatch'))
+          .addItem('Initialiser Nouveau Match', 'Interruptions.initialiserFeuilleEtProprietes') // Appelle la fonction dans Interruptions.gs
+          .addItem('Coup d\'envoi 1ère MT', 'Interruptions.debutPremiereMiTemps')
+          .addItem('Fin 1ère MT', 'Interruptions.finPremiereMiTemps')
+          .addItem('Coup d\'envoi 2ème MT', 'Interruptions.debutDeuxiemeMiTemps')
+          .addItem('Arrêter Jeu (Pause)', 'Interruptions.arretJeu')
+          .addItem('Reprendre Jeu', 'Interruptions.repriseJeu')
+          .addItem('Fin de Match', 'Interruptions.finDeMatch'))
       .addSeparator()
-      .addSubMenu(ui.createMenu('Actions de Match') // Renomme le sous-menu existant
-          .addItem('Essai Locale (5 pts)', 'addScoreLocaleEssai')
-          .addItem('Transformation Locale (2 pts)', 'addScoreLocaleTransfo')
-          .addItem('Pénalité Locale (3 pts)', 'addScoreLocalePenalite')
-          .addItem('Drop Locale (3 pts)', 'addScoreLocaleDrop')
-          .addSeparator()
-          .addItem('Essai Visiteur (5 pts)', 'addScoreVisiteurEssai')
-          .addItem('Transformation Visiteur (2 pts)', 'addScoreVisiteurTransfo')
-          .addItem('Pénalité Visiteur (3 pts)', 'addScoreVisiteurPenalite')
-          .addItem('Drop Visiteur (3 pts)', 'addScoreVisiteurDrop'))
+      // --- MODIFICATION CRUCIALE ICI : Un seul item pour toutes les actions de score/sanction via showCustomMenu ---
+      .addItem('Ajouter Action (Score/Carton/Drop...)', 'showCustomMenu') // Cet item appelle showCustomMenu
+      // Les anciens sous-menus "Actions de Match" et "Sanctions" avec des items directs sont supprimés ici
+      // car showCustomMenu gère déjà le prompt pour toutes ces actions.
       .addSeparator()
-      .addSubMenu(ui.createMenu('Sanctions') // <-- NOUVEAU SOUS-MENU SANCTIONS
-          .addItem('Carton Jaune...', 'recordCartonJaunePrompt')
-          .addItem('Carton Rouge...', 'recordCartonRougePrompt'))
-          // Tu pourras ajouter recordPenaliteSifflee ici plus tard si besoin
-      .addSeparator()
-      .addItem('Annuler dernier événement (attention!)', 'deleteLastEvent')
+      .addItem('Annuler dernier événement (attention!)', 'Evenements.deleteLastEvent') // Précise le fichier Evenements.gs
       .addToUi();
 }
+
+// Assurez-vous que la fonction showCustomMenu() est bien définie dans Main.gs
+// et qu'elle contient tous les 'case' pour les scores et les cartons,
+// appelant les fonctions de ScoreManager.gs (ex: ScoreManager.addScoreLocaleEssai())
+// et Sanctions.gs (ex: Sanctions.recordCartonJaunePrompt()).
+// ... (le reste de Main.gs, y compris showCustomMenu, promptForKickOffTeam, updateSidebar, getSidebarContent) ...
 
 
 /**
