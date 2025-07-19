@@ -7,7 +7,7 @@ function startMatchTimer() {
   const scriptProperties = PropertiesService.getScriptProperties();
   const currentTime = new Date().getTime(); // Moment exact où le chrono démarre
 
-  scriptProperties.setProperty('startTime', currentTime.toString()); 
+  scriptProperties.setProperty('startTime', currentTime.toString());
   scriptProperties.setProperty('isTimerRunning', 'true');
   Logger.log("Chronomètre démarré. StartTime: " + currentTime);
 }
@@ -50,11 +50,7 @@ function resetMatchTimer() {
  */
 function resumeMatchTimer() {
   startMatchTimer(); // Réutilise la fonction startMatchTimer pour la reprise
-  // Lors de la reprise, on doit s'assurer que la phase est la bonne (premiere_mi_temps ou deuxieme_mi_temps)
-  // Cette partie est gérée par `repriseJeu` dans Interruptions.gs, pas directement ici.
 }
-
-// Dans TimeManager.gs
 
 /**
  * Calcule le temps de jeu écoulé et la phase actuelle du match.
@@ -62,7 +58,7 @@ function resumeMatchTimer() {
  */
 function getMatchTimeState() {
   const scriptProperties = PropertiesService.getScriptProperties();
-  const isTimerRunning = scriptProperties.getProperty('isTimerRunning') === 'true';
+  const isTimerRunning = scriptProperties.getProperty('isTimerRunning') === 'true'; // L'état réel du chrono
   const currentPhase = scriptProperties.getProperty('currentMatchPhase') || 'non_demarre';
   const startTime = parseInt(scriptProperties.getProperty('startTime') || '0', 10);
   const gameTimeAtLastPause = parseInt(scriptProperties.getProperty('gameTimeAtLastPause') || '0', 10);
@@ -70,32 +66,36 @@ function getMatchTimeState() {
 
   let tempsDeJeuMs; // Variable pour le temps de jeu en millisecondes
 
-  // 1. Déterminer le temps de base en fonction de l'état du chrono
-  if (isTimerRunning && startTime > 0) { // Cette condition sera FAUSSE si isTimerRunning est false
+  // 1. Logique pour les phases de "temps figé" (prioritaire)
+  if (currentPhase === 'awaiting_conversion' || currentPhase === 'awaiting_penalty_kick') {
+    const gameTimeAtEventMs = parseInt(scriptProperties.getProperty('gameTimeAtEventMs') || '0', 10);
+    tempsDeJeuMs = gameTimeAtEventMs; // Fige le temps à celui de l'événement
+  }
+  // 2. Si le chrono est en cours ET qu'on n'est PAS dans une phase de temps figé
+  else if (isTimerRunning && startTime > 0) {
     const currentTime = new Date().getTime();
     tempsDeJeuMs = gameTimeAtLastPause + (currentTime - startTime);
     if (tempsDeJeuMs < 0) tempsDeJeuMs = 0; // Sécurité pour éviter les temps négatifs
-  } else {
-    // Si le chrono n'est pas en cours (en pause, non démarré, fin de match),
-    // le temps affiché est le temps accumulé jusqu'à la dernière pause.
-    tempsDeJeuMs = gameTimeAtLastPause; // Si pas en cours, prend le temps accumulé
+  }
+  // 3. Si le chrono n'est PAS en cours (pause normale, non démarré, fin de match)
+  else {
+    tempsDeJeuMs = gameTimeAtLastPause;
   }
 
-  // 2. Surcharge du temps pour des phases spécifiques (priorité sur le calcul précédent)
+  // 4. Logique spécifique pour les phases de match finales ou initiales (peut surcharger si nécessaire)
   if (currentPhase === 'non_demarre') {
     tempsDeJeuMs = 0; // Au tout début, le chrono est à zéro
-  } else if (currentPhase === 'awaiting_conversion' || currentPhase === 'awaiting_penalty_kick') {
-    const gameTimeAtEventMs = parseInt(scriptProperties.getProperty('gameTimeAtEventMs') || '0', 10);
-    tempsDeJeuMs = gameTimeAtEventMs; // Fige le temps à celui de l'événement
   } else if (currentPhase === 'fin_de_match') {
     tempsDeJeuMs = parseInt(scriptProperties.getProperty('finalDisplayedTimeMs') || '0', 10);
   }
-  // La phase 'mi_temps' utilise `gameTimeAtLastPause`, ce qui est correct et n'a pas besoin de surcharge.
+  // La phase 'mi_temps' utilise implicitement `gameTimeAtLastPause`, ce qui est correct.
+
 
   return {
-    isTimerRunning: isTimerRunning,
+    isTimerRunning: isTimerRunning, // IMPORTANT : Renvoie l'état réel de la propriété isTimerRunning
     tempsDeJeuMs: tempsDeJeuMs,
-    tempsDeJeuFormatted: formatMillisecondsToHMS(tempsDeJeuMs), // Utilise la fonction de Utils.gs
+    // Appel à la fonction de formatage qui se trouve dans Utils.gs
+    tempsDeJeuFormatted: formatMillisecondsToHMS(tempsDeJeuMs),
     phase: currentPhase,
     message: alertMessage
   };
