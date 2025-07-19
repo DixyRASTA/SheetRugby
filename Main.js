@@ -74,6 +74,8 @@ function promptForKickOffTeam() {
  */
 function showCustomMenu() {
   const ui = SpreadsheetApp.getUi();
+  Logger.log("showCustomMenu: Fonction appelée."); // NOUVEAU LOG
+
   const result = ui.prompt(
     'Menu Actions',
     'Sélectionnez une action de jeu (ex: essai locale, transfo locale reussie, carton jaune) :', // Ajout d'exemples pour guider l'utilisateur
@@ -82,6 +84,9 @@ function showCustomMenu() {
 
   if (result.getSelectedButton() === ui.Button.OK) {
     const action = result.getResponseText().toLowerCase().trim(); // Ajout de .trim() pour enlever les espaces accidentels
+
+    Logger.log("showCustomMenu: Action saisie par l'utilisateur: " + action); // NOUVEAU LOG
+
     switch (action) {
       // --- CAS POUR LES ESSAIS ---
       case 'essai locale':
@@ -136,11 +141,15 @@ function showCustomMenu() {
         break;
 
       default:
+        Logger.log("showCustomMenu: Action non reconnue: " + action); // NOUVEAU LOG
         ui.alert('Action Inconnue', 'L\'action "' + action + '" n\'est pas reconnue. Veuillez vérifier la saisie.', ui.ButtonSet.OK);
         break;
     }
+  }else {
+    Logger.log("showCustomMenu: Annulé par l'utilisateur."); // NOUVEAU LOG
   }
   updateSidebar(); // Assurez-vous que la sidebar est mise à jour après l'action
+  Logger.log("showCustomMenu: Fin de la fonction."); // NOUVEAU LOG
 }
 
 /**
