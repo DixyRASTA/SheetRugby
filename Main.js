@@ -67,7 +67,6 @@ function promptForKickOffTeam() {
   }
 }
 
-
 /**
  * Affiche un menu personnalisé pour les actions de match (scores, cartons, remplacements).
  * Chaque élément du menu appellera une fonction correspondante dans ScoreManager.gs.
@@ -111,22 +110,6 @@ function showCustomMenu() {
   
   actionMenu.addToUi(); // Affiche le nouveau menu flottant
 }
-// Fonctions d'assistant pour les prompts d'utilisateur (à ajouter dans Main.gs)
-// (Les addScore... restent inchangées, elles appellent déjà addScore directement)
-// ... Laissez toutes vos fonctions addScoreLocaleEssai, etc. INCHANGÉES ...
-
-// NOUVELLES FONCTIONS D'ASSISTANT pour les prompts d'utilisateur (à ajouter dans Main.gs)
-// Ces fonctions recueillent les informations via des boîtes de dialogue et appellent ScoreManager.gs
-
-function addScoreLocaleEssai() { addScore('Locale', 'Essai', 5, promptForPlayer()); }
-function addScoreLocaleTransfo() { addScore('Locale', 'Transformation', 2, promptForPlayer()); }
-function addScoreLocalePenalite() { addScore('Locale', 'Pénalité', 3, promptForPlayer()); }
-function addScoreLocaleDrop() { addScore('Locale', 'Drop', 3, promptForPlayer()); }
-
-function addScoreVisiteurEssai() { addScore('Visiteur', 'Essai', 5, promptForPlayer()); }
-function addScoreVisiteurTransfo() { addScore('Visiteur', 'Transformation', 2, promptForPlayer()); }
-function addScoreVisiteurPenalite() { addScore('Visiteur', 'Pénalité', 3, promptForPlayer()); }
-function addScoreVisiteurDrop() { addScore('Visiteur', 'Drop', 3, promptForPlayer()); }
 
 /**
  * Ouvre le tableau de bord (sidebar) du match.
@@ -135,36 +118,6 @@ function addScoreVisiteurDrop() { addScore('Visiteur', 'Drop', 3, promptForPlaye
 function ouvrirTableauDeBord() {
   updateSidebar(); // Appelle la fonction qui génère et affiche la sidebar
   createTimeDrivenTriggers(); // S'assure que le déclencheur de rafraîchissement est créé
-}
-
-/**
- * Crée ou met à jour les déclencheurs temporels nécessaires pour le script.
- * Exécute 'updateSidebar' toutes les minutes pour rafraîchir le chronomètre.
- * Ne crée le déclencheur que s'il n'existe pas déjà pour 'updateSidebar'.
- */
- function createTimeDrivenTriggers(){
-  const triggers = ScriptApp.getProjectTriggers();
-  let triggerExists = false;
-
-  for (const trigger of triggers) {
-    if (trigger.getHandlerFunction() === 'updateSidebar') {
-      triggerExists = true;
-      // Optionnel: Si vous voulez toujours un seul déclencheur et réinitialiser la fréquence
-      // ScriptApp.deleteTrigger(trigger); 
-      // triggerExists = false; // Permet de recréer le déclencheur avec la nouvelle config
-      break; 
-    }
-  }
-
-  if (!triggerExists) {
-    ScriptApp.newTrigger('updateSidebar')
-      .timeBased()
-      .everyMinutes(1) // Rafraîchissement toutes les 1 minute pour le chrono
-      .create();
-    Logger.log("Déclencheur temporel pour updateSidebar créé (toutes les minutes).");
-  } else {
-    Logger.log("Déclencheur pour updateSidebar existe déjà, pas de nouvelle création.");
-  }
 }
 
 /**
