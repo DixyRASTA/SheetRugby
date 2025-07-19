@@ -45,6 +45,14 @@ function addScoreLocaleEssai() {
   // ENFIN, ENREGISTRER L'ÉVÉNEMENT AVEC LE TEMPS FIGÉ
   // On utilise 'timeToFreeze' pour s'assurer que c'est le temps capturé.
   recordEvent(new Date(), formatMillisecondsToHMS(timeToFreeze), 'Locale', 'Essai', '', currentScore, parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10), '');
+ 
+  // --- AJOUTEZ CES LIGNES DE LOG ICI ---
+  Logger.log("addScoreLocaleEssai - Propriétés APRES SET:");
+  Logger.log("  currentMatchPhase: " + scriptProperties.getProperty('currentMatchPhase')); // Doit être 'awaiting_conversion'
+  Logger.log("  isTimerRunning: " + scriptProperties.getProperty('isTimerRunning'));       // Doit être 'false'
+  Logger.log("  gameTimeAtEventMs: " + scriptProperties.getProperty('gameTimeAtEventMs')); // Doit être le temps de l'essai
+  Logger.log("  startTime: " + scriptProperties.getProperty('startTime'));                 // Doit être '0' (car isTimerRunning est false)
+  // --- FIN DES LOGS À AJOUTER ---
   
   updateSidebar(); // Mettre à jour la sidebar
   ui.alert("Essai Locale", `Essai de l'équipe Locale. Score : ${currentScore}. En attente de transformation...`, ui.ButtonSet.OK);

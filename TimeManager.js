@@ -58,6 +58,15 @@ function resumeMatchTimer() {
  */
 function getMatchTimeState() {
   const scriptProperties = PropertiesService.getScriptProperties();
+
+  // --- AJOUTEZ CES LIGNES DE LOG ICI ---
+  Logger.log("getMatchTimeState - Propriétés LUES AU DÉBUT:");
+  Logger.log("  currentMatchPhase (lue): " + scriptProperties.getProperty('currentMatchPhase'));
+  Logger.log("  isTimerRunning (lue): " + scriptProperties.getProperty('isTimerRunning'));
+  Logger.log("  gameTimeAtEventMs (lue): " + scriptProperties.getProperty('gameTimeAtEventMs'));
+  Logger.log("  startTime (lue): " + scriptProperties.getProperty('startTime'));
+  // --- FIN DES LOGS À AJOUTER ---
+  
   const isTimerRunning = scriptProperties.getProperty('isTimerRunning') === 'true'; // L'état réel du chrono
   const currentPhase = scriptProperties.getProperty('currentMatchPhase') || 'non_demarre';
   const startTime = parseInt(scriptProperties.getProperty('startTime') || '0', 10);
