@@ -2,46 +2,68 @@
  * @file Code pour gérer le suivi d'un match de rugby dans Google Sheets.
  * Gère l'interface utilisateur (sidebar, menus) et orchestre les appels aux autres managers.
  */
- 
-/**
- * Fonction appelée automatiquement à l'ouverture de la feuille Google Sheet.
- * Ajoute les menus personnalisés pour un accès facile aux scripts.
- */
-// Dans Main.gs
 
-function onOpen() {
+/**
+ * Affiche un menu personnalisé pour les actions de match (scores, cartons, remplacements).
+ * Cette fonction est appelée par showCustomMenu() ou directement par les menus.
+ */
+function showCustomMenu() {
   const ui = SpreadsheetApp.getUi();
-  ui.createMenu('Match Rugby')
-      .addItem('Ouvrir Tableau de Bord', 'ouvrirTableauDeBord')
-      .addSeparator()
-      .addSubMenu(ui.createMenu('Phases de Match')
-          .addItem('Initialiser Nouveau Match', 'initialiserFeuilleEtProprietes')
-          .addItem('Coup d\'envoi 1ère MT', 'debutPremiereMiTemps')
-          .addItem('Fin 1ère MT', 'finPremiereMiTemps')
-          .addItem('Coup d\'envoi 2ème MT', 'debutDeuxiemeMiTemps')
-          .addItem('Arrêter Jeu (Pause)', 'arretJeu')
-          .addItem('Reprendre Jeu', 'repriseJeu')
-          .addItem('Fin de Match', 'finDeMatch'))
-      .addSeparator()
-      .addSubMenu(ui.createMenu('Actions de Match') // Renomme le sous-menu existant
-          .addItem('Essai Locale (5 pts)', 'addScoreLocaleEssai')
-          .addItem('Transformation Locale (2 pts)', 'addScoreLocaleTransfo')
-          .addItem('Pénalité Locale (3 pts)', 'addScoreLocalePenalite')
-          .addItem('Drop Locale (3 pts)', 'addScoreLocaleDrop')
-          .addSeparator()
-          .addItem('Essai Visiteur (5 pts)', 'addScoreVisiteurEssai')
-          .addItem('Transformation Visiteur (2 pts)', 'addScoreVisiteurTransfo')
-          .addItem('Pénalité Visiteur (3 pts)', 'addScoreVisiteurPenalite')
-          .addItem('Drop Visiteur (3 pts)', 'addScoreVisiteurDrop'))
-      .addSeparator()
-      .addSubMenu(ui.createMenu('Sanctions') // <-- NOUVEAU SOUS-MENU SANCTIONS
-          .addItem('Carton Jaune...', 'recordCartonJaunePrompt')
-          .addItem('Carton Rouge...', 'recordCartonRougePrompt'))
-          // Tu pourras ajouter recordPenaliteSifflee ici plus tard si besoin
-      .addSeparator()
-      .addItem('Annuler dernier événement (attention!)', 'deleteLastEvent')
-      .addToUi();
+  const result = ui.prompt(
+    'Menu Actions',
+    'Sélectionnez une action de jeu :',
+    ui.ButtonSet.OK_CANCEL
+  );
+
+  if (result.getSelectedButton() === ui.Button.OK) {
+    const action = result.getResponseText().toLowerCase();
+    switch (action) {
+      // ... (autres cas existants comme Essai Local) ...
+
+      // --- NOUVEAUX CAS POUR LA TRANSFORMATION ---
+      case 'transfo locale reussie':
+        ScoreManager.addScoreLocaleTransfo(true);
+        break;
+      case 'transfo locale manquee':
+        ScoreManager.addScoreLocaleTransfo(false);
+        break;
+      case 'transfo visiteur reussie':
+        ScoreManager.addScoreVisiteurTransfo(true);
+        break;
+      case 'transfo visiteur manquee':
+        ScoreManager.addScoreVisiteurTransfo(false);
+        break;
+
+      // --- NOUVEAUX CAS POUR LES PÉNALITÉS ---
+      case 'penalite locale reussie':
+        ScoreManager.addScoreLocalePenaliteReussie();
+        break;
+      case 'penalite locale manquee':
+        ScoreManager.addScoreLocalePenaliteManquee();
+        break;
+      case 'penalite visiteur reussie':
+        ScoreManager.addScoreVisiteurPenaliteReussie(); // Tu devras créer cette fonction
+        break;
+      case 'penalite visiteur manquee':
+        ScoreManager.addScoreVisiteurPenaliteManquee(); // Tu devras créer cette fonction
+        break;
+
+      // --- NOUVEAUX CAS POUR LES DROPS ---
+      case 'drop locale': // On considère qu'un drop est toujours réussi par défaut s'il est enregistré
+        ScoreManager.addScoreLocaleDrop();
+        break;
+      case 'drop visiteur':
+        ScoreManager.addScoreVisiteurDrop(); // Tu devras créer cette fonction
+        break;
+
+      default:
+        ui.alert('Action Inconnue', 'L\'action "' + action + '" n\'est pas reconnue.', ui.ButtonSet.OK);
+        break;
+    }
+  }
+  updateSidebar(); // Assurez-vous que la sidebar est mise à jour après l'action
 }
+
 
 /**
  * Fonction utilitaire pour demander quelle équipe donne le coup d'envoi.
