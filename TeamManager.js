@@ -19,50 +19,48 @@ function loadTeamNames() {
 
   // Vérifier si le nom de l'équipe locale est absent
   if (!localTeamName) {
-    ui.alert('Avertissement', 'Le nom de l\'équipe locale est obligatoire.', ui.ButtonSet.OK);
+    ui.alert('Avertissement', 'Le nom de l\'équipe locale est absent. Utilisation de "Local" par défaut.', ui.ButtonSet.OK);
     const localPrompt = ui.prompt(
       'Nom de l\'équipe Locale',
-      'Veuillez entrer le nom de l\'équipe Locale',
+      'Entrez le nom de l\'équipe Locale (par défaut: Local)',
       ui.ButtonSet.OK_CANCEL
     );
     if (localPrompt.getSelectedButton() === ui.Button.OK && localPrompt.getResponseText() !== '') {
       localTeamName = localPrompt.getResponseText();
-      scriptProperties.setProperty('localTeamName', localTeamName);
-      sheet.getRange('A2').setValue(localTeamName); // Mettre à jour la feuille
     } else {
-      ui.alert('Erreur', 'L\'initialisation du match nécessite le nom de l\'équipe locale.', ui.ButtonSet.OK);
-      return; // Arrêter l'exécution si le nom n'est pas saisi
+      localTeamName = 'Local'; // Utiliser le nom par défaut
     }
+    scriptProperties.setProperty('localTeamName', localTeamName);
+    sheet.getRange('A2').setValue(localTeamName); // Mettre à jour la feuille
   } else {
     scriptProperties.setProperty('localTeamName', localTeamName);
   }
 
   // Vérifier si le nom de l'équipe visiteur est absent
   if (!visitorTeamName) {
-    ui.alert('Avertissement', 'Le nom de l\'équipe visiteur est obligatoire.', ui.ButtonSet.OK);
+    ui.alert('Avertissement', 'Le nom de l\'équipe visiteur est absent. Utilisation de "Visiteur" par défaut.', ui.ButtonSet.OK);
     const visitorPrompt = ui.prompt(
       'Nom de l\'équipe Visiteur',
-      'Veuillez entrer le nom de l\'équipe Visiteur',
+      'Entrez le nom de l\'équipe Visiteur (par défaut: Visiteur)',
       ui.ButtonSet.OK_CANCEL
     );
     if (visitorPrompt.getSelectedButton() === ui.Button.OK && visitorPrompt.getResponseText() !== '') {
       visitorTeamName = visitorPrompt.getResponseText();
-      scriptProperties.setProperty('visitorTeamName', visitorTeamName);
-      sheet.getRange('A3').setValue(visitorTeamName); // Mettre à jour la feuille
     } else {
-      ui.alert('Erreur', 'L\'initialisation du match nécessite le nom de l\'équipe visiteur.', ui.ButtonSet.OK);
-      return; // Arrêter l'exécution si le nom n'est pas saisi
+      visitorTeamName = 'Visiteur'; // Utiliser le nom par défaut
     }
+    scriptProperties.setProperty('visitorTeamName', visitorTeamName);
+    sheet.getRange('A3').setValue(visitorTeamName); // Mettre à jour la feuille
   } else {
     scriptProperties.setProperty('visitorTeamName', visitorTeamName);
   }
 
   Logger.log(`Noms d'équipes chargés : Locale = ${getLocalTeamName()}, Visiteur = ${getVisitorTeamName()}`);
-  ui.alert('Information', 'Les noms des équipes ont été renseignés avec succès. Le match peut être initialisé.', ui.ButtonSet.OK);
+  ui.alert('Information', 'Les noms des équipes ont été renseignés. Le match peut être initialisé.', ui.ButtonSet.OK);
 }
 
 function getLocalTeamName() {
-  return PropertiesService.getScriptProperties().getProperty('localTeamName') || 'Locale';
+  return PropertiesService.getScriptProperties().getProperty('localTeamName') || 'Local';
 }
 
 function getVisitorTeamName() {
