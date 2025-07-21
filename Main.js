@@ -3,6 +3,8 @@
  * Gère l'interface utilisateur (sidebar, menus) et orchestre les appels aux autres managers.
  */
 
+// Dans Main.gs
+
 /**
  * Fonction appelée automatiquement à l'ouverture de la feuille Google Sheet.
  * Ajoute les menus personnalisés pour un accès facile aux scripts.
@@ -10,37 +12,37 @@
 function onOpen() {
   const ui = SpreadsheetApp.getUi();
   ui.createMenu('Match Rugby')
-      .addItem('Ouvrir Tableau de Bord', 'ouvrirTableauDeBord') // Assurez-vous que cette fonction est dans Main.gs
+      .addItem('Ouvrir Tableau de Bord', 'ouvrirTableauDeBord') // Appel direct car dans Main.gs
       .addSeparator()
       .addSubMenu(ui.createMenu('Phases de Match')
-          .addItem('Initialiser Nouveau Match', 'Interruptions.initialiserFeuilleEtProprietes')
-          .addItem('Coup d\'envoi 1ère MT', 'Interruptions.debutPremiereMiTemps')
-          .addItem('Fin 1ère MT', 'Interruptions.finPremiereMiTemps')
-          .addItem('Coup d\'envoi 2ème MT', 'Interruptions.debutDeuxiemeMiTemps')
-          .addItem('Arrêter Jeu (Pause)', 'Interruptions.arretJeu')
-          .addItem('Reprendre Jeu', 'Interruptions.repriseJeu')
-          .addItem('Fin de Match', 'Interruptions.finDeMatch'))
+          .addItem('Initialiser Nouveau Match', 'appelInitialiserNouveauMatch') // <-- APPELLE LA PASSERELLE DANS MAIN.GS
+          .addItem('Coup d\'envoi 1ère MT', 'appelDebutPremiereMiTemps') // <-- APPELLE LA PASSERELLE
+          .addItem('Fin 1ère MT', 'appelFinPremiereMiTemps') // <-- APPELLE LA PASSERELLE
+          .addItem('Coup d\'envoi 2ème MT', 'appelDebutDeuxiemeMiTemps') // <-- APPELLE LA PASSERELLE
+          .addItem('Arrêter Jeu (Pause)', 'appelArretJeu') // <-- APPELLE LA PASSERELLE
+          .addItem('Reprendre Jeu', 'appelReprendreJeu') // <-- APPELLE LA PASSERELLE
+          .addItem('Fin de Match', 'appelFinDeMatch')) // <-- APPELLE LA PASSERELLE
       .addSeparator()
-      .addSubMenu(ui.createMenu('Scores') // Nouveau sous-menu pour les scores
-          .addItem('Essai Locale (5 pts)', 'ScoreManager.addScoreLocaleEssai')
-          .addItem('Transformation Locale Réussie (2 pts)', 'ScoreManager.addScoreLocaleTransfoReussie') // Nouvelle fonction pour clarté
-          .addItem('Transformation Locale Manquée', 'ScoreManager.addScoreLocaleTransfoManquee') // Nouvelle fonction pour clarté
+      .addSubMenu(ui.createMenu('Scores')
+          .addItem('Essai Locale (5 pts)', 'ScoreManager.addScoreLocaleEssai') // Toujours avec préfixe car direct
+          .addItem('Transformation Locale Réussie (2 pts)', 'ScoreManager.addScoreLocaleTransfoReussie')
+          .addItem('Transformation Locale Manquée', 'ScoreManager.addScoreLocaleTransfoManquee')
           .addItem('Pénalité Locale Réussie (3 pts)', 'ScoreManager.addScoreLocalePenaliteReussie')
           .addItem('Pénalité Locale Manquée', 'ScoreManager.addScoreLocalePenaliteManquee')
           .addItem('Drop Locale (3 pts)', 'ScoreManager.addScoreLocaleDrop')
           .addSeparator()
           .addItem('Essai Visiteur (5 pts)', 'ScoreManager.addScoreVisiteurEssai')
-          .addItem('Transformation Visiteur Réussie (2 pts)', 'ScoreManager.addScoreVisiteurTransfoReussie') // Nouvelle fonction
-          .addItem('Transformation Visiteur Manquée', 'ScoreManager.addScoreVisiteurTransfoManquee') // Nouvelle fonction
+          .addItem('Transformation Visiteur Réussie (2 pts)', 'ScoreManager.addScoreVisiteurTransfoReussie')
+          .addItem('Transformation Visiteur Manquée', 'ScoreManager.addScoreVisiteurTransfoManquee')
           .addItem('Pénalité Visiteur Réussie (3 pts)', 'ScoreManager.addScoreVisiteurPenaliteReussie')
           .addItem('Pénalité Visiteur Manquée', 'ScoreManager.addScoreVisiteurPenaliteManquee')
           .addItem('Drop Visiteur (3 pts)', 'ScoreManager.addScoreVisiteurDrop'))
       .addSeparator()
-      .addSubMenu(ui.createMenu('Sanctions') // Sous-menu pour les sanctions
-          .addItem('Carton Jaune...', 'Sanctions.recordCartonJaunePrompt')
-          .addItem('Carton Rouge...', 'Sanctions.recordCartonRougePrompt'))
+      .addSubMenu(ui.createMenu('Sanctions')
+          .addItem('Carton Jaune...', 'Sanctions.recordCartonJaunePrompt') // Toujours avec préfixe
+          .addItem('Carton Rouge...', 'Sanctions.recordCartonRougePrompt')) // Toujours avec préfixe
       .addSeparator()
-      .addItem('Annuler dernier événement (attention!)', 'Evenements.deleteLastEvent')
+      .addItem('Annuler dernier événement (attention!)', 'appelAnnulerDernierEvenement') // <-- APPELLE LA PASSERELLE
       .addToUi();
 }
 
@@ -183,6 +185,42 @@ function showCustomMenu() {
   updateSidebar(); // Assurez-vous que la sidebar est mise à jour après l'action
   Logger.log("showCustomMenu: Fin de la fonction."); // NOUVEAU LOG
 }
+
+
+// --- FONCTIONS PASSERELLES POUR LES INTERRUPTIONS (APPELÉES PAR LE MENU) ---
+function appelInitialiserNouveauMatch() {
+  Interruptions.initialiserFeuilleEtProprietes();
+}
+
+function appelDebutPremiereMiTemps() {
+  Interruptions.debutPremiereMiTemps();
+}
+
+function appelFinPremiereMiTemps() {
+  Interruptions.finPremiereMiTemps();
+}
+
+function appelDebutDeuxiemeMiTemps() {
+  Interruptions.debutDeuxiemeMiTemps();
+}
+
+function appelArretJeu() {
+  Interruptions.arretJeu();
+}
+
+function appelReprendreJeu() {
+  Interruptions.reprendreJeu();
+}
+
+function appelFinDeMatch() {
+  Interruptions.finDeMatch();
+}
+
+// --- FONCTION PASSERELLE POUR ÉVÉNEMENTS ---
+function appelAnnulerDernierEvenement() {
+  Evenements.deleteLastEvent();
+}
+
 
 /**
  * Génère et affiche le contenu HTML de la sidebar.
