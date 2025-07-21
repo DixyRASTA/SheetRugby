@@ -14,13 +14,13 @@ function onOpen() {
       .addItem('Ouvrir Tableau de Bord', 'ouvrirTableauDeBord')
       .addSeparator()
       .addSubMenu(ui.createMenu('Phases de Match')
-          .addItem('Initialiser Nouveau Match', 'initialiserFeuilleEtProprietes') // <-- CORRIGÉ
-          .addItem('Coup d\'envoi 1ère MT', 'debutPremiereMiTemps') // <-- CORRIGÉ
-          .addItem('Fin 1ère MT', 'finPremiereMiTemps') // <-- CORRIGÉ
-          .addItem('Coup d\'envoi 2ème MT', 'debutDeuxiemeMiTemps') // <-- CORRIGÉ
-          .addItem('Arrêter Jeu (Pause)', 'arretJeu') // <-- CORRIGÉ
-          .addItem('Reprendre Jeu', 'repriseJeu') // <-- CORRIGÉ
-          .addItem('Fin de Match', 'finDeMatch')) // <-- CORRIGÉ
+          .addItem('Initialiser Nouveau Match', 'Interruptions.initialiserFeuilleEtProprietes') // <-- CORRIGÉ
+          .addItem('Coup d\'envoi 1ère MT', 'Interruptions.debutPremiereMiTemps') // <-- CORRIGÉ
+          .addItem('Fin 1ère MT', 'Interruptions.finPremiereMiTemps') // <-- CORRIGÉ
+          .addItem('Coup d\'envoi 2ème MT', 'Interruptions.debutDeuxiemeMiTemps') // <-- CORRIGÉ
+          .addItem('Arrêter Jeu (Pause)', 'Interruptions.arretJeu') // <-- CORRIGÉ
+          .addItem('Reprendre Jeu', 'Interruptions.repriseJeu') // <-- CORRIGÉ
+          .addItem('Fin de Match', 'Interruptions.finDeMatch')) // <-- CORRIGÉ
       .addSeparator()
       // Un seul item pour toutes les actions de score/sanction via showCustomMenu
       .addItem('Ajouter Action (Score/Carton/Drop...)', 'showCustomMenu')
