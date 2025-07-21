@@ -3,7 +3,6 @@
  * Appelle TimeManager pour manipuler le chronomètre et Evenements pour enregistrer les actions.
  */
 
-// Dans Interruptions.gs
 
 /**
  * Réinitialise toutes les propriétés du match à leur état initial.
@@ -19,29 +18,19 @@ function initialiserFeuilleEtProprietes() {
 
   if (response === ui.Button.YES) {
     const scriptProperties = PropertiesService.getScriptProperties();
-    // TRÈS IMPORTANT : REMPLACER scriptProperties.deleteAllProperties();
-    // par une initialisation explicite de toutes les propriétés nécessaires.
-    // Cela garantit un état propre et prévisible.
-
-    // Réinitialisation des propriétés de base du match
+    // Initialisation explicite de toutes les propriétés nécessaires
     scriptProperties.setProperty('currentScoreLocal', '0');
     scriptProperties.setProperty('currentScoreVisiteur', '0');
     scriptProperties.setProperty('currentMatchPhase', 'non_demarre');
     scriptProperties.setProperty('alertMessage', 'Match non démarré.');
     scriptProperties.setProperty('previousMatchPhase', 'non_demarre');
-    
-    // Réinitialisation des propriétés spécifiques au coup d'envoi et aux phases de gel du temps
-    scriptProperties.setProperty('kickoffTeam1stHalf', ''); 
-    scriptProperties.setProperty('kickoffTeam2ndHalf', ''); 
-    scriptProperties.setProperty('teamAwaitingKick', ''); 
+    scriptProperties.setProperty('kickoffTeam1stHalf', '');
+    scriptProperties.setProperty('kickoffTeam2ndHalf', '');
+    scriptProperties.setProperty('teamAwaitingKick', '');
     scriptProperties.setProperty('gameTimeAtEventMs', '0'); // Réinitialise le temps figé
 
-    // Réinitialiser les propriétés du chrono via la fonction dédiée
-    // Cette fonction s'assure que 'isTimerRunning', 'startTime', 'gameTimeAtLastPause', 'finalDisplayedTimeMs' sont à '0'/'false'
-    resetMatchTimer(); 
-
-    // Charge les noms des équipes (cette fonction gère ses propres propriétés)
-    loadTeamNames(); 
+    resetMatchTimer(); // Appelle la fonction de TimeManager.gs (sans préfixe)
+    loadTeamNames();    // Appelle la fonction (sans préfixe)
 
     // Effacer la feuille "Saisie" sauf les deux premières lignes d'en-tête
     try {
@@ -52,41 +41,44 @@ function initialiserFeuilleEtProprietes() {
       }
     } catch (e) {
       Logger.log("Erreur lors de la réinitialisation de la feuille 'Saisie': " + e.message);
-      SpreadsheetApp.getUi().alert("Erreur", "Impossible de réinitialiser la feuille 'Saisie'. Vérifiez son nom ou ses permissions.", SpreadsheetApp.getUi().ButtonSet.OK);
+      ui.alert("Erreur", "Impossible de réinitialiser la feuille 'Saisie'. Vérifiez son nom ou ses permissions.", ui.ButtonSet.OK);
     }
 
-    updateSidebar(); // Mettre à jour la sidebar pour refléter l'initialisation
-    ui.alert("Match initialisé", "Un nouveau match a été initialisé. Vous pouvez démarrer la 1ère mi-temps.", ui.ButtonSet.OK);
+    // Ouvre la sidebar APRES l'initialisation des données
+    ouvrirTableauDeBord(); // <-- APPEL AJOUTÉ POUR OUVRIR LA SIDEBAR
+
+    // L'appel à updateSidebar() ici est moins critique car ouvrirTableauDeBord() va charger Sidebar.html
+    // qui lui-même appellera getSidebarContent() via fetchDataAndUpdate().
+    // On peut le laisser ou le retirer, car le rafraîchissement se fait côté client.
+    // updateSidebar(); 
+    
+    ui.alert("Match initialisé", "Un nouveau match a été initialisé. La 1ère mi-temps peut être démarrée.", ui.ButtonSet.OK);
   }
 }
-
-// Les fonctions debutPremiereMiTemps, finPremiereMiTemps, debutDeuxiemeMiTemps,
-// arretJeu, repriseJeu, finDeMatch restent telles que définies dans nos dernières discussions.
-// Elles devraient fonctionner correctement avec des propriétés bien initialisées.
-
 
 /**
  * Démarre la première mi-temps du match et lance le chronomètre.
  * Enregistre l'événement dans la feuille "Saisie".
  */
 function debutPremiereMiTemps() {
-
+  const ui = SpreadsheetApp.getUi(); // <-- AJOUT DE ui ICI !
   const scriptProperties = PropertiesService.getScriptProperties();
   const currentPhase = scriptProperties.getProperty('currentMatchPhase');
-  
+
   // Vérification de sécurité (sera enrichie avec SecurityManager plus tard)
   if (currentPhase !== 'non_demarre' && currentPhase !== 'fin_de_match' && currentPhase !== 'mi_temps') {
     scriptProperties.setProperty('alertMessage', 'Le match est déjà en cours ou dans une phase incorrecte.');
-    updateSidebar();
+    updateSidebar(); // Met à jour les propriétés pour le prochain rafraîchissement client
+    ui.alert("Action impossible", scriptProperties.getProperty('alertMessage'), ui.ButtonSet.OK); // Ajout d'une alerte
     return;
   }
 
-   // Demander et stocker l'équipe qui donne le coup d'envoi de la 1ère MT
-  const kickoffTeam1stHalf = promptForKickOffTeam();
+  // Demander et stocker l'équipe qui donne le coup d'envoi de la 1ère MT
+  const kickoffTeam1stHalf = promptForKickOffTeam(); // Appel de la fonction de Main.gs (sans préfixe)
   if (!kickoffTeam1stHalf) {
-      ui.alert("Annulation", "Le coup d'envoi de la 1ère mi-temps a été annulé.");
-      updateSidebar();
-      return;
+    ui.alert("Annulation", "Le coup d'envoi de la 1ère mi-temps a été annulé.");
+    updateSidebar(); // Met à jour les propriétés pour le prochain rafraîchissement client
+    return;
   }
   scriptProperties.setProperty('kickoffTeam1stHalf', kickoffTeam1stHalf);
   // Calculer et stocker l'équipe qui aura le coup d'envoi de la 2nde MT (l'inverse)
@@ -94,20 +86,20 @@ function debutPremiereMiTemps() {
   scriptProperties.setProperty('kickoffTeam2ndHalf', kickoffTeam2ndHalf);
 
   scriptProperties.setProperty('currentMatchPhase', 'premiere_mi_temps');
-  startMatchTimer(); // Démarre le chronomètre
+  startMatchTimer(); // Démarre le chronomètre (fonction de TimeManager.gs, sans préfixe)
   scriptProperties.setProperty('alertMessage', '');
 
-  const matchTimeState = getMatchTimeState();
-  const kickoffTeamName = (kickoffTeam1stHalf === 'Locale') ? getLocalTeamName() : getVisitorTeamName(); // Récupère le nom réel
+  const matchTimeState = getMatchTimeState(); // Fonction de TimeManager.gs, sans préfixe
+  const kickoffTeamName = (kickoffTeam1stHalf === 'Locale') ? getLocalTeamName() : getVisitorTeamName(); // Fonctions (sans préfixe)
 
   // Enregistrement de l'événement "Coup d'envoi 1ère MT"
-  recordEvent(new Date(), matchTimeState.tempsDeJeuFormatted, kickoffTeam1stHalf, 'Coup d\'envoi 1ère MT', '', 
-              parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10), 
-              parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10), 
-              `Coup d'envoi par ${kickoffTeamName}`); // Utilise le nom réel dans la remarque
+  recordEvent(new Date(), matchTimeState.tempsDeJeuFormatted, kickoffTeam1stHalf, 'Coup d\'envoi 1ère MT', '',
+    parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10),
+    parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10),
+    `Coup d'envoi par ${kickoffTeamName}`); // Utilise le nom réel dans la remarque
   
-  updateSidebar();
-  SpreadsheetApp.getUi().alert("Coup d'envoi 1ère mi-temps !", "Le match a commencé.", SpreadsheetApp.getUi().ButtonSet.OK);
+  updateSidebar(); // Met à jour les propriétés pour le prochain rafraîchissement client
+  ui.alert("Coup d'envoi 1ère mi-temps !", "Le match a commencé.", ui.ButtonSet.OK);
 }
 
 
