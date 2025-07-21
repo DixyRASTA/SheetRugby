@@ -19,10 +19,10 @@ function loadTeamNames() {
 
   // Vérifier si le nom de l'équipe locale est absent
   if (!localTeamName) {
-    ui.alert('Avertissement', 'Le nom de l\'équipe locale est absent. Utilisation de "Local" par défaut.', ui.ButtonSet.OK);
+    ui.alert('Avertissement', 'Le nom de l\'équipe locale est absent.', ui.ButtonSet.OK);
     const localPrompt = ui.prompt(
       'Nom de l\'équipe Locale',
-      'Entrez le nom de l\'équipe Locale (par défaut: Local)',
+      'Entrez le nom de l\'équipe Locale (si non renseignée, par défaut: Local)',
       ui.ButtonSet.OK_CANCEL
     );
     if (localPrompt.getSelectedButton() === ui.Button.OK && localPrompt.getResponseText() !== '') {
@@ -38,10 +38,10 @@ function loadTeamNames() {
 
   // Vérifier si le nom de l'équipe visiteur est absent
   if (!visitorTeamName) {
-    ui.alert('Avertissement', 'Le nom de l\'équipe visiteur est absent. Utilisation de "Visiteur" par défaut.', ui.ButtonSet.OK);
+    ui.alert('Avertissement', 'Le nom de l\'équipe visiteur est absent.', ui.ButtonSet.OK);
     const visitorPrompt = ui.prompt(
       'Nom de l\'équipe Visiteur',
-      'Entrez le nom de l\'équipe Visiteur (par défaut: Visiteur)',
+      'Entrez le nom de l\'équipe Visiteur (si non renseignée, par défaut: Visiteur)',
       ui.ButtonSet.OK_CANCEL
     );
     if (visitorPrompt.getSelectedButton() === ui.Button.OK && visitorPrompt.getResponseText() !== '') {
@@ -56,7 +56,7 @@ function loadTeamNames() {
   }
 
   Logger.log(`Noms d'équipes chargés : Locale = ${getLocalTeamName()}, Visiteur = ${getVisitorTeamName()}`);
-  ui.alert('Information', 'Les noms des équipes ont été renseignés. Le match peut être initialisé.', ui.ButtonSet.OK);
+  ui.alert('Information', 'Les noms des équipes sont renseignés. Le match va être initialisé.', ui.ButtonSet.OK);
 }
 
 function getLocalTeamName() {
