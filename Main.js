@@ -49,20 +49,20 @@ function onOpen() {
  * Fonction utilitaire pour demander quelle équipe donne le coup d'envoi.
  * Peut être appelée par d'autres fonctions.
  */
-function promptForKickOffTeam() {
-  const ui = SpreadsheetApp.getUi();
-  const response = ui.alert(
-    'Coup d\'envoi',
-    'Quelle équipe donne le coup d\'envoi ?',
-    ui.ButtonSet.YES_NO_CANCEL // YES pour Locale, NO pour Visiteur
-  );
-  if (response === ui.Button.YES) {
-    return 'Locale';
-  } else if (response === ui.Button.NO) {
-    return 'Visiteur';
-  }
-  return null; // Annulé
-}
+//function promptForKickOffTeam() {
+//  const ui = SpreadsheetApp.getUi();
+//  const response = ui.alert(
+//    'Coup d\'envoi',
+//    'Quelle équipe donne le coup d\'envoi ?',
+//    ui.ButtonSet.YES_NO_CANCEL // YES pour Locale, NO pour Visiteur
+//  );
+//  if (response === ui.Button.YES) {
+//    return 'Locale';
+//  } else if (response === ui.Button.NO) {
+//   return 'Visiteur';
+//  }
+//  return null; // Annulé
+//}
 
 /**
  * Ouvre le tableau de bord (sidebar) du match.

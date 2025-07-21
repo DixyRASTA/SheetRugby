@@ -3,10 +3,6 @@
  * Appelle TimeManager pour manipuler le chronomètre et Evenements pour enregistrer les actions.
  */
 
-// Dans Interruptions.gs
-
-// Dans Interruptions.gs
-
 /**
  * Réinitialise toutes les propriétés du match à leur état initial.
  * Appelé lors de l'initialisation d'un nouveau match.
