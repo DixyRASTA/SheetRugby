@@ -1,7 +1,6 @@
 /**
  * @file Gère la lecture et le stockage des noms des équipes.
  */
-
 const SHEET_NAME_EQUIPES = "Equipes"; // Nom de la feuille où sont les noms des équipes
 
 /**
@@ -12,31 +11,48 @@ const SHEET_NAME_EQUIPES = "Equipes"; // Nom de la feuille où sont les noms des
 function loadTeamNames() {
   const ui = SpreadsheetApp.getUi();
   const scriptProperties = PropertiesService.getScriptProperties();
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME_EQUIPES);
 
-  const defaultLocal = scriptProperties.getProperty('localTeamName') || 'UA Issigeac';
-  const defaultVisitor = scriptProperties.getProperty('visitorTeamName') || 'US Lalinde';
+  // Lire les noms des équipes à partir de la feuille
+  const localTeamName = sheet.getRange('A2').getValue();
+  const visitorTeamName = sheet.getRange('A3').getValue();
 
-  const localPrompt = ui.prompt(
-    'Nom de l\'équipe Locale',
-    'Entrez le nom de l\'équipe Locale (par défaut: ' + defaultLocal + ')',
-    ui.ButtonSet.OK_CANCEL
-  );
-  if (localPrompt.getSelectedButton() === ui.Button.OK && localPrompt.getResponseText() !== '') {
-    scriptProperties.setProperty('localTeamName', localPrompt.getResponseText());
+  // Vérifier si le nom de l'équipe locale est absent
+  if (!localTeamName) {
+    ui.alert('Avertissement', 'Le nom de l\'équipe locale est absent.', ui.ButtonSet.OK);
+    const localPrompt = ui.prompt(
+      'Nom de l\'équipe Locale',
+      'Entrez le nom de l\'équipe Locale',
+      ui.ButtonSet.OK_CANCEL
+    );
+    if (localPrompt.getSelectedButton() === ui.Button.OK && localPrompt.getResponseText() !== '') {
+      scriptProperties.setProperty('localTeamName', localPrompt.getResponseText());
+      sheet.getRange('A2').setValue(localPrompt.getResponseText()); // Mettre à jour la feuille
+    } else {
+      ui.alert('Avertissement', 'Aucun nom saisi pour l\'équipe locale.', ui.ButtonSet.OK);
+    }
   } else {
-    scriptProperties.setProperty('localTeamName', defaultLocal);
+    scriptProperties.setProperty('localTeamName', localTeamName);
   }
 
-  const visitorPrompt = ui.prompt(
-    'Nom de l\'équipe Visiteur',
-    'Entrez le nom de l\'équipe Visiteur (par défaut: ' + defaultVisitor + ')',
-    ui.ButtonSet.OK_CANCEL
-  );
-  if (visitorPrompt.getSelectedButton() === ui.Button.OK && visitorPrompt.getResponseText() !== '') {
-    scriptProperties.setProperty('visitorTeamName', visitorPrompt.getResponseText());
+  // Vérifier si le nom de l'équipe visiteur est absent
+  if (!visitorTeamName) {
+    ui.alert('Avertissement', 'Le nom de l\'équipe visiteur est absent.', ui.ButtonSet.OK);
+    const visitorPrompt = ui.prompt(
+      'Nom de l\'équipe Visiteur',
+      'Entrez le nom de l\'équipe Visiteur',
+      ui.ButtonSet.OK_CANCEL
+    );
+    if (visitorPrompt.getSelectedButton() === ui.Button.OK && visitorPrompt.getResponseText() !== '') {
+      scriptProperties.setProperty('visitorTeamName', visitorPrompt.getResponseText());
+      sheet.getRange('A3').setValue(visitorPrompt.getResponseText()); // Mettre à jour la feuille
+    } else {
+      ui.alert('Avertissement', 'Aucun nom saisi pour l\'équipe visiteur.', ui.ButtonSet.OK);
+    }
   } else {
-    scriptProperties.setProperty('visitorTeamName', defaultVisitor);
+    scriptProperties.setProperty('visitorTeamName', visitorTeamName);
   }
+
   Logger.log(`Noms d'équipes chargés : Locale = ${getLocalTeamName()}, Visiteur = ${getVisitorTeamName()}`);
 }
 
