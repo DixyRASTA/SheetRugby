@@ -113,7 +113,7 @@ function debutPremiereMiTemps() {
   );
 
   updateSidebar();
-  SpreadsheetApp.getUi().alert("Coup d'envoi 1ère mi-temps !", "Le match a commencé.", SpreadsheetApp.getUi().ButtonSet.OK);
+  ui.alert("Coup d'envoi 1ère mi-temps !", "Le match a commencé.", ui.ButtonSet.OK);
 }
 
 /**
@@ -125,26 +125,21 @@ function promptForKickOffTeam() {
   const localTeamName = getLocalTeamName();
   const visitorTeamName = getVisitorTeamName();
 
-  const response = ui.prompt(
+  const response = ui.alert(
     'Coup d\'envoi',
-    `Quelle équipe donne le coup d'envoi ?\n\n1. ${localTeamName}\n2. ${visitorTeamName}`,
-    ui.ButtonSet.OK_CANCEL
+    `L'équipe locale (${localTeamName}) donne-t-elle le coup d'envoi ?`,
+    ui.ButtonSet.YES_NO
   );
 
-  if (response.getSelectedButton() === ui.Button.OK) {
-    const userInput = response.getResponseText().trim();
-    if (userInput === '1' || userInput.toLowerCase() === localTeamName.toLowerCase()) {
-      return localTeamName;
-    } else if (userInput === '2' || userInput.toLowerCase() === visitorTeamName.toLowerCase()) {
-      return visitorTeamName;
-    } else {
-      ui.alert("Entrée invalide", "Veuillez entrer 1 ou 2, ou le nom de l'équipe.");
-      return promptForKickOffTeam(); // Redemander en cas d'entrée invalide
-    }
+  if (response === ui.Button.YES) {
+    return localTeamName;
+  } else if (response === ui.Button.NO) {
+    return visitorTeamName;
   } else {
-    return null; // L'utilisateur a annulé
+    return null; // L'utilisateur a fermé la boîte de dialogue sans choisir
   }
 }
+
 
 
 /**
