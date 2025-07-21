@@ -368,6 +368,39 @@ function addScoreVisiteurTransfo(isSuccessful) {
   handleKickEventEnd();
 }
 
+/**
+ * Gère une transformation réussie de l'équipe locale.
+ * C'est la fonction appelée par le menu.
+ */
+function addScoreLocaleTransfoReussie() {
+  addScoreLocaleTransfo(true); // Appelle la fonction principale avec isSuccessful = true
+}
+
+/**
+ * Gère une transformation manquée de l'équipe locale.
+ * C'est la fonction appelée par le menu.
+ */
+function addScoreLocaleTransfoManquee() {
+  addScoreLocaleTransfo(false); // Appelle la fonction principale avec isSuccessful = false
+}
+
+/**
+ * Gère une transformation réussie de l'équipe visiteur.
+ * C'est la fonction appelée par le menu.
+ */
+function addScoreVisiteurTransfoReussie() {
+  addScoreVisiteurTransfo(true); // Appelle la fonction principale avec isSuccessful = true
+}
+
+/**
+ * Gère une transformation manquée de l'équipe visiteur.
+ * C'est la fonction appelée par le menu.
+ */
+function addScoreVisiteurTransfoManquee() {
+  addScoreVisiteurTransfo(false); // Appelle la fonction principale avec isSuccessful = false
+}
+
+
 // --- FONCTIONS POUR GÉRER LES PÉNALITÉS ---
 /**
  * Gère une pénalité réussie de l'équipe locale.

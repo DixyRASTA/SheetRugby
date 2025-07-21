@@ -3,7 +3,6 @@
  * Gère l'interface utilisateur (sidebar, menus) et orchestre les appels aux autres managers.
  */
 
-
 /**
  * Fonction appelée automatiquement à l'ouverture de la feuille Google Sheet.
  * Ajoute les menus personnalisés pour un accès facile aux scripts.
@@ -11,23 +10,45 @@
 function onOpen() {
   const ui = SpreadsheetApp.getUi();
   ui.createMenu('Match Rugby')
-      .addItem('Ouvrir Tableau de Bord', 'ouvrirTableauDeBord')
+      .addItem('Ouvrir Tableau de Bord', 'ouvrirTableauDeBord') // Assurez-vous que cette fonction est dans Main.gs
       .addSeparator()
       .addSubMenu(ui.createMenu('Phases de Match')
-          .addItem('Initialiser Nouveau Match', 'Interruptions.initialiserFeuilleEtProprietes') // <-- CORRIGÉ
-          .addItem('Coup d\'envoi 1ère MT', 'Interruptions.debutPremiereMiTemps') // <-- CORRIGÉ
-          .addItem('Fin 1ère MT', 'Interruptions.finPremiereMiTemps') // <-- CORRIGÉ
-          .addItem('Coup d\'envoi 2ème MT', 'Interruptions.debutDeuxiemeMiTemps') // <-- CORRIGÉ
-          .addItem('Arrêter Jeu (Pause)', 'Interruptions.arretJeu') // <-- CORRIGÉ
-          .addItem('Reprendre Jeu', 'Interruptions.repriseJeu') // <-- CORRIGÉ
-          .addItem('Fin de Match', 'Interruptions.finDeMatch')) // <-- CORRIGÉ
+          .addItem('Initialiser Nouveau Match', 'Interruptions.initialiserFeuilleEtProprietes')
+          .addItem('Coup d\'envoi 1ère MT', 'Interruptions.debutPremiereMiTemps')
+          .addItem('Fin 1ère MT', 'Interruptions.finPremiereMiTemps')
+          .addItem('Coup d\'envoi 2ème MT', 'Interruptions.debutDeuxiemeMiTemps')
+          .addItem('Arrêter Jeu (Pause)', 'Interruptions.arretJeu')
+          .addItem('Reprendre Jeu', 'Interruptions.repriseJeu')
+          .addItem('Fin de Match', 'Interruptions.finDeMatch'))
       .addSeparator()
-      // Un seul item pour toutes les actions de score/sanction via showCustomMenu
-      .addItem('Ajouter Action (Score/Carton/Drop...)', 'showCustomMenu')
+      .addSubMenu(ui.createMenu('Scores') // Nouveau sous-menu pour les scores
+          .addItem('Essai Locale (5 pts)', 'ScoreManager.addScoreLocaleEssai')
+          .addItem('Transformation Locale Réussie (2 pts)', 'ScoreManager.addScoreLocaleTransfoReussie') // Nouvelle fonction pour clarté
+          .addItem('Transformation Locale Manquée', 'ScoreManager.addScoreLocaleTransfoManquee') // Nouvelle fonction pour clarté
+          .addItem('Pénalité Locale Réussie (3 pts)', 'ScoreManager.addScoreLocalePenaliteReussie')
+          .addItem('Pénalité Locale Manquée', 'ScoreManager.addScoreLocalePenaliteManquee')
+          .addItem('Drop Locale (3 pts)', 'ScoreManager.addScoreLocaleDrop')
+          .addSeparator()
+          .addItem('Essai Visiteur (5 pts)', 'ScoreManager.addScoreVisiteurEssai')
+          .addItem('Transformation Visiteur Réussie (2 pts)', 'ScoreManager.addScoreVisiteurTransfoReussie') // Nouvelle fonction
+          .addItem('Transformation Visiteur Manquée', 'ScoreManager.addScoreVisiteurTransfoManquee') // Nouvelle fonction
+          .addItem('Pénalité Visiteur Réussie (3 pts)', 'ScoreManager.addScoreVisiteurPenaliteReussie')
+          .addItem('Pénalité Visiteur Manquée', 'ScoreManager.addScoreVisiteurPenaliteManquee')
+          .addItem('Drop Visiteur (3 pts)', 'ScoreManager.addScoreVisiteurDrop'))
       .addSeparator()
-      .addItem('Annuler dernier événement (attention!)', 'Evenements.deleteLastEvent') // Déjà correct
+      .addSubMenu(ui.createMenu('Sanctions') // Sous-menu pour les sanctions
+          .addItem('Carton Jaune...', 'Sanctions.recordCartonJaunePrompt')
+          .addItem('Carton Rouge...', 'Sanctions.recordCartonRougePrompt'))
+      .addSeparator()
+      .addItem('Annuler dernier événement (attention!)', 'Evenements.deleteLastEvent')
       .addToUi();
 }
+
+// Assurez-vous que la fonction ouvrirTableauDeBord est définie dans Main.gs
+// et qu'elle ouvre bien la sidebar.
+// La fonction showCustomMenu() n'est plus appelée par le menu,
+// mais elle peut rester dans Main.gs si tu as d'autres usages pour elle,
+// ou être supprimée si elle n'est plus utile.
 
 // Assurez-vous que la fonction showCustomMenu() est bien définie dans Main.gs
 // et qu'elle contient tous les 'case' pour les scores et les cartons,
@@ -64,6 +85,18 @@ function promptForKickOffTeam() {
     return null; // Annulé
   }
 }
+
+/**
+ * Ouvre le tableau de bord (sidebar) du match.
+ */
+function ouvrirTableauDeBord() {
+  const html = HtmlService.createTemplateFromFile('Sidebar').evaluate()
+      .setTitle('Tableau de Bord Match Rugby')
+      .setWidth(300); // Ajuste la largeur si nécessaire
+  SpreadsheetApp.getUi().showSidebar(html);
+}
+
+// ... (le reste de Main.gs, comme updateSidebar() et getSidebarContent()) ...
 
 // Dans Main.gs
 
