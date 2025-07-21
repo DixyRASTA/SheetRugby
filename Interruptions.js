@@ -72,7 +72,7 @@ function debutPremiereMiTemps() {
   const ui = SpreadsheetApp.getUi();
   const scriptProperties = PropertiesService.getScriptProperties();
   const currentPhase = scriptProperties.getProperty('currentMatchPhase');
-  
+
   // Vérification de sécurité (sera enrichie avec SecurityManager plus tard)
   if (currentPhase !== 'non_demarre' && currentPhase !== 'fin_de_match' && currentPhase !== 'mi_temps') {
     scriptProperties.setProperty('alertMessage', 'Le match est déjà en cours ou dans une phase incorrecte.');
@@ -80,33 +80,70 @@ function debutPremiereMiTemps() {
     return;
   }
 
-   // Demander et stocker l'équipe qui donne le coup d'envoi de la 1ère MT
+  // Demander et stocker l'équipe qui donne le coup d'envoi de la 1ère MT
   const kickoffTeam1stHalf = promptForKickOffTeam();
   if (!kickoffTeam1stHalf) {
-      ui.alert("Annulation", "Le coup d'envoi de la 1ère mi-temps a été annulé.");
-      updateSidebar();
-      return;
+    ui.alert("Annulation", "Le coup d'envoi de la 1ère mi-temps a été annulé.");
+    updateSidebar();
+    return;
   }
+
   scriptProperties.setProperty('kickoffTeam1stHalf', kickoffTeam1stHalf);
+
   // Calculer et stocker l'équipe qui aura le coup d'envoi de la 2nde MT (l'inverse)
-  const kickoffTeam2ndHalf = (kickoffTeam1stHalf === 'Locale') ? 'Visiteur' : 'Locale';
+  const kickoffTeam2ndHalf = (kickoffTeam1stHalf === getLocalTeamName()) ? getVisitorTeamName() : getLocalTeamName();
   scriptProperties.setProperty('kickoffTeam2ndHalf', kickoffTeam2ndHalf);
 
   scriptProperties.setProperty('currentMatchPhase', 'premiere_mi_temps');
   startMatchTimer(); // Démarre le chronomètre
-  scriptProperties.setProperty('alertMessage', '');
 
+  scriptProperties.setProperty('alertMessage', '');
   const matchTimeState = getMatchTimeState();
-  const kickoffTeamName = (kickoffTeam1stHalf === 'Locale') ? getLocalTeamName() : getVisitorTeamName(); // Récupère le nom réel
 
   // Enregistrement de l'événement "Coup d'envoi 1ère MT"
-  recordEvent(new Date(), matchTimeState.tempsDeJeuFormatted, kickoffTeam1stHalf, 'Coup d\'envoi 1ère MT', '', 
-              parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10), 
-              parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10), 
-              `Coup d'envoi par ${kickoffTeamName}`); // Utilise le nom réel dans la remarque
-  
+  recordEvent(
+    new Date(),
+    matchTimeState.tempsDeJeuFormatted,
+    kickoffTeam1stHalf,
+    'Coup d\'envoi 1ère MT',
+    '',
+    parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10),
+    parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10),
+    `Coup d'envoi par ${kickoffTeam1stHalf}`
+  );
+
   updateSidebar();
   SpreadsheetApp.getUi().alert("Coup d'envoi 1ère mi-temps !", "Le match a commencé.", SpreadsheetApp.getUi().ButtonSet.OK);
+}
+
+/**
+ * Demande à l'utilisateur de sélectionner l'équipe qui donne le coup d'envoi.
+ * @return {string|null} Le nom de l'équipe sélectionnée ou null si annulé.
+ */
+function promptForKickOffTeam() {
+  const ui = SpreadsheetApp.getUi();
+  const localTeamName = getLocalTeamName();
+  const visitorTeamName = getVisitorTeamName();
+
+  const response = ui.prompt(
+    'Coup d\'envoi',
+    `Quelle équipe donne le coup d'envoi ?\n\n1. ${localTeamName}\n2. ${visitorTeamName}`,
+    ui.ButtonSet.OK_CANCEL
+  );
+
+  if (response.getSelectedButton() === ui.Button.OK) {
+    const userInput = response.getResponseText().trim();
+    if (userInput === '1' || userInput.toLowerCase() === localTeamName.toLowerCase()) {
+      return localTeamName;
+    } else if (userInput === '2' || userInput.toLowerCase() === visitorTeamName.toLowerCase()) {
+      return visitorTeamName;
+    } else {
+      ui.alert("Entrée invalide", "Veuillez entrer 1 ou 2, ou le nom de l'équipe.");
+      return promptForKickOffTeam(); // Redemander en cas d'entrée invalide
+    }
+  } else {
+    return null; // L'utilisateur a annulé
+  }
 }
 
 
