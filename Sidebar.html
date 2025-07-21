@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 15px;
+      background-color: #f4f4f4;
+      color: #333;
+    }
+    .container {
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    h2 {
+      color: #0056b3;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .data-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      font-size: 1.1em;
+    }
+    .label {
+      font-weight: bold;
+      color: #555;
+    }
+    .value {
+      color: #000;
+    }
+    .score-display {
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      margin: 20px 0;
+      padding: 15px;
+      background-color: #e9ecef;
+      border-radius: 5px;
+    }
+    .score-team {
+      text-align: center;
+    }
+    .score-value {
+      font-size: 2.5em;
+      font-weight: bold;
+      color: #d9534f; /* Couleur pour le score */
+    }
+    .team-name {
+      font-size: 0.9em;
+      color: #666;
+    }
+    .timer-status {
+      text-align: center;
+      margin-top: 15px;
+      font-size: 1.2em;
+      font-weight: bold;
+      color: #28a745; /* Couleur pour le statut du timer (vert) */
+    }
+    .alert-message {
+      margin-top: 15px;
+      padding: 10px;
+      background-color: #ffeeba;
+      border: 1px solid #ffc107;
+      border-radius: 4px;
+      color: #856404;
+      text-align: center;
+      font-size: 0.9em;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Tableau de Bord Match</h2>
+
+    <div class="score-display">
+      <div class="score-team">
+        <div class="team-name">Locale</div>
+        <div id="scoreLocale" class="score-value">0</div>
+      </div>
+      <div class="score-team">
+        <div class="team-name">Visiteur</div>
+        <div id="scoreVisiteur" class="score-value">0</div>
+      </div>
+    </div>
+
+    <div class="data-row">
+      <span class="label">Temps de Jeu :</span>
+      <span id="tempsDeJeu" class="value">00:00:00</span>
+    </div>
+    <div class="data-row">
+      <span class="label">Statut Chrono :</span>
+      <span id="timerStatus" class="value timer-status">ARRÊTÉ</span>
+    </div>
+    <div class="data-row">
+      <span class="label">Phase de Match :</span>
+      <span id="matchPhase" class="value">Non démarré</span>
+    </div>
+    <div id="alertMessage" class="alert-message"></div>
+  </div>
+
+  <script>
+    // Fonction pour mettre à jour l'interface utilisateur de la sidebar avec les données reçues
+    function updateClientSidebar(data) {
+      document.getElementById('scoreLocale').innerText = data.scoreLocal;
+      document.getElementById('scoreVisiteur').innerText = data.scoreVisiteur;
+      document.getElementById('tempsDeJeu').innerText = data.tempsDeJeu;
+      document.getElementById('timerStatus').innerText = data.timerStatus;
+      document.getElementById('matchPhase').innerText = data.matchPhase;
+      document.getElementById('alertMessage').innerText = data.alert;
+    }
+
+    // Fonction pour récupérer les données depuis le script Apps Script (côté serveur)
+    function fetchDataAndUpdate() {
+      // Appel asynchrone à la fonction getSidebarContent() dans Main.gs
+      google.script.run.withSuccessHandler(updateClientSidebar).getSidebarContent();
+    }
+
+    // Appelle fetchDataAndUpdate toutes les secondes (1000 ms) pour rafraîchir l'affichage
+    setInterval(fetchDataAndUpdate, 1000);
+
+    // Appelle fetchDataAndUpdate une première fois au chargement initial de la sidebar
+    document.addEventListener('DOMContentLoaded', fetchDataAndUpdate);
+  </script>
+</body>
+</html>
