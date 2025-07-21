@@ -42,6 +42,17 @@ function addScoreLocaleEssai() {
   currentScore += ESSAI_POINTS;
   scriptProperties.setProperty('currentScoreLocal', currentScore.toString());
 
+  // --- NOUVEAU : AJOUTER CES LIGNES POUR FORCER LA SYNCHRONISATION ET LE DÉLAI ---
+scriptProperties.flush(); // Force l'écriture immédiate des propriétés
+Utilities.sleep(200);     // Pause de 200ms pour laisser le temps à la persistance (À RETIRER APRÈS DEBUG)
+
+Logger.log("addScoreLocaleEssai - Propriétés APRES SET ET FLUSH:"); // Modifié le message du log
+Logger.log(" currentMatchPhase: " + scriptProperties.getProperty('currentMatchPhase'));
+Logger.log(" isTimerRunning: " + scriptProperties.getProperty('isTimerRunning'));
+Logger.log(" gameTimeAtEventMs: " + scriptProperties.getProperty('gameTimeAtEventMs'));
+Logger.log(" startTime: " + scriptProperties.getProperty('startTime'));
+// --- FIN DES LOGS À AJOUTER ---
+
   // ENFIN, ENREGISTRER L'ÉVÉNEMENT AVEC LE TEMPS FIGÉ
   // On utilise 'timeToFreeze' pour s'assurer que c'est le temps capturé.
   recordEvent(new Date(), formatMillisecondsToHMS(timeToFreeze), 'Locale', 'Essai', '', currentScore, parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10), '');
