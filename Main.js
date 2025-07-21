@@ -3,7 +3,6 @@
  * Gère l'interface utilisateur (sidebar, menus) et orchestre les appels aux autres managers.
  */
 
-// Dans Main.gs
 
 /**
  * Fonction appelée automatiquement à l'ouverture de la feuille Google Sheet.
@@ -12,37 +11,37 @@
 function onOpen() {
   const ui = SpreadsheetApp.getUi();
   ui.createMenu('Match Rugby')
-      .addItem('Ouvrir Tableau de Bord', 'ouvrirTableauDeBord') // Dans Main.gs, pas de préfixe
+      .addItem('Ouvrir Tableau de Bord', 'ouvrirTableauDeBord')
       .addSeparator()
       .addSubMenu(ui.createMenu('Phases de Match')
-          .addItem('Initialiser Nouveau Match', 'initialiserFeuilleEtProprietes') // <-- APPEL SANS PRÉFIXE
-          .addItem('Coup d\'envoi 1ère MT', 'debutPremiereMiTemps') // <-- APPEL SANS PRÉFIXE
-          .addItem('Fin 1ère MT', 'finPremiereMiTemps') // <-- APPEL SANS PRÉFIXE
-          .addItem('Coup d\'envoi 2ème MT', 'debutDeuxiemeMiTemps') // <-- APPEL SANS PRÉFIXE
-          .addItem('Arrêter Jeu (Pause)', 'arretJeu') // <-- APPEL SANS PRÉFIXE
-          .addItem('Reprendre Jeu', 'reprendreJeu') // <-- APPEL SANS PRÉFIXE
-          .addItem('Fin de Match', 'finDeMatch')) // <-- APPEL SANS PRÉFIXE
+          .addItem('Initialiser Nouveau Match', 'initialiserFeuilleEtProprietes')
+          .addItem('Coup d\'envoi 1ère MT', 'debutPremiereMiTemps')
+          .addItem('Fin 1ère MT', 'finPremiereMiTemps')
+          .addItem('Coup d\'envoi 2ème MT', 'debutDeuxiemeMiTemps')
+          .addItem('Arrêter Jeu (Pause)', 'arretJeu')
+          .addItem('Reprendre Jeu', 'reprendreJeu')
+          .addItem('Fin de Match', 'finDeMatch'))
       .addSeparator()
       .addSubMenu(ui.createMenu('Scores')
-          .addItem('Essai Locale (5 pts)', 'addScoreLocaleEssai') // <-- APPEL SANS PRÉFIXE
-          .addItem('Transformation Locale Réussie (2 pts)', 'addScoreLocaleTransfoReussie') // <-- APPEL SANS PRÉFIXE
-          .addItem('Transformation Locale Manquée', 'addScoreLocaleTransfoManquee') // <-- APPEL SANS PRÉFIXE
-          .addItem('Pénalité Locale Réussie (3 pts)', 'addScoreLocalePenaliteReussie') // <-- APPEL SANS PRÉFIXE
-          .addItem('Pénalité Locale Manquée', 'addScoreLocalePenaliteManquee') // <-- APPEL SANS PRÉFIXE
-          .addItem('Drop Locale (3 pts)', 'addScoreLocaleDrop') // <-- APPEL SANS PRÉFIXE
+          .addItem('Essai Locale (5 pts)', 'addScoreLocaleEssai')
+          .addItem('Transformation Locale Réussie (2 pts)', 'addScoreLocaleTransfoReussie')
+          .addItem('Transformation Locale Manquée', 'addScoreLocaleTransfoManquee')
+          .addItem('Pénalité Locale Réussie (3 pts)', 'addScoreLocalePenaliteReussie')
+          .addItem('Pénalité Locale Manquée', 'addScoreLocalePenaliteManquee')
+          .addItem('Drop Locale (3 pts)', 'addScoreLocaleDrop')
           .addSeparator()
-          .addItem('Essai Visiteur (5 pts)', 'addScoreVisiteurEssai') // <-- APPEL SANS PRÉFIXE
-          .addItem('Transformation Visiteur Réussie (2 pts)', 'addScoreVisiteurTransfoReussie') // <-- APPEL SANS PRÉFIXE
-          .addItem('Transformation Visiteur Manquée', 'addScoreVisiteurTransfoManquee') // <-- APPEL SANS PRÉFIXE
-          .addItem('Pénalité Visiteur Réussie (3 pts)', 'addScoreVisiteurPenaliteReussie') // <-- APPEL SANS PRÉFIXE
-          .addItem('Pénalité Visiteur Manquée', 'addScoreVisiteurPenaliteManquee') // <-- APPEL SANS PRÉFIXE
-          .addItem('Drop Visiteur (3 pts)', 'addScoreVisiteurDrop')) // <-- APPEL SANS PRÉFIXE
+          .addItem('Essai Visiteur (5 pts)', 'addScoreVisiteurEssai')
+          .addItem('Transformation Visiteur Réussie (2 pts)', 'addScoreVisiteurTransfoReussie')
+          .addItem('Transformation Visiteur Manquée', 'addScoreVisiteurTransfoManquee')
+          .addItem('Pénalité Visiteur Réussie (3 pts)', 'addScoreVisiteurPenaliteReussie')
+          .addItem('Pénalité Visiteur Manquée', 'addScoreVisiteurPenaliteManquee')
+          .addItem('Drop Visiteur (3 pts)', 'addScoreVisiteurDrop'))
       .addSeparator()
       .addSubMenu(ui.createMenu('Sanctions')
-          .addItem('Carton Jaune...', 'recordCartonJaunePrompt') // <-- APPEL SANS PRÉFIXE
-          .addItem('Carton Rouge...', 'recordCartonRougePrompt')) // <-- APPEL SANS PRÉFIXE
+          .addItem('Carton Jaune...', 'recordCartonJaunePrompt')
+          .addItem('Carton Rouge...', 'recordCartonRougePrompt'))
       .addSeparator()
-      .addItem('Annuler dernier événement (attention!)', 'deleteLastEvent') // <-- APPEL SANS PRÉFIXE
+      .addItem('Annuler dernier événement (attention!)', 'deleteLastEvent')
       .addToUi();
 }
 
@@ -80,7 +79,7 @@ function ouvrirTableauDeBord() {
  * elle appelle TimeManager pour obtenir l'état du chronomètre et les autres managers pour obtenir les données.
  */
 function updateSidebar() {
-  const timeState = TimeManager.getMatchTimeState(); // TimeManager est un objet global, donc préfixe ok ici
+  const timeState = getMatchTimeState(); // <-- CORRIGÉ : Suppression de TimeManager.
   const scriptProperties = PropertiesService.getScriptProperties();
 
   const currentScoreLocal = scriptProperties.getProperty('currentScoreLocal') || '0';
@@ -120,7 +119,7 @@ function updateSidebar() {
  * C'est le lien entre le JS de la sidebar et les fonctions Apps Script côté serveur.
  */
 function getSidebarContent() {
-  const timeState = TimeManager.getMatchTimeState(); // TimeManager est un objet global, donc préfixe ok ici
+  const timeState = getMatchTimeState(); // <-- CORRIGÉ : Suppression de TimeManager.
   const scriptProperties = PropertiesService.getScriptProperties();
 
   const currentScoreLocal = scriptProperties.getProperty('currentScoreLocal') || '0';
@@ -150,4 +149,3 @@ function getSidebarContent() {
     alert: alertMessage
   };
 }
-
