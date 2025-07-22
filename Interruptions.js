@@ -132,6 +132,14 @@ function finPremiereMiTemps() {
 
   updateSidebar();
   SpreadsheetApp.getUi().alert("Mi-temps", "La 1ère mi-temps est terminée.", SpreadsheetApp.getUi().ButtonSet.OK);
+
+   // Enregistrer "Mi-Temps" dans la feuille Google Sheets
+  const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = spreadsheet.getSheetByName('Saisie'); // Remplacez 'Saisie' par le nom de votre feuille
+  sheet.appendRow(['Mi-Temps']); // Ajoute une ligne avec "Mi-Temps" dans la première colonne
+
+  updateSidebar();
+  SpreadsheetApp.getUi().alert("Mi-temps", "La 1ère mi-temps est terminée.", SpreadsheetApp.getUi().ButtonSet.OK);
 }
 
 /**
