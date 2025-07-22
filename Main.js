@@ -27,7 +27,7 @@ function onOpen() {
       .addSubMenu(ui.createMenu('Sanctions')
           .addItem('Carton Jaune', 'recordCartonJaunePrompt')
           .addItem('Carton Rouge', 'recordCartonRougePrompt')
-          .addItem('Carton Bleu', 'recordCartonRougePrompt')
+          .addItem('Carton Bleu', 'recordCartonBleuPrompt')
           .addItem('Evènement','recordSanctionEvent'))
       .addSeparator()
       .addItem('Annuler dernier événement (attention!)', 'deleteLastEvent')
