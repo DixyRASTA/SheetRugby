@@ -103,38 +103,6 @@ function debutPremiereMiTemps() {
 }
 
 /**
- * Demande à l'utilisateur de sélectionner l'équipe qui donne le coup d'envoi.
- * @return {string|null} Le nom de l'équipe sélectionnée ou null si annulé.
- */
-function promptForKickOffTeam() {
-  const ui = SpreadsheetApp.getUi();
-  const localTeamName = getLocalTeamName();
-  const visitorTeamName = getVisitorTeamName();
-
-  const response = ui.prompt(
-    'Coup d\'envoi',
-    `Quelle équipe donne le coup d'envoi ?\n\n1. ${localTeamName}\n2. ${visitorTeamName}`,
-    ui.ButtonSet.OK_CANCEL
-  );
-
-  if (response.getSelectedButton() === ui.Button.OK) {
-    const userInput = response.getResponseText().trim();
-    if (userInput === '1' || userInput.toLowerCase() === localTeamName.toLowerCase()) {
-      return localTeamName;
-    } else if (userInput === '2' || userInput.toLowerCase() === visitorTeamName.toLowerCase()) {
-      return visitorTeamName;
-    } else {
-      ui.alert("Entrée invalide", "Veuillez entrer 1 ou 2, ou le nom de l'équipe.");
-      return promptForKickOffTeam(); // Redemander en cas d'entrée invalide
-    }
-  } else {
-    return null; // L'utilisateur a annulé
-  }
-}
-
-
-
-/**
  * Arrête le jeu pour la fin de la première mi-temps.
  * Met le chronomètre en pause et enregistre l'événement.
  */
