@@ -130,9 +130,6 @@ function finPremiereMiTemps() {
   const currentScoreVisiteur = parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10);
   recordEvent(new Date(), matchTimeState.tempsDeJeuFormatted, '', 'Fin 1ère MT', '', currentScoreLocal, currentScoreVisiteur, 'Mi-temps');
 
-  updateSidebar();
-  SpreadsheetApp.getUi().alert("Mi-temps", "La 1ère mi-temps est terminée.", SpreadsheetApp.getUi().ButtonSet.OK);
-
    // Enregistrer "Mi-Temps" dans la feuille Google Sheets
   const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
   const sheet = spreadsheet.getSheetByName('Saisie'); // Remplacez 'Saisie' par le nom de votre feuille
@@ -218,23 +215,44 @@ function finDeMatch() {
   SpreadsheetApp.getUi().alert("Fin du Match !", "Le match est terminé.", SpreadsheetApp.getUi().ButtonSet.OK);
 }
 
-
-// Dans Interruptions.gs
-
 /**
  * Arrête le jeu (mise en pause du chronomètre).
  */
 function arretJeu() {
   const scriptProperties = PropertiesService.getScriptProperties();
   const ui = SpreadsheetApp.getUi(); // Assurez-vous d'avoir l'objet UI
-
   const currentPhaseBeforeArret = scriptProperties.getProperty('currentMatchPhase');
+  
   Logger.log("arretJeu - Début. Phase actuelle: " + currentPhaseBeforeArret);
 
   if (currentPhaseBeforeArret === 'premiere_mi_temps' || currentPhaseBeforeArret === 'deuxieme_mi_temps') {
     scriptProperties.setProperty('previousMatchPhase', currentPhaseBeforeArret); // Stocke la phase avant la pause
     scriptProperties.setProperty('currentMatchPhase', 'pause'); // Définit la nouvelle phase comme "pause"
     pauseMatchTimer(); // Met le chronomètre en pause
+
+    // Enregistrer l'arrêt du jeu dans la feuille
+    const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = spreadsheet.getSheetByName('Saisie'); // Remplacez 'Saisie' par le nom de votre feuille
+    const matchTimeState = getMatchTimeState();
+    const currentScoreLocal = parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10);
+    const currentScoreVisiteur = parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10);
+
+    // Formater la date pour afficher uniquement l'heure
+    const now = new Date();
+    const formattedTime = Utilities.formatDate(now, Session.getScriptTimeZone(), "HH:mm:ss");
+
+    sheet.appendRow([
+      formattedTime, // Heure formatée
+      matchTimeState.tempsDeJeuFormatted,
+      '',
+      'Arrêt',
+      '',
+      currentScoreLocal,
+      currentScoreVisiteur,
+      'Match arrêté'
+    ]);
+
+
 
     scriptProperties.setProperty('alertMessage', 'Jeu arrêté.');
     Logger.log("arretJeu - Jeu mis en pause. currentMatchPhase: " + scriptProperties.getProperty('currentMatchPhase') + ", previousMatchPhase: " + scriptProperties.getProperty('previousMatchPhase'));
@@ -251,21 +269,44 @@ function arretJeu() {
  * Reprend le jeu après une pause.
  * Relance le chronomètre et restaure la phase de match précédente.
  */
-function repriseJeu() {
+function reprendreJeu() {
   const scriptProperties = PropertiesService.getScriptProperties();
   const ui = SpreadsheetApp.getUi();
-
   const currentPhaseAtStartOfReprise = scriptProperties.getProperty('currentMatchPhase');
   const previousPhase = scriptProperties.getProperty('previousMatchPhase');
 
-  Logger.log("repriseJeu - Début. currentPhase (au moment du clic): " + currentPhaseAtStartOfReprise + ", previousPhase: " + previousPhase);
+  Logger.log("reprendreJeu - Début. currentPhase (au moment du clic): " + currentPhaseAtStartOfReprise + ", previousPhase: " + previousPhase);
 
   if (currentPhaseAtStartOfReprise === 'pause') {
     // Restaure la phase précédente (avant la pause), par défaut à 'premiere_mi_temps' si indéfini.
     const phaseToResumeTo = previousPhase || 'premiere_mi_temps';
     scriptProperties.setProperty('currentMatchPhase', phaseToResumeTo); 
-    
     resumeMatchTimer(); // Appelle la fonction de TimeManager pour relancer le chrono
+
+   // Enregistrer la reprise du jeu dans la feuille
+    const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = spreadsheet.getSheetByName('Saisie'); // Remplacez 'Saisie' par le nom de votre feuille
+    const matchTimeState = getMatchTimeState();
+    const currentScoreLocal = parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10);
+    const currentScoreVisiteur = parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10);
+
+    // Formater la date pour afficher uniquement l'heure
+    const now = new Date();
+    const formattedTime = Utilities.formatDate(now, Session.getScriptTimeZone(), "HH:mm:ss");
+
+    sheet.appendRow([
+      formattedTime, // Heure formatée
+      matchTimeState.tempsDeJeuFormatted,
+      '',
+      'Reprise',
+      '',
+      currentScoreLocal,
+      currentScoreVisiteur,
+      'Match repris'
+    ]);
+
+
+
     scriptProperties.setProperty('alertMessage', ''); 
     Logger.log("repriseJeu - Jeu repris. currentMatchPhase: " + scriptProperties.getProperty('currentMatchPhase') + 
                ", isTimerRunning: " + scriptProperties.getProperty('isTimerRunning') + 

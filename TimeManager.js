@@ -1,5 +1,3 @@
-// Dans TimeManager.gs
-
 /**
  * Démarre ou reprend le chronomètre du match.
  */
