@@ -116,13 +116,16 @@ function recordSanctionEvent() {
   // Demander à l'utilisateur de saisir le nom du joueur
   const player = promptForPlayer();
 
+  // Demander à l'utilisateur de saisir une remarque
+  const remark = promptForRemark();
+
   // Récupérer les scores actuels et le temps de jeu
   const currentLocalScore = parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10);
   const currentVisitorScore = parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10);
   const matchTimeState = getMatchTimeState();
 
   // Enregistrer l'événement
-  recordEvent(new Date(), matchTimeState.tempsDeJeuFormatted, team, sanctionType, player, currentLocalScore, currentVisitorScore, '');
+  recordEvent(new Date(), matchTimeState.tempsDeJeuFormatted, team, sanctionType, player, currentLocalScore, currentVisitorScore, remark);
 
   // Afficher une confirmation
   let message = `${team}`;
@@ -131,9 +134,31 @@ function recordSanctionEvent() {
   }
   message += ` reçoit un ${sanctionType}.`;
 
+  if (remark) {
+    message += ` Remarque: ${remark}`;
+  }
+
   Logger.log(message);
-  ui.alert("Sanction enregistrée", message, ui.ButtonSet.OK);
+  ui.alert("Événement enregistré", message, ui.ButtonSet.OK);
 
   // Mettre à jour la sidebar
   updateSidebar();
+}
+
+/**
+ * Demande une remarque optionnelle.
+ * @returns {string} La remarque ou une chaîne vide si non renseignée/annulée.
+ */
+function promptForRemark() {
+  const ui = SpreadsheetApp.getUi();
+  const remarkResult = ui.prompt(
+    'Remarque (Optionnelle)',
+    'Ajouter une remarque (laisser vide si aucune) :',
+    ui.ButtonSet.OK_CANCEL
+  );
+
+  if (remarkResult.getSelectedButton() === ui.Button.OK) {
+    return remarkResult.getResponseText().trim();
+  }
+  return ''; // Annulé ou vide
 }
