@@ -11,8 +11,8 @@
 function onOpen() {
   const ui = SpreadsheetApp.getUi();
   ui.createMenu('Match Rugby')
-      .addItem('Ouvrir Tableau de Bord', 'ouvrirTableauDeBord')
-      .addSeparator()
+      //.addItem('Ouvrir Tableau de Bord', 'ouvrirTableauDeBord')
+      //.addSeparator()
       .addSubMenu(ui.createMenu('Phases de Match')
           .addItem('Initialiser Nouveau Match', 'initialiserFeuilleEtProprietes')
           .addItem('Coup d\'envoi 1ère MT', 'debutPremiereMiTemps')
@@ -42,6 +42,9 @@ function onOpen() {
           .addItem('Carton Rouge...', 'recordCartonRougePrompt'))
       .addSeparator()
       .addItem('Annuler dernier événement (attention!)', 'deleteLastEvent')
+      .addToUi();
+  ui.createMenu('Initialisation')    
+      .addItem('Initialiser Nouveau Match', 'initialiserFeuilleEtProprietes')
       .addToUi();
 }
 

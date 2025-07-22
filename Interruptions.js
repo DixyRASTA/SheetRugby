@@ -28,8 +28,8 @@ function initialiserFeuilleEtProprietes() {
     scriptProperties.setProperty('teamAwaitingKick', '');
     scriptProperties.setProperty('gameTimeAtEventMs', '0'); // Réinitialise le temps figé
 
-    resetMatchTimer(); // Appelle la fonction de TimeManager.gs (sans préfixe)
-    loadTeamNames();    // Appelle la fonction (sans préfixe)
+    resetMatchTimer(); // Appelle la fonction de TimeManager.gs 
+    loadTeamNames();    // Appelle la fonction pour définir le nom des équipes
 
     // Effacer la feuille "Saisie" sauf les deux premières lignes d'en-tête
     try {
@@ -43,21 +43,11 @@ function initialiserFeuilleEtProprietes() {
       ui.alert("Erreur", "Impossible de réinitialiser la feuille 'Saisie'. Vérifiez son nom ou ses permissions.", ui.ButtonSet.OK);
     }
 
-    // --- CORRECTION CLÉ ICI ---
     // Ouvre la sidebar APRES l'initialisation des données
-    ouvrirTableauDeBord(); // <--- CET APPEL MANQUANT DOIT ÊTRE AJOUTÉ ICI !
-
-    // updateSidebar(); // Cet appel n'est plus strictement nécessaire ici car ouvrirTableauDeBord()
-                       // va charger Sidebar.html qui lui-même appellera getSidebarContent().
-                       // Je recommande de le retirer pour éviter la confusion.
-
+    ouvrirTableauDeBord(); 
     ui.alert("Match initialisé", "Un nouveau match a été initialisé. Vous pouvez démarrer la 1ère mi-temps.", ui.ButtonSet.OK);
   }
 }
-
-// Les fonctions debutPremiereMiTemps, finPremiereMiTemps, debutDeuxiemeMiTemps,
-// arretJeu, repriseJeu, finDeMatch restent telles que définies dans nos dernières discussions.
-// Elles devraient fonctionner correctement avec des propriétés bien initialisées.
 
 
 /**
@@ -121,18 +111,24 @@ function promptForKickOffTeam() {
   const localTeamName = getLocalTeamName();
   const visitorTeamName = getVisitorTeamName();
 
-  const response = ui.alert(
+  const response = ui.prompt(
     'Coup d\'envoi',
-    `L'équipe locale (${localTeamName}) donne-t-elle le coup d'envoi ?`,
-    ui.ButtonSet.YES_NO
+    `Quelle équipe donne le coup d'envoi ?\n\n1. ${localTeamName}\n2. ${visitorTeamName}`,
+    ui.ButtonSet.OK_CANCEL
   );
 
-  if (response === ui.Button.YES) {
-    return localTeamName;
-  } else if (response === ui.Button.NO) {
-    return visitorTeamName;
+  if (response.getSelectedButton() === ui.Button.OK) {
+    const userInput = response.getResponseText().trim();
+    if (userInput === '1' || userInput.toLowerCase() === localTeamName.toLowerCase()) {
+      return localTeamName;
+    } else if (userInput === '2' || userInput.toLowerCase() === visitorTeamName.toLowerCase()) {
+      return visitorTeamName;
+    } else {
+      ui.alert("Entrée invalide", "Veuillez entrer 1 ou 2, ou le nom de l'équipe.");
+      return promptForKickOffTeam(); // Redemander en cas d'entrée invalide
+    }
   } else {
-    return null; // L'utilisateur a fermé la boîte de dialogue sans choisir
+    return null; // L'utilisateur a annulé
   }
 }
 
