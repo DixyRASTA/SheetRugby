@@ -111,6 +111,7 @@ function addEssai() {
 function addPenalite() {
   const scriptProperties = PropertiesService.getScriptProperties();
   const ui = SpreadsheetApp.getUi();
+  const currentPhase = scriptProperties.getProperty('currentMatchPhase');
 
   // Bloquer si le match n'est pas démarré ou déjà terminé
   if (currentPhase === 'non_demarre' || currentPhase === 'fin_de_match' || currentPhase === 'mi_temps' || currentPhase === 'pause') { // Ajout mi_temps et pause
