@@ -85,18 +85,55 @@ function promptForPlayer() {
 }
 
 // Fonction générique pour enregistrer un événement hors nomenclature
-function recordSanctionEvent(team, sanctionType, player = '') {
+function recordSanctionEvent() {
+  const ui = SpreadsheetApp.getUi();
   const scriptProperties = PropertiesService.getScriptProperties();
+
+  // Demander à l'utilisateur de saisir le type d'événement
+  const eventTypeResult = ui.prompt(
+    'Type d\'événement',
+    'Veuillez entrer le type d\'événement (laisser vide si inconnu) :',
+    ui.ButtonSet.OK_CANCEL
+  );
+
+  // Si l'utilisateur annule, quitter la fonction
+  if (eventTypeResult.getSelectedButton() !== ui.Button.OK) {
+    ui.alert("Annulé", "L'enregistrement de l'événement a été annulé.", ui.ButtonSet.OK);
+    return;
+  }
+
+  const sanctionType = eventTypeResult.getResponseText().trim();
+
+  // Demander à l'utilisateur de choisir l'équipe
+  const team = promptForTeam();
+
+  // Si l'utilisateur annule le choix de l'équipe, quitter la fonction
+  if (team === null) {
+    ui.alert("Annulé", "L'enregistrement de l'événement a été annulé.", ui.ButtonSet.OK);
+    return;
+  }
+
+  // Demander à l'utilisateur de saisir le nom du joueur
+  const player = promptForPlayer();
+
+  // Récupérer les scores actuels et le temps de jeu
   const currentLocalScore = parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10);
   const currentVisitorScore = parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10);
+  const matchTimeState = getMatchTimeState();
 
-  const matchTimeState = getMatchTimeState(); // Récupère le temps de jeu actuel
-  
-  // Enregistre l'événement de sanction avec les scores actuels
+  // Enregistrer l'événement
   recordEvent(new Date(), matchTimeState.tempsDeJeuFormatted, team, sanctionType, player, currentLocalScore, currentVisitorScore, '');
 
-  Logger.log(`${player} (${team}) reçoit un ${sanctionType}.`);
-  SpreadsheetApp.getUi().alert("Sanction enregistrée", `${player} (${team}) reçoit un ${sanctionType}.`, SpreadsheetApp.getUi().ButtonSet.OK);
+  // Afficher une confirmation
+  let message = `${team}`;
+  if (player) {
+    message += ` (${player})`;
+  }
+  message += ` reçoit un ${sanctionType}.`;
 
-  updateSidebar(); // Met à jour la sidebar après l'événement
+  Logger.log(message);
+  ui.alert("Sanction enregistrée", message, ui.ButtonSet.OK);
+
+  // Mettre à jour la sidebar
+  updateSidebar();
 }
