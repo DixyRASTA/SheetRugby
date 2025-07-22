@@ -44,10 +44,18 @@ function resetMatchTimer() {
 
 /**
  * Reprend le chronomètre du match après une pause.
- * C'est la même logique que startMatchTimer, mais on la sépare pour la clarté.
+ * @param {number} timeToResumeFrom - Le temps à partir duquel reprendre le chronomètre.
  */
-function resumeMatchTimer() {
-  startMatchTimer(); // Réutilise la fonction startMatchTimer pour la reprise
+function resumeMatchTimer(timeToResumeFrom) {
+  const scriptProperties = PropertiesService.getScriptProperties();
+
+  // Si un temps spécifique est fourni, l'utiliser pour reprendre le chronomètre
+  if (timeToResumeFrom) {
+    scriptProperties.setProperty('gameTimeAtLastPause', timeToResumeFrom.toString());
+  }
+
+  // Démarrer le chronomètre
+  startMatchTimer();
 }
 
 /**

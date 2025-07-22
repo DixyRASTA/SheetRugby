@@ -1,6 +1,3 @@
-/**
- * Gère l'ajout d'un essai pour une équipe et la tentative de transformation.
- */
 function addEssai() {
   const scriptProperties = PropertiesService.getScriptProperties();
   const ui = SpreadsheetApp.getUi();
@@ -23,16 +20,22 @@ function addEssai() {
   const timeToFreeze = currentRunningTimeState.tempsDeJeuMs;
 
   // Demander quelle équipe a marqué l'essai
-  const response = ui.prompt('Essai marqué', 'Quelle équipe a marqué l\'essai ? (Locale/Visiteur)', ui.ButtonSet.OK_CANCEL);
+  const localTeamName = getLocalTeamName();
+  const visitorTeamName = getVisitorTeamName();
+  const teamChoice = ui.prompt(`Essai marqué par:\n1. ${localTeamName}\n2. ${visitorTeamName}\nEntrez 1 ou 2:`, ui.ButtonSet.OK_CANCEL);
 
-  if (response.getSelectedButton() !== ui.Button.OK) {
+  if (teamChoice.getSelectedButton() !== ui.Button.OK) {
     ui.alert("Annulé", "L'ajout d'essai a été annulé.", ui.ButtonSet.OK);
     return;
   }
 
-  const scoringTeam = response.getResponseText().trim();
-  if (scoringTeam !== 'Locale' && scoringTeam !== 'Visiteur') {
-    ui.alert("Entrée invalide", "Veuillez entrer 'Locale' ou 'Visiteur'.", ui.ButtonSet.OK);
+  let scoringTeam;
+  if (teamChoice.getResponseText().trim() === '1') {
+    scoringTeam = localTeamName;
+  } else if (teamChoice.getResponseText().trim() === '2') {
+    scoringTeam = visitorTeamName;
+  } else {
+    ui.alert("Entrée invalide", "Veuillez entrer '1' ou '2'.", ui.ButtonSet.OK);
     return;
   }
 
@@ -44,39 +47,77 @@ function addEssai() {
   scriptProperties.setProperty('isTimerRunning', 'false');
 
   // Mettre à jour le score
-  const currentScoreKey = scoringTeam === 'Locale' ? 'currentScoreLocal' : 'currentScoreVisiteur';
+  const currentScoreKey = scoringTeam === localTeamName ? 'currentScoreLocal' : 'currentScoreVisiteur';
   let currentScore = parseInt(scriptProperties.getProperty(currentScoreKey) || '0', 10);
   currentScore += 5; // Ajouter 5 points pour l'essai
   scriptProperties.setProperty(currentScoreKey, currentScore.toString());
 
   // Enregistrer l'événement
-  const currentScoreLocal = parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10);
-  const currentScoreVisiteur = parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10);
-  recordEvent(new Date(), formatMillisecondsToHMS(timeToFreeze), scoringTeam, 'Essai', '', currentScoreLocal, currentScoreVisiteur, 'Essai marqué');
+  const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = spreadsheet.getSheetByName('Saisie');
+
+  // Formater l'heure sans la date
+  const formattedTime = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "HH:mm:ss");
+
+  // Enregistrer l'essai
+  sheet.appendRow([
+    formattedTime,
+    formatMillisecondsToHMS(timeToFreeze),
+    scoringTeam,
+    'Essai',
+    '',
+    parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10),
+    parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10),
+    `Essai marqué par ${scoringTeam}`
+  ]);
 
   // Demander si la transformation est réussie
   const conversionResponse = ui.alert('Transformation', 'La transformation est-elle réussie ?', ui.ButtonSet.YES_NO);
 
-  let transformationResult = '';
+  // Calculer le temps écoulé pendant la tentative
+  const startAttemptTime = new Date().getTime();
+  const conversionEndTime = new Date().getTime();
+  const attemptDuration = conversionEndTime - startAttemptTime;
+
   if (conversionResponse === ui.Button.YES) {
     let conversionScore = parseInt(scriptProperties.getProperty(currentScoreKey) || '0', 10);
     conversionScore += 2; // Ajouter 2 points pour la transformation réussie
     scriptProperties.setProperty(currentScoreKey, conversionScore.toString());
-    transformationResult = 'Transformation réussie';
+
+    // Enregistrer la transformation réussie
+    sheet.appendRow([
+      Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "HH:mm:ss"),
+      formatMillisecondsToHMS(timeToFreeze + attemptDuration),
+      scoringTeam,
+      'Transformation réussie',
+      '',
+      scoringTeam === localTeamName ? conversionScore : parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10),
+      scoringTeam === visitorTeamName ? conversionScore : parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10),
+      `Transformation réussie par ${scoringTeam}`
+    ]);
   } else {
-    transformationResult = 'Transformation manquée';
+    // Enregistrer la transformation ratée
+    sheet.appendRow([
+      Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "HH:mm:ss"),
+      formatMillisecondsToHMS(timeToFreeze + attemptDuration),
+      scoringTeam,
+      'Transformation ratée',
+      '',
+      parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10),
+      parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10),
+      `Transformation ratée par ${scoringTeam}`
+    ]);
   }
 
-  // Enregistrer le résultat de la transformation
-  recordEvent(new Date(), formatMillisecondsToHMS(timeToFreeze), scoringTeam, 'Transformation', '', currentScoreLocal, currentScoreVisiteur, transformationResult);
-
-  // Reprendre le jeu
+  // Reprendre le jeu en tenant compte du temps écoulé pendant la tentative
   scriptProperties.setProperty('currentMatchPhase', scriptProperties.getProperty('previousMatchPhase'));
   scriptProperties.setProperty('isTimerRunning', 'true');
+  scriptProperties.setProperty('gameTimeAtLastPause', (timeToFreeze + attemptDuration).toString());
+
   resumeMatchTimer();
 
   updateSidebar();
-  ui.alert("Essai", `Essai de l'équipe ${scoringTeam}. ${transformationResult}.`, ui.ButtonSet.OK);
+  ui.alert("Essai", `Essai de l'équipe ${scoringTeam}.`, ui.ButtonSet.OK);
 }
 
 
