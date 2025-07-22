@@ -102,6 +102,7 @@ function addEssai() {
   scriptProperties.setProperty('currentMatchPhase', currentPhase);
   scriptProperties.setProperty('isTimerRunning', 'true');
 
+  // Reprendre le chronomètre avec le temps actuel
   resumeMatchTimer();
 
   updateSidebar();
