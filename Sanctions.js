@@ -32,7 +32,7 @@ function recordCartonRougePrompt() {
  * Enregistre un carton Bleu pour un joueur d'une équipe.
  * Déclenche les prompts pour l'équipe et le joueur.
  */
-function recordCartonBeuPrompt() {
+function recordCartonBleuPrompt() {
   const team = promptForTeam(); // Utilise une fonction utilitaire pour demander l'équipe
   if (!team) return; // Si l'utilisateur annule
 
