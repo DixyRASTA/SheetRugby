@@ -203,64 +203,92 @@ function addPenalite() {
 /**
  * Gère une tentative de drop.
  */
-function addScoreLocaleDrop() {
+function addDrop() {
   const scriptProperties = PropertiesService.getScriptProperties();
   const ui = SpreadsheetApp.getUi();
   const currentPhase = scriptProperties.getProperty('currentMatchPhase');
-  
-  // Vérifier si le match est dans une phase active où un drop peut être marqué
-  if (currentPhase === 'non_demarre' || currentPhase === 'fin_de_match' || 
-      currentPhase === 'mi_temps' || currentPhase === 'pause' || // Pas pendant une pause "chrono"
-      currentPhase === 'awaiting_conversion' || currentPhase === 'awaiting_penalty_kick') { // Pas pendant un temps figé
-     ui.alert("Action impossible", "Le match n'est pas en cours pour marquer un drop.", ui.ButtonSet.OK);
-     return;
+
+  // Bloquer si le match n'est pas démarré ou déjà terminé
+  if (currentPhase === 'non_demarre' || currentPhase === 'fin_de_match' || currentPhase === 'mi_temps' || currentPhase === 'pause') { // Ajout mi_temps et pause
+    ui.alert("Match non démarré", "Veuillez démarrer le match ou reprendre le jeu avant d'ajouter un score.", ui.ButtonSet.OK);
+    return;
   }
 
-  // Obtenir le temps de jeu ACTUEL qui tourne
+  // Récupérer le temps actuel du chronomètre
   const currentRunningTimeState = getMatchTimeState();
-  const timeOfDropMs = currentRunningTimeState.tempsDeJeuMs; // C'est le temps quand l'action est enregistrée
-  const formattedGameTime = formatMillisecondsToHMS(timeOfDropMs);
+  const timeOfDrop = currentRunningTimeState.tempsDeJeuMs;
 
-  let currentScore = parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10);
-  let scoreVisiteur = parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10);
-  currentScore += PENALITE_DROP_POINTS; // Généralement 3 points
-  scriptProperties.setProperty('currentScoreLocal', currentScore.toString());
+  // Formater l'heure sans la date
+  const formattedTime = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "HH:mm:ss");
 
-  // Enregistrer l'événement avec le temps actuel
-  recordEvent(new Date(), formattedGameTime, 'Locale', 'Drop Réussi', '', currentScore, scoreVisiteur, '');
-  ui.alert("Drop Locale", `Drop réussi. Nouveau score Locale: ${currentScore}`, ui.ButtonSet.OK);
+  // Récupérer les noms des équipes
+  const localTeamName = getLocalTeamName();
+  const visitorTeamName = getVisitorTeamName();
 
-  // AUCUNE action pour figer le temps ou changer la phase après un drop réussi
-  // Le chrono continuera naturellement de tourner car il n'a pas été arrêté.
-  updateSidebar(); // Juste pour rafraîchir le score et l'alerte dans la sidebar
-}
+  // Demander quelle équipe bénéficie du drop
+  const response = ui.prompt(
+    'Drop pour quelle équipe ?',
+    `1. ${localTeamName}\n2. ${visitorTeamName}\nEntrez 1 ou 2:`,
+    ui.ButtonSet.OK_CANCEL
+  );
 
-/**
- * Gère un drop réussi de l'équipe visiteur.
- */
-function addScoreVisiteurDrop() {
-  const scriptProperties = PropertiesService.getScriptProperties();
-  const ui = SpreadsheetApp.getUi();
-  const currentPhase = scriptProperties.getProperty('currentMatchPhase');
-  
-  if (currentPhase === 'non_demarre' || currentPhase === 'fin_de_match' || 
-      currentPhase === 'mi_temps' || currentPhase === 'pause' || 
-      currentPhase === 'awaiting_conversion' || currentPhase === 'awaiting_penalty_kick') {
-     ui.alert("Action impossible", "Le match n'est pas en cours pour marquer un drop.", ui.ButtonSet.OK);
-     return;
+  // Vérifier si l'utilisateur a annulé
+  if (response.getSelectedButton() !== ui.Button.OK) {
+    ui.alert("Annulé", "L'ajout du drop a été annulé.", ui.ButtonSet.OK);
+    return;
   }
 
-  const currentRunningTimeState = getMatchTimeState();
-  const timeOfDropMs = currentRunningTimeState.tempsDeJeuMs;
-  const formattedGameTime = formatMillisecondsToHMS(timeOfDropMs);
+  // Déterminer l'équipe qui bénéficie du drop
+  let dropTeam;
+  if (response.getResponseText().trim() === '1') {
+    dropTeam = localTeamName;
+  } else if (response.getResponseText().trim() === '2') {
+    dropTeam = visitorTeamName;
+  } else {
+    ui.alert("Entrée invalide", "Veuillez entrer '1' ou '2'.", ui.ButtonSet.OK);
+    return;
+  }
 
-  let currentScoreLocal = parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10);
-  let currentScoreVisiteur = parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10);
-  currentScoreVisiteur += PENALITE_DROP_POINTS;
-  scriptProperties.setProperty('currentScoreVisiteur', currentScoreVisiteur.toString());
+  // Ouvrir la feuille et préparer les données
+  const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = spreadsheet.getSheetByName('Saisie');
 
-  recordEvent(new Date(), formattedGameTime, 'Visiteur', 'Drop Réussi', '', currentScoreLocal, currentScoreVisiteur, '');
-  ui.alert("Drop Visiteur", `Drop réussi. Nouveau score Visiteur: ${currentScoreVisiteur}`, ui.ButtonSet.OK);
+  // Demander si le drop est réussi
+  const successResponse = ui.alert('Drop réussi ?', 'Le drop est-il réussi ?', ui.ButtonSet.YES_NO);
+
+  // Mettre à jour le score et écrire dans la feuille
+  const currentScoreKey = dropTeam === localTeamName ? 'currentScoreLocal' : 'currentScoreVisiteur';
+  let currentScore = parseInt(scriptProperties.getProperty(currentScoreKey) || '0', 10);
+
+  if (successResponse === ui.Button.YES) {
+    currentScore += 3; // Ajouter 3 points pour le drop réussi
+    scriptProperties.setProperty(currentScoreKey, currentScore.toString());
+
+    // Enregistrer le drop réussi
+    sheet.appendRow([
+      formattedTime,
+      formatMillisecondsToHMS(timeOfDrop),
+      dropTeam,
+      'Drop réussi',
+      '',
+      parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10),
+      parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10),
+      `Drop réussi par ${dropTeam}`
+    ]);
+  } else {
+    // Enregistrer le drop raté
+    sheet.appendRow([
+      formattedTime,
+      formatMillisecondsToHMS(timeOfDrop),
+      dropTeam,
+      'Drop raté',
+      '',
+      parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10),
+      parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10),
+      `Drop raté par ${dropTeam}`
+    ]);
+  }
 
   updateSidebar();
+  ui.alert("Drop", `Drop ${successResponse === ui.Button.YES ? 'réussi' : 'raté'} par ${dropTeam}.`, ui.ButtonSet.OK);
 }
