@@ -11,10 +11,7 @@
 function onOpen() {
   const ui = SpreadsheetApp.getUi();
   ui.createMenu('Match Rugby')
-      //.addItem('Ouvrir Tableau de Bord', 'ouvrirTableauDeBord')
-      //.addSeparator()
       .addSubMenu(ui.createMenu('Phases de Match')
-          .addItem('Initialiser Nouveau Match', 'initialiserFeuilleEtProprietes')
           .addItem('Coup d\'envoi 1ère MT', 'debutPremiereMiTemps')
           .addItem('Fin 1ère MT', 'finPremiereMiTemps')
           .addItem('Coup d\'envoi 2ème MT', 'debutDeuxiemeMiTemps')
