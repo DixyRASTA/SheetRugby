@@ -147,7 +147,6 @@ function finPremiereMiTemps() {
  * Enregistre l'événement dans la feuille "Saisie".
  */
 function debutDeuxiemeMiTemps() {
-
   const scriptProperties = PropertiesService.getScriptProperties(); // Déclaration unique de scriptProperties au début de la fonction
   const currentPhase = scriptProperties.getProperty('currentMatchPhase');
 
@@ -160,22 +159,27 @@ function debutDeuxiemeMiTemps() {
 
   // Ici, le chrono DOIT reprendre à partir du temps accumulé à la fin de la 1ère MT.
   // startMatchTimer() va utiliser gameTimeAtLastPause qui contient déjà le temps de la 1ère MT.
-  // NOUVEAU : Forcer le temps de jeu accumulé à 40 minutes (2400000 ms) pour le début de la 2ème MT.
+  // Forcer le temps de jeu accumulé à 40 minutes (2400000 ms) pour le début de la 2ème MT.
   const QUARANTE_MINUTES_MS = 40 * 60 * 1000;
   scriptProperties.setProperty('gameTimeAtLastPause', QUARANTE_MINUTES_MS.toString());
   
   scriptProperties.setProperty('currentMatchPhase', 'deuxieme_mi_temps');
   startMatchTimer(); // startMatchTimer va utiliser le gameTimeAtLastPause que l'on vient de forcer à 40 minutes.
+  
   scriptProperties.setProperty('alertMessage', '');
-
   const matchTimeState = getMatchTimeState(); // Cette fonction va maintenant calculer à partir des 40 minutes
+  
   const kickoffTeam = scriptProperties.getProperty('kickoffTeam2ndHalf') || ''; // Récupère l'équipe qui donne le coup d'envoi de la 2ème MT
   
   // Enregistrement de l'événement "Coup d'envoi 2ème MT"
-  recordEvent(new Date(), matchTimeState.tempsDeJeuFormatted, kickoffTeam, 'Coup d\'envoi 2ème MT', '', 
-              parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10), 
-              parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10), 
-              ''); // La remarque sera l'équipe qui donne le coup d'envoi
+  recordEvent(
+    new Date(), 
+    matchTimeState.tempsDeJeuFormatted, 
+    kickoffTeam, 'Coup d\'envoi 2ème MT', '', 
+    parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10), 
+    parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10), 
+    `Coup d'envoi par ${kickoffTeam}` // Ajoutez le nom de l'équipe dans la remarque
+  );
 
   updateSidebar();
   SpreadsheetApp.getUi().alert("Coup d'envoi 2ème mi-temps !", "Le jeu a repris.", SpreadsheetApp.getUi().ButtonSet.OK);
