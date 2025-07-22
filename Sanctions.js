@@ -28,26 +28,19 @@ function recordCartonRougePrompt() {
   recordSanctionEvent(team, 'Carton Rouge', player);
 }
 
-// Fonction générique pour enregistrer un événement de sanction
-function recordSanctionEvent(team, sanctionType, player = '') {
-  const scriptProperties = PropertiesService.getScriptProperties();
-  const currentLocalScore = parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10);
-  const currentVisitorScore = parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10);
+/**
+ * Enregistre un carton Bleu pour un joueur d'une équipe.
+ * Déclenche les prompts pour l'équipe et le joueur.
+ */
+function recordCartonBeuPrompt() {
+  const team = promptForTeam(); // Utilise une fonction utilitaire pour demander l'équipe
+  if (!team) return; // Si l'utilisateur annule
 
-  const matchTimeState = getMatchTimeState(); // Récupère le temps de jeu actuel
-  
-  // Enregistre l'événement de sanction avec les scores actuels
-  recordEvent(new Date(), matchTimeState.tempsDeJeuFormatted, team, sanctionType, player, currentLocalScore, currentVisitorScore, '');
+  const player = promptForPlayer(); // Utilise une fonction utilitaire pour demander le joueur (optionnel)
 
-  Logger.log(`${player} (${team}) reçoit un ${sanctionType}.`);
-  SpreadsheetApp.getUi().alert("Sanction enregistrée", `${player} (${team}) reçoit un ${sanctionType}.`, SpreadsheetApp.getUi().ButtonSet.OK);
-
-  updateSidebar(); // Met à jour la sidebar après l'événement
+  recordSanctionEvent(team, 'Carton Bleu', player);
 }
 
-
-// --- Fonctions utilitaires pour les prompts (peuvent être déplacées dans Main.gs si on veut les réutiliser) ---
-// Pour l'instant, on les met ici pour la clarté et l'isolement de Sanctions.gs
 
 /**
  * Demande à l'utilisateur de choisir l'équipe (Locale ou Visiteur).
@@ -89,4 +82,21 @@ function promptForPlayer() {
     return playerResult.getResponseText().trim();
   }
   return ''; // Annulé ou vide
+}
+
+// Fonction générique pour enregistrer un événement hors nomenclature
+function recordSanctionEvent(team, sanctionType, player = '') {
+  const scriptProperties = PropertiesService.getScriptProperties();
+  const currentLocalScore = parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10);
+  const currentVisitorScore = parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10);
+
+  const matchTimeState = getMatchTimeState(); // Récupère le temps de jeu actuel
+  
+  // Enregistre l'événement de sanction avec les scores actuels
+  recordEvent(new Date(), matchTimeState.tempsDeJeuFormatted, team, sanctionType, player, currentLocalScore, currentVisitorScore, '');
+
+  Logger.log(`${player} (${team}) reçoit un ${sanctionType}.`);
+  SpreadsheetApp.getUi().alert("Sanction enregistrée", `${player} (${team}) reçoit un ${sanctionType}.`, SpreadsheetApp.getUi().ButtonSet.OK);
+
+  updateSidebar(); // Met à jour la sidebar après l'événement
 }

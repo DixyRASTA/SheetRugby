@@ -25,8 +25,10 @@ function onOpen() {
           .addItem('Drop tenté', 'addDrop'))
       .addSeparator()
       .addSubMenu(ui.createMenu('Sanctions')
-          .addItem('Carton Jaune...', 'recordCartonJaunePrompt')
-          .addItem('Carton Rouge...', 'recordCartonRougePrompt'))
+          .addItem('Carton Jaune', 'recordCartonJaunePrompt')
+          .addItem('Carton Rouge', 'recordCartonRougePrompt')
+          .addItem('Carton Bleu', 'recordCartonRougePrompt')
+          .addItem('Evènement','recordSanctionEvent'))
       .addSeparator()
       .addItem('Annuler dernier événement (attention!)', 'deleteLastEvent')
       .addToUi();
