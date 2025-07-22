@@ -3,26 +3,25 @@ function addEssai() {
   const ui = SpreadsheetApp.getUi();
   const currentPhase = scriptProperties.getProperty('currentMatchPhase');
 
-  // Bloquer si on est déjà en attente d'un coup de pied
-  if (currentPhase === 'awaiting_conversion' || currentPhase === 'awaiting_penalty_kick') {
-    ui.alert("Action impossible", "Une transformation ou pénalité est déjà en cours. Veuillez la résoudre d'abord.", ui.ButtonSet.OK);
-    return;
-  }
-
   // Bloquer si le match n'est pas démarré ou déjà terminé
-  if (currentPhase === 'non_demarre' || currentPhase === 'fin_de_match') {
-    ui.alert("Match non démarré", "Veuillez démarrer le match avant d'ajouter un score.", ui.ButtonSet.OK);
+  if (currentPhase === 'non_demarre' || currentPhase === 'fin_de_match' || currentPhase === 'mi_temps' || currentPhase === 'pause') { // Ajout mi_temps et pause
+    ui.alert("Match non démarré", "Veuillez démarrer le match ou reprendre le jeu avant d'ajouter un score.", ui.ButtonSet.OK);
     return;
   }
 
-  // Récupérer le temps actuel du chronomètre
-  const currentRunningTimeState = getMatchTimeState();
-  const timeToFreeze = currentRunningTimeState.tempsDeJeuMs;
+  // Récupérer le temps actuel du chronomètre pour l'enregistrement de l'essai
+  const matchTimeStateAtEssai = getMatchTimeState();
+  const timeOfEssaiMs = matchTimeStateAtEssai.tempsDeJeuMs;
 
   // Demander quelle équipe a marqué l'essai
-  const localTeamName = getLocalTeamName();
-  const visitorTeamName = getVisitorTeamName();
-  const teamChoice = ui.prompt(`Essai marqué par:\n1. ${localTeamName}\n2. ${visitorTeamName}\nEntrez 1 ou 2:`, ui.ButtonSet.OK_CANCEL);
+  const localTeamName = getLocalTeamName(); // Assumé être dans TeamManager.gs
+  const visitorTeamName = getVisitorTeamName(); // Assumé être dans TeamManager.gs
+
+  const teamChoice = ui.prompt(
+    'Essai marqué par:',
+    `1. ${localTeamName}\n2. ${visitorTeamName}\nEntrez 1 ou 2:`,
+    ui.ButtonSet.OK_CANCEL
+  );
 
   if (teamChoice.getSelectedButton() !== ui.Button.OK) {
     ui.alert("Annulé", "L'ajout d'essai a été annulé.", ui.ButtonSet.OK);
@@ -39,34 +38,31 @@ function addEssai() {
     return;
   }
 
-  // Mettre à jour le score
+  // Mettre à jour le score de l'essai
   const currentScoreKey = scoringTeam === localTeamName ? 'currentScoreLocal' : 'currentScoreVisiteur';
   let currentScore = parseInt(scriptProperties.getProperty(currentScoreKey) || '0', 10);
   currentScore += 5; // Ajouter 5 points pour l'essai
   scriptProperties.setProperty(currentScoreKey, currentScore.toString());
 
   // Enregistrer l'essai
-  const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
-  const sheet = spreadsheet.getSheetByName('Saisie');
-  const formattedTime = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "HH:mm:ss");
-
-  sheet.appendRow([
-    formattedTime,
-    formatMillisecondsToHMS(timeToFreeze),
+  recordEvent(
+    new Date(),
+    formatMillisecondsToHMS(timeOfEssaiMs), // Temps de l'essai
     scoringTeam,
     'Essai',
-    '',
+    '', // Joueur non spécifié ici, à ajouter si besoin
     parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10),
     parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10),
     `Essai marqué par ${scoringTeam}`
-  ]);
+  );
 
   // Demander si la transformation est réussie
   const conversionResponse = ui.alert('Transformation', 'La transformation est-elle réussie ?', ui.ButtonSet.YES_NO);
 
-  // Utiliser le temps réel au moment de la validation
-  const currentTimeState = getMatchTimeState();
-  const currentTime = currentTimeState.tempsDeJeuMs;
+  // Récupérer le temps actuel pour l'enregistrement de la transformation
+  // Le chrono continue de tourner, donc on prend le temps au moment de la réponse
+  const matchTimeStateAtConversion = getMatchTimeState();
+  const timeOfConversionMs = matchTimeStateAtConversion.tempsDeJeuMs;
 
   if (conversionResponse === ui.Button.YES) {
     let conversionScore = parseInt(scriptProperties.getProperty(currentScoreKey) || '0', 10);
@@ -74,39 +70,38 @@ function addEssai() {
     scriptProperties.setProperty(currentScoreKey, conversionScore.toString());
 
     // Enregistrer la transformation réussie
-    sheet.appendRow([
-      Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "HH:mm:ss"),
-      formatMillisecondsToHMS(currentTime),
+    recordEvent(
+      new Date(),
+      formatMillisecondsToHMS(timeOfConversionMs), // Temps de la transformation
       scoringTeam,
       'Transformation réussie',
       '',
-      scoringTeam === localTeamName ? conversionScore : parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10),
-      scoringTeam === visitorTeamName ? conversionScore : parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10),
+      parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10),
+      parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10),
       `Transformation réussie par ${scoringTeam}`
-    ]);
+    );
   } else {
     // Enregistrer la transformation ratée
-    sheet.appendRow([
-      Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "HH:mm:ss"),
-      formatMillisecondsToHMS(currentTime),
+    recordEvent(
+      new Date(),
+      formatMillisecondsToHMS(timeOfConversionMs), // Temps de la transformation
       scoringTeam,
       'Transformation ratée',
       '',
       parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10),
       parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10),
       `Transformation ratée par ${scoringTeam}`
-    ]);
+    );
   }
 
-  // Reprendre le jeu
-  scriptProperties.setProperty('currentMatchPhase', currentPhase);
-  scriptProperties.setProperty('isTimerRunning', 'true');
-
-  // Reprendre le chronomètre avec le temps actuel
-  resumeMatchTimer();
+  // Reprendre le jeu : Le jeu n'a pas été arrêté, donc le chrono continue de tourner.
+  // La phase du match doit rester la même qu'avant l'essai.
+  // Pas besoin de `resumeMatchTimer()` ni de changer `isTimerRunning` si elle était déjà `true`.
+  // S'assurer que le message d'alerte est vide après l'action.
+  scriptProperties.setProperty('alertMessage', '');
 
   updateSidebar();
-  ui.alert("Essai", `Essai de l'équipe ${scoringTeam}.`, ui.ButtonSet.OK);
+  ui.alert("Essai", `Essai de l'équipe ${scoringTeam} et transformation gérée.`, ui.ButtonSet.OK);
 }
 
 
@@ -150,170 +145,16 @@ function addScore(team, actionType, points, player = '', remark = '') {
   updateSidebar(); // Met à jour la sidebar après le changement de score
 }
 
-// Fonctions d'assistant pour les prompts d'utilisateur (à ajouter dans Main.gs)
-// (Les addScore... restent inchangées, elles appellent déjà addScore directement)
-// ... Laissez toutes vos fonctions addScoreLocaleEssai, etc. INCHANGÉES ...
-
 // NOUVELLES FONCTIONS D'ASSISTANT pour les prompts d'utilisateur (à ajouter dans Main.gs)
 // Ces fonctions recueillent les informations via des boîtes de dialogue et appellent ScoreManager.gs
 
-function addScoreLocaleEssai() { addScore('Locale', 'Essai', 5, promptForPlayer()); }
-function addScoreLocaleTransfo() { addScore('Locale', 'Transformation', 2, promptForPlayer()); }
 function addScoreLocalePenalite() { addScore('Locale', 'Pénalité', 3, promptForPlayer()); }
 function addScoreLocaleDrop() { addScore('Locale', 'Drop', 3, promptForPlayer()); }
 
-function addScoreVisiteurEssai() { addScore('Visiteur', 'Essai', 5, promptForPlayer()); }
-function addScoreVisiteurTransfo() { addScore('Visiteur', 'Transformation', 2, promptForPlayer()); }
+
 function addScoreVisiteurPenalite() { addScore('Visiteur', 'Pénalité', 3, promptForPlayer()); }
 function addScoreVisiteurDrop() { addScore('Visiteur', 'Drop', 3, promptForPlayer()); }
-
-
-
-// --- FONCTION COMMUNE POUR GÉRER LA FIN D'UN ÉVÉNEMENT DE COUP DE PIED ---
-/**
- * Gère la fin d'un événement où le temps était figé (transformation, pénalité).
- * Reprend le jeu si nécessaire ou passe à la mi-temps/fin de match.
- */
-function handleKickEventEnd() {
-  const scriptProperties = PropertiesService.getScriptProperties();
-  const ui = SpreadsheetApp.getUi();
-
-  const previousPhase = scriptProperties.getProperty('previousMatchPhase');
-  const gameTimeAtEventMs = parseInt(scriptProperties.getProperty('gameTimeAtEventMs') || '0', 10);
-  const totalMatchTime = 2 * 40 * 60 * 1000; // 2 mi-temps de 40 minutes en ms 
-
-  // Nettoyer les propriétés de l'événement figé
-  scriptProperties.setProperty('gameTimeAtEventMs', '0');
-  scriptProperties.setProperty('teamAwaitingKick', '');
-
-  // Vérifier si le temps total du match est écoulé
-  // Si le temps de l'événement (quand l'essai/pénalité a eu lieu) est >= temps total du match
-  // et qu'on était en 2ème mi-temps ou que previousMatchPhase est 'deuxieme_mi_temps'
-  if (gameTimeAtEventMs >= totalMatchTime && previousPhase === 'deuxieme_mi_temps') {
-    finDeMatch(); // Appelle la fonction de fin de match (présumée être dans Interruptions.gs)
-    scriptProperties.setProperty('alertMessage', 'Fin de match après l\'événement.');
-  } else if (previousPhase === 'premiere_mi_temps' || previousPhase === 'deuxieme_mi_temps') {
-    // Si le match n'est pas fini, reprendre le jeu
-    scriptProperties.setProperty('currentMatchPhase', previousPhase); // Restaurer la phase précédente
-    resumeMatchTimer(); // Relancer le chronomètre (présumée être dans TimeManager.gs)
-    scriptProperties.setProperty('alertMessage', 'Jeu repris après le coup de pied.');
-  } else if (previousPhase === 'mi_temps') {
-    // Si l'événement a eu lieu juste avant la mi-temps, on passe à la mi-temps
-    scriptProperties.setProperty('currentMatchPhase', 'mi_temps');
-    scriptProperties.setProperty('alertMessage', 'Mi-temps.');
-  } else {
-    // Cas par défaut ou imprévu, remettre en pause ou dans un état sûr
-    scriptProperties.setProperty('currentMatchPhase', 'pause');
-    scriptProperties.setProperty('alertMessage', 'État du jeu incertain après coup de pied, mis en pause.');
-  }
-
-  updateSidebar(); // Mettre à jour la sidebar
-}
-
-// --- FONCTIONS POUR GÉRER LES TRANSFORMATIONS ---
-/**
- * Gère le résultat d'une transformation de l'équipe locale.
- * @param {boolean} isSuccessful Vrai si la transformation est réussie, faux sinon.
- */
-function addScoreLocaleTransfo(isSuccessful) {
-  const scriptProperties = PropertiesService.getScriptProperties();
-  const ui = SpreadsheetApp.getUi();
-  const currentPhase = scriptProperties.getProperty('currentMatchPhase');
-  const teamAwaitingKick = scriptProperties.getProperty('teamAwaitingKick');
-  const gameTimeAtEventMs = parseInt(scriptProperties.getProperty('gameTimeAtEventMs') || '0', 10);
-  const formattedGameTime = formatMillisecondsToHMS(gameTimeAtEventMs); // Utilise le temps figé
-
-  if (currentPhase !== 'awaiting_conversion' || teamAwaitingKick !== 'Locale') {
-    ui.alert("Action impossible", "Ce n'est pas le moment pour une transformation Locale.", ui.ButtonSet.OK);
-    return;
-  }
-
-  let points = 0;
-  let actionDescription = 'Transformation Manquée';
-  let currentScore = parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10);
-  let scoreVisiteur = parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10);
-
-  if (isSuccessful) {
-    points = TRANSFO_POINTS;
-    actionDescription = 'Transformation Réussie';
-    currentScore += points;
-    scriptProperties.setProperty('currentScoreLocal', currentScore.toString());
-  }
-
-  recordEvent(new Date(), formattedGameTime, 'Locale', actionDescription, '', currentScore, scoreVisiteur, '');
-  ui.alert("Transformation Locale", `${actionDescription}. Nouveau score Locale: ${currentScore}`, ui.ButtonSet.OK);
-
-  // Appelle la fonction commune de fin d'événement de coup de pied
-  handleKickEventEnd();
-}
-
-/**
- * Gère le résultat d'une transformation de l'équipe visiteur.
- * @param {boolean} isSuccessful Vrai si la transformation est réussie, faux sinon.
- */
-function addScoreVisiteurTransfo(isSuccessful) {
-  const scriptProperties = PropertiesService.getScriptProperties();
-  const ui = SpreadsheetApp.getUi();
-  const currentPhase = scriptProperties.getProperty('currentMatchPhase');
-  const teamAwaitingKick = scriptProperties.getProperty('teamAwaitingKick');
-  const gameTimeAtEventMs = parseInt(scriptProperties.getProperty('gameTimeAtEventMs') || '0', 10);
-  const formattedGameTime = formatMillisecondsToHMS(gameTimeAtEventMs);
-
-  if (currentPhase !== 'awaiting_conversion' || teamAwaitingKick !== 'Visiteur') {
-    ui.alert("Action impossible", "Ce n'est pas le moment pour une transformation Visiteur.", ui.ButtonSet.OK);
-    return;
-  }
-
-  let points = 0;
-  let actionDescription = 'Transformation Manquée';
-  let currentScoreLocal = parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10);
-  let currentScoreVisiteur = parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10);
-
-  if (isSuccessful) {
-    points = TRANSFO_POINTS;
-    actionDescription = 'Transformation Réussie';
-    currentScoreVisiteur += points;
-    scriptProperties.setProperty('currentScoreVisiteur', currentScoreVisiteur.toString());
-  }
-
-  recordEvent(new Date(), formattedGameTime, 'Visiteur', actionDescription, '', currentScoreLocal, currentScoreVisiteur, '');
-  ui.alert("Transformation Visiteur", `${actionDescription}. Nouveau score Visiteur: ${currentScoreVisiteur}`, ui.ButtonSet.OK);
-
-  handleKickEventEnd();
-}
-
-/**
- * Gère une transformation réussie de l'équipe locale.
- * C'est la fonction appelée par le menu.
- */
-function addScoreLocaleTransfoReussie() {
-  addScoreLocaleTransfo(true); // Appelle la fonction principale avec isSuccessful = true
-}
-
-/**
- * Gère une transformation manquée de l'équipe locale.
- * C'est la fonction appelée par le menu.
- */
-function addScoreLocaleTransfoManquee() {
-  addScoreLocaleTransfo(false); // Appelle la fonction principale avec isSuccessful = false
-}
-
-/**
- * Gère une transformation réussie de l'équipe visiteur.
- * C'est la fonction appelée par le menu.
- */
-function addScoreVisiteurTransfoReussie() {
-  addScoreVisiteurTransfo(true); // Appelle la fonction principale avec isSuccessful = true
-}
-
-/**
- * Gère une transformation manquée de l'équipe visiteur.
- * C'est la fonction appelée par le menu.
- */
-function addScoreVisiteurTransfoManquee() {
-  addScoreVisiteurTransfo(false); // Appelle la fonction principale avec isSuccessful = false
-}
-
+ 
 
 // --- FONCTIONS POUR GÉRER LES PÉNALITÉS ---
 /**
