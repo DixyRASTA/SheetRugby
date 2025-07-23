@@ -1,5 +1,11 @@
+// --- CONSTANTES DE POINTS --- // (Ces constantes pourraient être déplacées dans un fichier commun si elles sont utilisées ailleurs)
+// const ESSAI_POINTS = 5; // Supprimé si déjà dans ScoreManager.gs
+// const TRANSFO_POINTS = 2; // Supprimé si déjà dans ScoreManager.gs
+// const PENALITE_POINTS = 3; // Supprimé si déjà dans ScoreManager.gs
+// const DROP_POINTS = 3; // Supprimé si déjà dans ScoreManager.gs
+
 /**
- * @file Gère la logique des sanctions (cartons) et des pénalités sifflées.
+ * @file Gère la logique des sanctions (cartons) et des événements génériques.
  */
 
 /**
@@ -7,12 +13,18 @@
  * Déclenche les prompts pour l'équipe et le joueur.
  */
 function recordCartonJaunePrompt() {
-  const team = promptForTeam(); // Utilise une fonction utilitaire pour demander l'équipe
+  const ui = SpreadsheetApp.getUi();
+  if (!isGameActive()) { // Utilise une fonction de sécurité pour vérifier la phase de jeu
+    ui.alert("Action impossible", "Veuillez démarrer le match ou reprendre le jeu pour enregistrer un carton.", ui.ButtonSet.OK);
+    return;
+  }
+
+  const team = promptForTeam(); // Demande l'équipe (retourne le nom réel de l'équipe ou null)
   if (!team) return; // Si l'utilisateur annule
 
-  const player = promptForPlayer(); // Utilise une fonction utilitaire pour demander le joueur (optionnel)
+  const player = promptForPlayer(); // Demande le joueur (optionnel)
 
-  recordSanctionEvent(team, 'Carton Jaune', player);
+  recordSanctionEvent(team, 'Carton Jaune', player, ''); // Ajout du paramètre remark vide
 }
 
 /**
@@ -20,12 +32,18 @@ function recordCartonJaunePrompt() {
  * Déclenche les prompts pour l'équipe et le joueur.
  */
 function recordCartonRougePrompt() {
-  const team = promptForTeam(); // Utilise une fonction utilitaire pour demander l'équipe
+  const ui = SpreadsheetApp.getUi();
+  if (!isGameActive()) { // Utilise une fonction de sécurité pour vérifier la phase de jeu
+    ui.alert("Action impossible", "Veuillez démarrer le match ou reprendre le jeu pour enregistrer un carton.", ui.ButtonSet.OK);
+    return;
+  }
+
+  const team = promptForTeam(); // Demande l'équipe
   if (!team) return; // Si l'utilisateur annule
 
-  const player = promptForPlayer(); // Utilise une fonction utilitaire pour demander le joueur (optionnel)
+  const player = promptForPlayer(); // Demande le joueur (optionnel)
 
-  recordSanctionEvent(team, 'Carton Rouge', player);
+  recordSanctionEvent(team, 'Carton Rouge', player, ''); // Ajout du paramètre remark vide
 }
 
 /**
@@ -33,38 +51,101 @@ function recordCartonRougePrompt() {
  * Déclenche les prompts pour l'équipe et le joueur.
  */
 function recordCartonBleuPrompt() {
-  const team = promptForTeam(); // Utilise une fonction utilitaire pour demander l'équipe
+  const ui = SpreadsheetApp.getUi();
+  if (!isGameActive()) { // Utilise une fonction de sécurité pour vérifier la phase de jeu
+    ui.alert("Action impossible", "Veuillez démarrer le match ou reprendre le jeu pour enregistrer un carton.", ui.ButtonSet.OK);
+    return;
+  }
+
+  const team = promptForTeam(); // Demande l'équipe
   if (!team) return; // Si l'utilisateur annule
 
-  const player = promptForPlayer(); // Utilise une fonction utilitaire pour demander le joueur (optionnel)
+  const player = promptForPlayer(); // Demande le joueur (optionnel)
 
-  recordSanctionEvent(team, 'Carton Bleu', player);
+  recordSanctionEvent(team, 'Carton Bleu', player, ''); // Ajout du paramètre remark vide
 }
 
+/**
+ * Fonction interne pour enregistrer un événement de sanction (Carton Jaune/Rouge/Bleu).
+ * Appelée par recordCarton...Prompt.
+ * @param {string} teamName Le nom réel de l'équipe concernée.
+ * @param {string} sanctionType Le type de sanction (ex: 'Carton Jaune').
+ * @param {string} playerName Le nom du joueur concerné (vide si non applicable).
+ * @param {string} remark Une remarque optionnelle.
+ */
+function recordSanctionEvent(teamName, sanctionType, playerName, remark) {
+  const scriptProperties = PropertiesService.getScriptProperties();
+  const ui = SpreadsheetApp.getUi();
+
+  const currentLocalScore = parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10);
+  const currentVisitorScore = parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10);
+  const matchTimeState = getMatchTimeState();
+
+  recordEvent(
+    new Date(),
+    matchTimeState.tempsDeJeuFormatted,
+    teamName,
+    sanctionType,
+    playerName,
+    currentLocalScore,
+    currentVisitorScore,
+    remark // Passe la remarque
+  );
+
+  let message = `${teamName}`;
+  if (playerName) {
+    message += ` (${playerName})`;
+  }
+  message += ` reçoit un ${sanctionType}.`;
+
+  if (remark) {
+    message += ` Remarque: ${remark}`;
+  }
+
+  Logger.log(message);
+  ui.alert("Sanction enregistrée", message, ui.ButtonSet.OK);
+  updateSidebar();
+}
 
 /**
  * Demande à l'utilisateur de choisir l'équipe (Locale ou Visiteur).
- * Affiche les noms réels des équipes.
- * @returns {string|null} 'Locale', 'Visiteur' (les chaînes génériques pour la logique interne) ou null si annulé.
+ * Affiche les noms réels des équipes et retourne le nom réel choisi.
+ * @returns {string|null} Le nom réel de l'équipe ('XV du Poireau', 'Stade Toulousain') ou null si annulé.
  */
 function promptForTeam() {
   const ui = SpreadsheetApp.getUi();
-  const localTeam = getLocalTeamName(); // Récupère le nom réel de l'équipe Locale
-  const visitorTeam = getVisitorTeamName(); // Récupère le nom réel de l'équipe Visiteur
+  const localTeamName = getLocalTeamName(); // Récupère le nom réel de l'équipe Locale
+  const visitorTeamName = getVisitorTeamName(); // Récupère le nom réel de l'équipe Visiteur
 
-  const teamChoice = ui.alert(
+  let selectedTeam = null;
+  let isValidInput = false;
+
+  while (!isValidInput) {
+    const response = ui.prompt(
       'Équipe concernée',
-      `Quelle équipe est concernée ?\n\nOui = ${localTeam}\nNon = ${visitorTeam}`, // <-- MODIFIÉ ICI
-      ui.ButtonSet.YES_NO_CANCEL
-  );
+      `Quelle équipe est concernée ?\n\n1. ${localTeamName}\n2. ${visitorTeamName}`,
+      ui.ButtonSet.OK_CANCEL
+    );
 
- if (teamChoice === ui.Button.YES) {
-    return 'Locale'; // Retourne 'Locale' pour la logique interne
-  } else if (teamChoice === ui.Button.NO) {
-    return 'Visiteur'; // Retourne 'Visiteur' pour la logique interne
-  } else {
-    return null; // Annulé
+    if (response.getSelectedButton() === ui.Button.OK) {
+      const userInput = response.getResponseText().trim();
+      if (userInput === '1' || userInput.toLowerCase() === localTeamName.toLowerCase()) {
+        selectedTeam = localTeamName;
+        isValidInput = true;
+      } else if (userInput === '2' || userInput.toLowerCase() === visitorTeamName.toLowerCase()) {
+        selectedTeam = visitorTeamName;
+        isValidInput = true;
+      } else {
+        ui.alert("Entrée invalide", "Veuillez entrer 1 ou 2, ou le nom de l'équipe.");
+        // Reste dans la boucle pour redemander
+      }
+    } else {
+      // L'utilisateur a annulé
+      selectedTeam = null;
+      isValidInput = true; // Quitter la boucle
+    }
   }
+  return selectedTeam;
 }
 
 /**
@@ -84,15 +165,41 @@ function promptForPlayer() {
   return ''; // Annulé ou vide
 }
 
-// Fonction générique pour enregistrer un événement hors nomenclature
-function recordSanctionEvent() {
+/**
+ * Demande une remarque optionnelle.
+ * @returns {string} La remarque ou une chaîne vide si non renseignée/annulée.
+ */
+function promptForRemark() {
+  const ui = SpreadsheetApp.getUi();
+  const remarkResult = ui.prompt(
+    'Remarque (Optionnelle)',
+    'Ajouter une remarque (laisser vide si aucune) :',
+    ui.ButtonSet.OK_CANCEL
+  );
+
+  if (remarkResult.getSelectedButton() === ui.Button.OK) {
+    return remarkResult.getResponseText().trim();
+  }
+  return ''; // Annulé ou vide
+}
+
+/**
+ * Fonction générique pour demander et enregistrer un événement personnalisé.
+ * Peut être appelée depuis un menu si l'utilisateur veut ajouter un événement non prédéfini.
+ */
+function promptAndRecordCustomEvent() {
   const ui = SpreadsheetApp.getUi();
   const scriptProperties = PropertiesService.getScriptProperties();
+
+  if (!isGameActive()) {
+    ui.alert("Action impossible", "Veuillez démarrer le match ou reprendre le jeu pour enregistrer un événement.", ui.ButtonSet.OK);
+    return;
+  }
 
   // Demander à l'utilisateur de saisir le type d'événement
   const eventTypeResult = ui.prompt(
     'Type d\'événement',
-    'Veuillez entrer le type d\'événement (laisser vide si inconnu) :',
+    'Veuillez entrer le type d\'événement (ex: Mêlée, Touche, etc.) :',
     ui.ButtonSet.OK_CANCEL
   );
 
@@ -102,7 +209,11 @@ function recordSanctionEvent() {
     return;
   }
 
-  const sanctionType = eventTypeResult.getResponseText().trim();
+  const customEventType = eventTypeResult.getResponseText().trim();
+  if (!customEventType) {
+      ui.alert("Erreur", "Le type d'événement ne peut pas être vide.", ui.ButtonSet.OK);
+      return;
+  }
 
   // Demander à l'utilisateur de choisir l'équipe
   const team = promptForTeam();
@@ -125,14 +236,14 @@ function recordSanctionEvent() {
   const matchTimeState = getMatchTimeState();
 
   // Enregistrer l'événement
-  recordEvent(new Date(), matchTimeState.tempsDeJeuFormatted, team, sanctionType, player, currentLocalScore, currentVisitorScore, remark);
+  recordEvent(new Date(), matchTimeState.tempsDeJeuFormatted, team, customEventType, player, currentLocalScore, currentVisitorScore, remark);
 
   // Afficher une confirmation
   let message = `${team}`;
   if (player) {
     message += ` (${player})`;
   }
-  message += ` reçoit un ${sanctionType}.`;
+  message += `: ${customEventType}.`;
 
   if (remark) {
     message += ` Remarque: ${remark}`;
@@ -140,25 +251,15 @@ function recordSanctionEvent() {
 
   Logger.log(message);
   ui.alert("Événement enregistré", message, ui.ButtonSet.OK);
-
-  // Mettre à jour la sidebar
   updateSidebar();
 }
 
 /**
- * Demande une remarque optionnelle.
- * @returns {string} La remarque ou une chaîne vide si non renseignée/annulée.
+ * Vérifie si le jeu est dans une phase active pour permettre des actions de score/sanction.
+ * @returns {boolean} True si le jeu est actif (1ère ou 2ème mi-temps), false sinon.
  */
-function promptForRemark() {
-  const ui = SpreadsheetApp.getUi();
-  const remarkResult = ui.prompt(
-    'Remarque (Optionnelle)',
-    'Ajouter une remarque (laisser vide si aucune) :',
-    ui.ButtonSet.OK_CANCEL
-  );
-
-  if (remarkResult.getSelectedButton() === ui.Button.OK) {
-    return remarkResult.getResponseText().trim();
-  }
-  return ''; // Annulé ou vide
+function isGameActive() {
+  const scriptProperties = PropertiesService.getScriptProperties();
+  const currentPhase = scriptProperties.getProperty('currentMatchPhase');
+  return currentPhase === 'premiere_mi_temps' || currentPhase === 'deuxieme_mi_temps';
 }
