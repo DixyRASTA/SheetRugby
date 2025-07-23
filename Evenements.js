@@ -1,19 +1,15 @@
 /**
- * @file Gère l'enregistrement et la récupération des événements du match sur la feuille "Saisie".
- */
-
-/**
  * Enregistre un événement dans la feuille "Saisie".
  * @param {Date} timestamp L'heure exacte de l'événement.
  * @param {string} gameTime Le temps de jeu formaté (HH:mm:ss).
- * @param {string} team L'équipe concernée (Locale, Visiteur, ou vide si non applicable).
+ * @param {string} teamName Le nom de l'équipe concernée (Ex: "XV du Poireau", "Stade Toulousain", ou vide si non applicable).
  * @param {string} action Le type d'action (Ex: "Essai", "Coup d'envoi", "Carton Jaune").
  * @param {string} player Le nom du joueur concerné (vide si non applicable).
  * @param {number} finalScoreLocal Le score de l'équipe locale APRÈS l'événement.
  * @param {number} finalScoreVisitor Le score de l'équipe visiteur APRÈS l'événement.
  * @param {string} remark Une remarque ou un détail supplémentaire sur l'événement.
  */
-function recordEvent(timestamp, gameTime, team, action, player, finalScoreLocal, finalScoreVisitor, remark) {
+function recordEvent(timestamp, gameTime, teamName, action, player, finalScoreLocal, finalScoreVisitor, remark) {
   const feuilleSaisie = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Saisie");
   if (!feuilleSaisie) {
     Logger.log("Erreur: La feuille 'Saisie' n'a pas été trouvée.");
@@ -21,30 +17,26 @@ function recordEvent(timestamp, gameTime, team, action, player, finalScoreLocal,
     return;
   }
 
-  // Convertion 'Locale'/'Visiteur' en nom d'équipe réel
-  // Plus besoin de conversion ici si les appelants passent déjà le nom réel.
+  // Le paramètre 'teamName' contient déjà le nom réel de l'équipe.
+  // Plus besoin de variable intermédiaire ou de conversion ici.
   
-
   // Formater l'heure de l'événement pour la colonne A
   const formattedTimestamp = Utilities.formatDate(timestamp, SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone(), "HH:mm:ss");
   
-  // La ligne à ajouter :
-  // A2 Heure | B2 Temps de jeu | C2 Equipe | D2 Action | E2 Joueurs | F2 Score Loc. | G2 Score Visit. | H2 Remarque
   const rowData = [
-    formattedTimestamp, // A
-    gameTime,           // B
-    teamNameForRecord,  // C
-    action,             // D
-    player,             // E
-    finalScoreLocal,    // F (Utilise directement le score final passé en paramètre)
-    finalScoreVisitor,  // G (Utilise directement le score final passé en paramètre)
-    remark              // H
+    formattedTimestamp, // A : Heure de l'événement (réelle)
+    gameTime,           // B : Temps de jeu (chrono)
+    teamName,           // C : Nom de l'équipe (UTILISE DIRECTEMENT LE PARAMÈTRE teamName)
+    action,             // D : Type d'action
+    player,             // E : Joueur concerné
+    finalScoreLocal,    // F : Score Local final
+    finalScoreVisitor,  // G : Score Visiteur final
+    remark              // H : Remarque
   ];
 
   feuilleSaisie.appendRow(rowData);
-  Logger.log(`Événement enregistré: ${action} - ${gameTime}`);
+  Logger.log(`Événement enregistré: ${action} pour ${teamName} - ${gameTime}`);
 }
-
 /**
  * Récupère les N derniers événements enregistrés pour affichage (par exemple, dans la sidebar).
  * @param {number} count Le nombre d'événements à récupérer.
