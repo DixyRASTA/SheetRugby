@@ -25,8 +25,7 @@ function initialiserFeuilleEtProprietes() {
     scriptProperties.setProperty('previousMatchPhase', 'non_demarre');
     scriptProperties.setProperty('kickoffTeam1stHalf', '');
     scriptProperties.setProperty('kickoffTeam2ndHalf', '');
-    scriptProperties.setProperty('teamAwaitingKick', '');
-    scriptProperties.setProperty('gameTimeAtEventMs', '0'); // Réinitialise le temps figé
+    // scriptProperties.setProperty('gameTimeAtEventMs', '0'); // Supprimé car n'est plus utilisé pour le chrono figé
 
     resetMatchTimer(); // Appelle la fonction de TimeManager.gs 
     loadTeamNames();    // Appelle la fonction pour définir le nom des équipes
@@ -48,7 +47,6 @@ function initialiserFeuilleEtProprietes() {
     ui.alert("Match initialisé", "Un nouveau match a été initialisé. Vous pouvez démarrer la 1ère mi-temps.", ui.ButtonSet.OK);
   }
 }
-
 
 /**
  * Démarre la première mi-temps du match et lance le chronomètre.
@@ -113,8 +111,8 @@ function debutPremiereMiTemps() {
  * Met le chronomètre en pause et enregistre l'événement.
  */
 function finPremiereMiTemps() {
-
-  const scriptProperties = PropertiesService.getScriptProperties(); // Déclaration unique de scriptProperties au début de la fonction
+  const ui = SpreadsheetApp.getUi(); // Ajout de ui pour l'alerte
+  const scriptProperties = PropertiesService.getScriptProperties();
   const currentPhase = scriptProperties.getProperty('currentMatchPhase');
 
   // Vérification de sécurité
@@ -124,8 +122,7 @@ function finPremiereMiTemps() {
     return;
   }
 
-   pauseMatchTimer(); // Cette fonction met à jour gameTimeAtLastPause avec le temps RÉEL de la 1ère MT (ex: 43:00)
-                     // C'est ce temps réel que nous voulons enregistrer pour l'événement "Fin 1ère MT".
+  pauseMatchTimer(); // Cette fonction met à jour gameTimeAtLastPause avec le temps RÉEL de la 1ère MT
   
   const matchTimeState = getMatchTimeState(); // Récupère l'état avec le temps réel de fin de 1ère MT
   scriptProperties.setProperty('currentMatchPhase', 'mi_temps');
@@ -134,15 +131,21 @@ function finPremiereMiTemps() {
   // Enregistrer l'événement "Fin 1ère MT" avec le temps de jeu RÉEL accumulé
   const currentScoreLocal = parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10);
   const currentScoreVisiteur = parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10);
-  recordEvent(new Date(), matchTimeState.tempsDeJeuFormatted, '', 'Fin 1ère MT', '', currentScoreLocal, currentScoreVisiteur, 'Mi-temps');
-
-   // Enregistrer "Mi-Temps" dans la feuille Google Sheets
-  const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
-  const sheet = spreadsheet.getSheetByName('Saisie'); // Remplacez 'Saisie' par le nom de votre feuille
-  sheet.appendRow(['Mi-Temps']); // Ajoute une ligne avec "Mi-Temps" dans la première colonne
+  
+  // *** CORRECTION ICI : Utilisation de recordEvent pour la fin de mi-temps ***
+  recordEvent(
+    new Date(),
+    matchTimeState.tempsDeJeuFormatted,
+    '', // Pas d'équipe spécifique pour la fin de mi-temps
+    'Fin 1ère MT',
+    '', // Pas de joueur spécifique
+    currentScoreLocal,
+    currentScoreVisiteur,
+    'Mi-temps'
+  );
 
   updateSidebar();
-  SpreadsheetApp.getUi().alert("Mi-temps", "La 1ère mi-temps est terminée.", SpreadsheetApp.getUi().ButtonSet.OK);
+  ui.alert("Mi-temps", "La 1ère mi-temps est terminée.", ui.ButtonSet.OK); // Utilisation de ui
 }
 
 /**
@@ -150,7 +153,8 @@ function finPremiereMiTemps() {
  * Enregistre l'événement dans la feuille "Saisie".
  */
 function debutDeuxiemeMiTemps() {
-  const scriptProperties = PropertiesService.getScriptProperties(); // Déclaration unique de scriptProperties au début de la fonction
+  const ui = SpreadsheetApp.getUi();
+  const scriptProperties = PropertiesService.getScriptProperties();
   const currentPhase = scriptProperties.getProperty('currentMatchPhase');
 
   // Vérification de sécurité
@@ -160,9 +164,9 @@ function debutDeuxiemeMiTemps() {
     return;
   }
 
-  // Ici, le chrono DOIT reprendre à partir du temps accumulé à la fin de la 1ère MT.
-  // startMatchTimer() va utiliser gameTimeAtLastPause qui contient déjà le temps de la 1ère MT.
-  // Forcer le temps de jeu accumulé à 40 minutes (2400000 ms) pour le début de la 2ème MT.
+  // CONSERVATION DE LA LOGIQUE : Forcer le temps de jeu accumulé à 40 minutes (2400000 ms) pour le début de la 2ème MT.
+  // Cela permet au temps total affiché de continuer à partir de 40:00:00 pour la seconde période,
+  // simulant une continuité pour les comptes-rendus de match.
   const QUARANTE_MINUTES_MS = 40 * 60 * 1000;
   scriptProperties.setProperty('gameTimeAtLastPause', QUARANTE_MINUTES_MS.toString());
   
@@ -185,7 +189,7 @@ function debutDeuxiemeMiTemps() {
   );
 
   updateSidebar();
-  SpreadsheetApp.getUi().alert("Coup d'envoi 2ème mi-temps !", "Le jeu a repris.", SpreadsheetApp.getUi().ButtonSet.OK);
+  ui.alert("Coup d'envoi 2ème mi-temps !", "Le jeu a repris.", ui.ButtonSet.OK);
 }
 
 /**
@@ -193,8 +197,8 @@ function debutDeuxiemeMiTemps() {
  * Arrête le chronomètre et enregistre l'événement.
  */
 function finDeMatch() {
-
-  const scriptProperties = PropertiesService.getScriptProperties(); // Déclaration unique de scriptProperties au début de la fonction
+  const ui = SpreadsheetApp.getUi(); // Ajout de ui pour l'alerte
+  const scriptProperties = PropertiesService.getScriptProperties();
   const currentPhase = scriptProperties.getProperty('currentMatchPhase');
 
   // Vérification de sécurité
@@ -218,7 +222,7 @@ function finDeMatch() {
   recordEvent(new Date(), matchTimeState.tempsDeJeuFormatted, '', 'Fin de Match', '', currentScoreLocal, currentScoreVisiteur, 'Fin');
 
   updateSidebar();
-  SpreadsheetApp.getUi().alert("Fin du Match !", "Le match est terminé.", SpreadsheetApp.getUi().ButtonSet.OK);
+  ui.alert("Fin du Match !", "Le match est terminé.", ui.ButtonSet.OK); // Utilisation de ui
 }
 
 /**
@@ -226,7 +230,7 @@ function finDeMatch() {
  */
 function arretJeu() {
   const scriptProperties = PropertiesService.getScriptProperties();
-  const ui = SpreadsheetApp.getUi(); // Assurez-vous d'avoir l'objet UI
+  const ui = SpreadsheetApp.getUi();
   const currentPhaseBeforeArret = scriptProperties.getProperty('currentMatchPhase');
   
   Logger.log("arretJeu - Début. Phase actuelle: " + currentPhaseBeforeArret);
@@ -236,29 +240,21 @@ function arretJeu() {
     scriptProperties.setProperty('currentMatchPhase', 'pause'); // Définit la nouvelle phase comme "pause"
     pauseMatchTimer(); // Met le chronomètre en pause
 
-    // Enregistrer l'arrêt du jeu dans la feuille
-    const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
-    const sheet = spreadsheet.getSheetByName('Saisie'); // Remplacez 'Saisie' par le nom de votre feuille
     const matchTimeState = getMatchTimeState();
     const currentScoreLocal = parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10);
     const currentScoreVisiteur = parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10);
 
-    // Formater la date pour afficher uniquement l'heure
-    const now = new Date();
-    const formattedTime = Utilities.formatDate(now, Session.getScriptTimeZone(), "HH:mm:ss");
-
-    sheet.appendRow([
-      formattedTime, // Heure formatée
+    // *** CORRECTION ICI : Utilisation de recordEvent pour l'arrêt de jeu ***
+    recordEvent(
+      new Date(),
       matchTimeState.tempsDeJeuFormatted,
-      '',
+      '', // Pas d'équipe spécifique
       'Arrêt',
-      '',
+      '', // Pas de joueur spécifique
       currentScoreLocal,
       currentScoreVisiteur,
       'Match arrêté'
-    ]);
-
-
+    );
 
     scriptProperties.setProperty('alertMessage', 'Jeu arrêté.');
     Logger.log("arretJeu - Jeu mis en pause. currentMatchPhase: " + scriptProperties.getProperty('currentMatchPhase') + ", previousMatchPhase: " + scriptProperties.getProperty('previousMatchPhase'));
@@ -268,7 +264,7 @@ function arretJeu() {
     Logger.log("arretJeu - Impossible d'arrêter. Phase actuelle: " + currentPhaseBeforeArret);
   }
   updateSidebar();
-  ui.alert("Jeu Arrêté", scriptProperties.getProperty('alertMessage'), ui.ButtonSet.OK); // Ajout d'une alerte pour confirmation
+  ui.alert("Jeu Arrêté", scriptProperties.getProperty('alertMessage'), ui.ButtonSet.OK);
 }
 
 /**
@@ -289,29 +285,21 @@ function reprendreJeu() {
     scriptProperties.setProperty('currentMatchPhase', phaseToResumeTo); 
     resumeMatchTimer(); // Appelle la fonction de TimeManager pour relancer le chrono
 
-   // Enregistrer la reprise du jeu dans la feuille
-    const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
-    const sheet = spreadsheet.getSheetByName('Saisie'); // Remplacez 'Saisie' par le nom de votre feuille
     const matchTimeState = getMatchTimeState();
     const currentScoreLocal = parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10);
     const currentScoreVisiteur = parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10);
 
-    // Formater la date pour afficher uniquement l'heure
-    const now = new Date();
-    const formattedTime = Utilities.formatDate(now, Session.getScriptTimeZone(), "HH:mm:ss");
-
-    sheet.appendRow([
-      formattedTime, // Heure formatée
+    // *** CORRECTION ICI : Utilisation de recordEvent pour la reprise de jeu ***
+    recordEvent(
+      new Date(),
       matchTimeState.tempsDeJeuFormatted,
-      '',
+      '', // Pas d'équipe spécifique
       'Reprise',
-      '',
+      '', // Pas de joueur spécifique
       currentScoreLocal,
       currentScoreVisiteur,
       'Match repris'
-    ]);
-
-
+    );
 
     scriptProperties.setProperty('alertMessage', ''); 
     Logger.log("repriseJeu - Jeu repris. currentMatchPhase: " + scriptProperties.getProperty('currentMatchPhase') + 
