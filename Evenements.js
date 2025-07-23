@@ -9,11 +9,11 @@
  * @param {string} team L'équipe concernée (Locale, Visiteur, ou vide si non applicable).
  * @param {string} action Le type d'action (Ex: "Essai", "Coup d'envoi", "Carton Jaune").
  * @param {string} player Le nom du joueur concerné (vide si non applicable).
- * @param {number} scoreLocal Le score de l'équipe locale après l'événement.
- * @param {number} scoreVisitor Le score de l'équipe visiteur après l'événement.
+ * @param {number} finalScoreLocal Le score de l'équipe locale APRÈS l'événement.
+ * @param {number} finalScoreVisitor Le score de l'équipe visiteur APRÈS l'événement.
  * @param {string} remark Une remarque ou un détail supplémentaire sur l'événement.
  */
-function recordEvent(timestamp, gameTime, team, action, player, scoreLocal, scoreVisitor, remark) {
+function recordEvent(timestamp, gameTime, team, action, player, finalScoreLocal, finalScoreVisitor, remark) {
   const feuilleSaisie = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Saisie");
   if (!feuilleSaisie) {
     Logger.log("Erreur: La feuille 'Saisie' n'a pas été trouvée.");
@@ -24,18 +24,12 @@ function recordEvent(timestamp, gameTime, team, action, player, scoreLocal, scor
   // Convertion 'Locale'/'Visiteur' en nom d'équipe réel
   let teamNameForRecord = '';
   if (team === 'Locale') {
-    teamNameForRecord = getLocalTeamName();
+    teamNameForRecord = getLocalTeamName(); // Assumé être une fonction globale ou dans TeamManager.gs
   } else if (team === 'Visiteur') {
-    teamNameForRecord = getVisitorTeamName();
+    teamNameForRecord = getVisitorTeamName(); // Assumé être une fonction globale ou dans TeamManager.gs
   } else {
     teamNameForRecord = ''; // Pour les événements sans équipe spécifique (ex: arrêt jeu)
   }
-
-  // Obtenir les scores actuels pour s'assurer qu'ils sont bien enregistrés
-  // (même si les paramètres sont passés, c'est une bonne pratique de les récupérer au dernier moment)
-  const scriptProperties = PropertiesService.getScriptProperties();
-  const currentScoreLocal = parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10);
-  const currentScoreVisiteur = parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10);
 
   // Formater l'heure de l'événement pour la colonne A
   const formattedTimestamp = Utilities.formatDate(timestamp, SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone(), "HH:mm:ss");
@@ -48,8 +42,8 @@ function recordEvent(timestamp, gameTime, team, action, player, scoreLocal, scor
     teamNameForRecord,  // C
     action,             // D
     player,             // E
-    scoreLocal !== undefined ? scoreLocal : currentScoreLocal, // F (Utiliser le paramètre ou le score actuel)
-    scoreVisitor !== undefined ? scoreVisitor : currentScoreVisiteur, // G (Utiliser le paramètre ou le score actuel)
+    finalScoreLocal,    // F (Utilise directement le score final passé en paramètre)
+    finalScoreVisitor,  // G (Utilise directement le score final passé en paramètre)
     remark              // H
   ];
 
