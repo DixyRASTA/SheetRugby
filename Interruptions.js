@@ -84,17 +84,23 @@ function debutPremiereMiTemps() {
   startMatchTimer(); // Démarre le chronomètre
 
   scriptProperties.setProperty('alertMessage', '');
-  const matchTimeState = getMatchTimeState();
+  
+  // Récupérer les scores actuels pour l'enregistrement, après avoir mis à jour la phase si nécessaire
+  const currentScoreLocal = parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10);
+  const currentScoreVisiteur = parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10);
 
   // Enregistrement de l'événement "Coup d'envoi 1ère MT"
+  // On récupère le temps après le démarrage du chrono pour être précis
+  const matchTimeState = getMatchTimeState(); // Ici, le chrono est déjà en marche
+
   recordEvent(
     new Date(),
     matchTimeState.tempsDeJeuFormatted,
-    kickoffTeam1stHalf,
+    kickoffTeam1stHalf, // Passe le NOM réel de l'équipe
     'Coup d\'envoi 1ère MT',
-    '',
-    parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10),
-    parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10),
+    '', // Pas de joueur spécifique pour le coup d'envoi
+    currentScoreLocal, // Passe les scores actuels
+    currentScoreVisiteur, // Passe les scores actuels
     `Coup d'envoi par ${kickoffTeam1stHalf}`
   );
 
