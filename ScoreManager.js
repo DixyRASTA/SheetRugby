@@ -1,3 +1,14 @@
+// --- CONSTANTES DE POINTS ---
+const ESSAI_POINTS = 5;
+const TRANSFO_POINTS = 2;
+const PENALITE_POINTS = 3;
+const DROP_POINTS = 3;
+
+// --- FONCTION POUR GÉRER LES ESSAIS ---
+/**
+ * Gère un essai.
+ */
+
 function addEssai() {
   const scriptProperties = PropertiesService.getScriptProperties();
   const ui = SpreadsheetApp.getUi();
@@ -41,7 +52,7 @@ function addEssai() {
   // Mettre à jour le score de l'essai
   const currentScoreKey = scoringTeam === localTeamName ? 'currentScoreLocal' : 'currentScoreVisiteur';
   let currentScore = parseInt(scriptProperties.getProperty(currentScoreKey) || '0', 10);
-  currentScore += 5; // Ajouter 5 points pour l'essai
+  currentScore += ESSAI_POINTS; // Ajouter 5 points pour l'essai
   scriptProperties.setProperty(currentScoreKey, currentScore.toString());
 
   // Enregistrer l'essai
@@ -166,7 +177,7 @@ function addPenalite() {
   let currentScore = parseInt(scriptProperties.getProperty(currentScoreKey) || '0', 10);
 
   if (successResponse === ui.Button.YES) {
-    currentScore += 3; // Ajouter 3 points pour la pénalité réussie
+    currentScore += PENALITE_POINTS; // Ajouter 3 points pour la pénalité réussie
     scriptProperties.setProperty(currentScoreKey, currentScore.toString());
 
     // Enregistrer la pénalité réussie
@@ -261,7 +272,7 @@ function addDrop() {
   let currentScore = parseInt(scriptProperties.getProperty(currentScoreKey) || '0', 10);
 
   if (successResponse === ui.Button.YES) {
-    currentScore += 3; // Ajouter 3 points pour le drop réussi
+    currentScore += DROP_POINTS; // Ajouter 3 points pour le drop réussi
     scriptProperties.setProperty(currentScoreKey, currentScore.toString());
 
     // Enregistrer le drop réussi

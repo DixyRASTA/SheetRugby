@@ -22,14 +22,8 @@ function recordEvent(timestamp, gameTime, team, action, player, finalScoreLocal,
   }
 
   // Convertion 'Locale'/'Visiteur' en nom d'équipe réel
-  let teamNameForRecord = '';
-  if (team === 'Locale') {
-    teamNameForRecord = getLocalTeamName(); // Assumé être une fonction globale ou dans TeamManager.gs
-  } else if (team === 'Visiteur') {
-    teamNameForRecord = getVisitorTeamName(); // Assumé être une fonction globale ou dans TeamManager.gs
-  } else {
-    teamNameForRecord = ''; // Pour les événements sans équipe spécifique (ex: arrêt jeu)
-  }
+  // Plus besoin de conversion ici si les appelants passent déjà le nom réel.
+  
 
   // Formater l'heure de l'événement pour la colonne A
   const formattedTimestamp = Utilities.formatDate(timestamp, SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone(), "HH:mm:ss");
