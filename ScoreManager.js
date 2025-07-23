@@ -170,28 +170,28 @@ function addPenalite() {
     scriptProperties.setProperty(currentScoreKey, currentScore.toString());
 
     // Enregistrer la pénalité réussie
-    sheet.appendRow([
-      formattedTime,
+    recordEvent(
+      new Date(),
       formatMillisecondsToHMS(timeOfPenalty),
       penalizedTeam,
       'Pénalité réussie',
-      '',
+      '', // Joueur (vide si non applicable ici)
       parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10),
       parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10),
       `Pénalité réussie par ${penalizedTeam}`
-    ]);
+    );
   } else {
     // Enregistrer la pénalité ratée
-    sheet.appendRow([
-      formattedTime,
+    recordEvent(
+      new Date,
       formatMillisecondsToHMS(timeOfPenalty),
       penalizedTeam,
       'Pénalité ratée',
-      '',
+      '', // Joueur (vide si non applicable ici)
       parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10),
       parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10),
       `Pénalité ratée par ${penalizedTeam}`
-    ]);
+    );
   }
 
   updateSidebar();
@@ -265,8 +265,8 @@ function addDrop() {
     scriptProperties.setProperty(currentScoreKey, currentScore.toString());
 
     // Enregistrer le drop réussi
-    sheet.appendRow([
-      formattedTime,
+    recordEvent(
+      new Date(),
       formatMillisecondsToHMS(timeOfDrop),
       dropTeam,
       'Drop réussi',
@@ -274,11 +274,11 @@ function addDrop() {
       parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10),
       parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10),
       `Drop réussi par ${dropTeam}`
-    ]);
+    );
   } else {
     // Enregistrer le drop raté
-    sheet.appendRow([
-      formattedTime,
+    recordEvent(
+      new Date(),
       formatMillisecondsToHMS(timeOfDrop),
       dropTeam,
       'Drop raté',
@@ -286,7 +286,7 @@ function addDrop() {
       parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10),
       parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10),
       `Drop raté par ${dropTeam}`
-    ]);
+    );
   }
 
   updateSidebar();
