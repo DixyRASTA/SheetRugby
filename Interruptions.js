@@ -144,6 +144,14 @@ function finPremiereMiTemps() {
     'Mi-temps'
   );
 
+  // --- AJOUT DE LA LIGNE DE DÉLIMITATION "Mi-temps" ---
+  const feuilleSaisie = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Saisie");
+  if (feuilleSaisie) {
+    feuilleSaisie.appendRow(['Mi-temps']); // Ajoute une ligne avec "Mi-temps" dans la première colonne
+  } else {
+    Logger.log("Erreur: La feuille 'Saisie' n'a pas été trouvée pour ajouter la délimitation.");
+  }
+
   updateSidebar();
   ui.alert("Mi-temps", "La 1ère mi-temps est terminée.", ui.ButtonSet.OK); // Utilisation de ui
 }
