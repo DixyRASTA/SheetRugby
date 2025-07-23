@@ -4,19 +4,31 @@ const TRANSFO_POINTS = 2;
 const PENALITE_POINTS = 3;
 const DROP_POINTS = 3;
 
-// --- FONCTION POUR GÉRER LES ESSAIS ---
 /**
- * Gère un essai.
+ * Fonction utilitaire interne pour vérifier si l'ajout d'un score est permis en phase actuelle.
+ * @returns {boolean} True si l'action est permise, false sinon.
  */
-
-function addEssai() {
+function isScoreAllowedForPhase() {
   const scriptProperties = PropertiesService.getScriptProperties();
   const ui = SpreadsheetApp.getUi();
   const currentPhase = scriptProperties.getProperty('currentMatchPhase');
 
-  // Bloquer si le match n'est pas démarré ou déjà terminé
-  if (currentPhase === 'non_demarre' || currentPhase === 'fin_de_match' || currentPhase === 'mi_temps' || currentPhase === 'pause') { // Ajout mi_temps et pause
-    ui.alert("Match non démarré", "Veuillez démarrer le match ou reprendre le jeu avant d'ajouter un score.", ui.ButtonSet.OK);
+  if (currentPhase === 'non_demarre' || currentPhase === 'fin_de_match' || currentPhase === 'mi_temps' || currentPhase === 'pause') {
+    ui.alert("Action impossible", "Veuillez démarrer le match ou reprendre le jeu avant d'ajouter un score.", ui.ButtonSet.OK);
+    return false;
+  }
+  return true;
+}
+
+// --- FONCTION POUR GÉRER LES ESSAIS ---
+/**
+ * Gère un essai.
+ */
+function addEssai() {
+  const scriptProperties = PropertiesService.getScriptProperties();
+  const ui = SpreadsheetApp.getUi();
+
+  if (!isScoreAllowedForPhase()) {
     return;
   }
 
@@ -25,8 +37,8 @@ function addEssai() {
   const timeOfEssaiMs = matchTimeStateAtEssai.tempsDeJeuMs;
 
   // Demander quelle équipe a marqué l'essai
-  const localTeamName = getLocalTeamName(); // Assumé être dans TeamManager.gs
-  const visitorTeamName = getVisitorTeamName(); // Assumé être dans TeamManager.gs
+  const localTeamName = getLocalTeamName();
+  const visitorTeamName = getVisitorTeamName();
 
   const teamChoice = ui.prompt(
     'Essai marqué par:',
@@ -71,13 +83,12 @@ function addEssai() {
   const conversionResponse = ui.alert('Transformation', 'La transformation est-elle réussie ?', ui.ButtonSet.YES_NO);
 
   // Récupérer le temps actuel pour l'enregistrement de la transformation
-  // Le chrono continue de tourner, donc on prend le temps au moment de la réponse
   const matchTimeStateAtConversion = getMatchTimeState();
   const timeOfConversionMs = matchTimeStateAtConversion.tempsDeJeuMs;
 
   if (conversionResponse === ui.Button.YES) {
     let conversionScore = parseInt(scriptProperties.getProperty(currentScoreKey) || '0', 10);
-    conversionScore += 2; // Ajouter 2 points pour la transformation réussie
+    conversionScore += TRANSFO_POINTS; // Ajouter 2 points pour la transformation réussie
     scriptProperties.setProperty(currentScoreKey, conversionScore.toString());
 
     // Enregistrer la transformation réussie
@@ -105,12 +116,7 @@ function addEssai() {
     );
   }
 
-  // Reprendre le jeu : Le jeu n'a pas été arrêté, donc le chrono continue de tourner.
-  // La phase du match doit rester la même qu'avant l'essai.
-  // Pas besoin de `resumeMatchTimer()` ni de changer `isTimerRunning` si elle était déjà `true`.
-  // S'assurer que le message d'alerte est vide après l'action.
   scriptProperties.setProperty('alertMessage', '');
-
   updateSidebar();
   ui.alert("Essai", `Essai de l'équipe ${scoringTeam} et transformation gérée.`, ui.ButtonSet.OK);
 }
@@ -122,20 +128,14 @@ function addEssai() {
 function addPenalite() {
   const scriptProperties = PropertiesService.getScriptProperties();
   const ui = SpreadsheetApp.getUi();
-  const currentPhase = scriptProperties.getProperty('currentMatchPhase');
 
-  // Bloquer si le match n'est pas démarré ou déjà terminé
-  if (currentPhase === 'non_demarre' || currentPhase === 'fin_de_match' || currentPhase === 'mi_temps' || currentPhase === 'pause') { // Ajout mi_temps et pause
-    ui.alert("Match non démarré", "Veuillez démarrer le match ou reprendre le jeu avant d'ajouter un score.", ui.ButtonSet.OK);
+  if (!isScoreAllowedForPhase()) {
     return;
   }
 
   // Récupérer le temps actuel du chronomètre
   const currentRunningTimeState = getMatchTimeState();
   const timeOfPenalty = currentRunningTimeState.tempsDeJeuMs;
-
-  // Formater l'heure sans la date
-  const formattedTime = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "HH:mm:ss");
 
   // Récupérer les noms des équipes
   const localTeamName = getLocalTeamName();
@@ -165,10 +165,6 @@ function addPenalite() {
     return;
   }
 
-  // Ouvrir la feuille et préparer les données
-  const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
-  const sheet = spreadsheet.getSheetByName('Saisie');
-
   // Demander si la pénalité est réussie
   const successResponse = ui.alert('Pénalité réussie ?', 'La pénalité est-elle réussie ?', ui.ButtonSet.YES_NO);
 
@@ -194,7 +190,7 @@ function addPenalite() {
   } else {
     // Enregistrer la pénalité ratée
     recordEvent(
-      new Date,
+      new Date(),
       formatMillisecondsToHMS(timeOfPenalty),
       penalizedTeam,
       'Pénalité ratée',
@@ -209,7 +205,6 @@ function addPenalite() {
   ui.alert("Pénalité", `Pénalité ${successResponse === ui.Button.YES ? 'réussie' : 'ratée'} par ${penalizedTeam}.`, ui.ButtonSet.OK);
 }
 
-
 // --- FONCTIONS POUR GÉRER LES DROPS ---
 /**
  * Gère une tentative de drop.
@@ -217,20 +212,14 @@ function addPenalite() {
 function addDrop() {
   const scriptProperties = PropertiesService.getScriptProperties();
   const ui = SpreadsheetApp.getUi();
-  const currentPhase = scriptProperties.getProperty('currentMatchPhase');
 
-  // Bloquer si le match n'est pas démarré ou déjà terminé
-  if (currentPhase === 'non_demarre' || currentPhase === 'fin_de_match' || currentPhase === 'mi_temps' || currentPhase === 'pause') { // Ajout mi_temps et pause
-    ui.alert("Match non démarré", "Veuillez démarrer le match ou reprendre le jeu avant d'ajouter un score.", ui.ButtonSet.OK);
+  if (!isScoreAllowedForPhase()) {
     return;
   }
 
   // Récupérer le temps actuel du chronomètre
   const currentRunningTimeState = getMatchTimeState();
   const timeOfDrop = currentRunningTimeState.tempsDeJeuMs;
-
-  // Formater l'heure sans la date
-  const formattedTime = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "HH:mm:ss");
 
   // Récupérer les noms des équipes
   const localTeamName = getLocalTeamName();
@@ -259,10 +248,6 @@ function addDrop() {
     ui.alert("Entrée invalide", "Veuillez entrer '1' ou '2'.", ui.ButtonSet.OK);
     return;
   }
-
-  // Ouvrir la feuille et préparer les données
-  const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
-  const sheet = spreadsheet.getSheetByName('Saisie');
 
   // Demander si le drop est réussi
   const successResponse = ui.alert('Drop réussi ?', 'Le drop est-il réussi ?', ui.ButtonSet.YES_NO);
