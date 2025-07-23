@@ -23,6 +23,7 @@ function recordCartonJaunePrompt() {
   if (!team) return; // Si l'utilisateur annule
 
   const player = promptForPlayer(); // Demande le joueur (optionnel)
+  const remark = promptForRemark(); // Demande la remarque
 
   recordSanctionEvent(team, 'Carton Jaune', player, remark); // Ajout du paramètre remark 
 }
@@ -42,6 +43,7 @@ function recordCartonRougePrompt() {
   if (!team) return; // Si l'utilisateur annule
 
   const player = promptForPlayer(); // Demande le joueur (optionnel)
+  const remark = promptForRemark(); // Demande la remarque
 
   recordSanctionEvent(team, 'Carton Rouge', player, remark); // Ajout du paramètre remark 
 }
@@ -61,6 +63,7 @@ function recordCartonBleuPrompt() {
   if (!team) return; // Si l'utilisateur annule
 
   const player = promptForPlayer(); // Demande le joueur (optionnel)
+  const remark = promptForRemark(); // Demande la remarque
 
   recordSanctionEvent(team, 'Carton Bleu', player, remark); // Ajout du paramètre remark 
 }
