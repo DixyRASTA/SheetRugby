@@ -28,7 +28,7 @@ function onOpen() {
           .addItem('Carton Jaune', 'recordCartonJaunePrompt')
           .addItem('Carton Rouge', 'recordCartonRougePrompt')
           .addItem('Carton Bleu', 'recordCartonBleuPrompt')
-          .addItem('Evènement','recordSanctionEvent'))
+          .addItem('Evènement','promptAndRecordCustomEvent'))
       .addSeparator()
       .addItem('Annuler dernier événement (attention!)', 'deleteLastEvent')
       .addToUi();
