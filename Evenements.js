@@ -21,7 +21,7 @@ function recordEvent(timestamp, gameTime, teamName, action, player, finalScoreLo
   const formattedTimestamp = Utilities.formatDate(timestamp, SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone(), "HH:mm:ss");
   const rowData = [
     formattedTimestamp, // A : Heure de l'événement (réelle)
-    gameTime,           // B : Temps de jeu (chrono)
+    "'" + gameTime,           // B : Temps de jeu (chrono)<-- MODIFICATION ICI : Ajout de l'apostrophe
     teamName,           // C : Nom de l'équipe
     action,             // D : Type d'action
     player,             // E : Joueur concerné
