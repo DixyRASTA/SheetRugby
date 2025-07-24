@@ -17,7 +17,7 @@ function onOpen() {
           .addItem('Coup d\'envoi 2ème MT', 'debutDeuxiemeMiTemps')
           .addItem('Fin de Match', 'finDeMatch')
           .addItem('Arrêter Jeu (Pause)', 'arretJeu')
-          .addItem('Reprendre Jeu')) // Reprendre Jeu ne doit pas déclencher un prompt
+          .addItem('Reprendre Jeu', 'reprendreJeu')) // Reprendre Jeu ne doit pas déclencher un prompt
       .addSeparator()
       .addSubMenu(ui.createMenu('Scores')
           .addItem('Essai', 'addEssai')
