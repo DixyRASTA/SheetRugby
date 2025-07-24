@@ -38,57 +38,46 @@ function onOpen() {
 }
 
 /**
- * Ouvre le tableau de bord (sidebar) du match.
+ * Ouvre la barre latérale personnalisée "Match en direct".
+ * Cette fonction ne devrait être appelée qu'une seule fois pour afficher la sidebar.
+ * Le rafraîchissement des données est géré par le JavaScript dans Sidebar.html.
  */
 function ouvrirTableauDeBord() {
-  const html = HtmlService.createTemplateFromFile('Sidebar').evaluate()
-      .setTitle('Tableau de Bord Match Rugby')
-      .setWidth(300); // Ajuste la largeur si nécessaire
-  SpreadsheetApp.getUi().showSidebar(html);
-}
-
-
-function updateSidebar() {
-  getMatchTimeState(); // Cela rafraîchit les propriétés du timer.
   const ui = SpreadsheetApp.getUi();
-  const html = HtmlService.createHtmlOutputFromFile('Sidebar')
+  const htmlOutput = HtmlService.createHtmlOutputFromFile('Sidebar')
       .setTitle('Match en direct')
-      .setWidth(300); // Ou la largeur désirée
-  ui.showSidebar(html);
+      .setWidth(300);
+  ui.showSidebar(htmlOutput);
 }
 
 /**
  * Récupère toutes les données nécessaires pour mettre à jour la sidebar.
+ * Cette fonction est appelée par le JavaScript côté client (Sidebar.html).
  * @returns {Object} Un objet contenant le temps de jeu, les scores, les noms d'équipes et les dernières actions.
  */
 function getDataForSidebar() {
   const scriptProperties = PropertiesService.getScriptProperties();
 
   // 1. Récupération du temps de jeu
-  const matchTimeState = getMatchTimeState();
+  const matchTimeState = getMatchTimeState(); // S'assure que le timer est mis à jour
   const formattedTime = matchTimeState.tempsDeJeuFormatted;
 
   // 2. Récupération des scores et noms d'équipes
   const currentScoreLocal = scriptProperties.getProperty('currentScoreLocal') || '0';
   const currentScoreVisiteur = scriptProperties.getProperty('currentScoreVisiteur') || '0';
-  const localTeamName = getLocalTeamName(); // Assurez-vous que cette fonction est accessible (TeamManager.gs)
-  const visitorTeamName = getVisitorTeamName(); // Assurez-vous que cette fonction est accessible (TeamManager.gs)
+  const localTeamName = getLocalTeamName(); 
+  const visitorTeamName = getVisitorTeamName(); 
 
   // 3. Récupération des dernières actions de la feuille "Saisie"
   const feuilleSaisie = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Saisie");
   let lastActions = [];
-  if (feuilleSaisie && feuilleSaisie.getLastRow() > 2) { // Vérifie s'il y a des données après l'en-tête
-    // Récupère toutes les données à partir de la 3ème ligne
-    const dataRange = feuilleSaisie.getRange(3, 1, feuilleSaisie.getLastRow() - 2, feuilleSaisie.getLastColumn());
+  if (feuilleSaisie && feuilleSaisie.getLastRow() > 2) { 
+    const dataRange = feuilleSaisie.getRange(3, 1, feuilleSaisie.getLastRow() - 2, 8); // On prend jusqu'à la colonne H (Remarque)
     const allData = dataRange.getValues();
     
-    // Filtre pour ne garder que les colonnes nécessaires (Temps de jeu et Remarque)
-    // Colonnes : A=Date, B=Temps de jeu, C=Équipe, D=Événement, E=Joueur, F=Score Local, G=Score Visiteur, H=Remarque
-    // Nous avons besoin des colonnes B (index 1) et H (index 7)
-    lastActions = allData.map(row => [row[1], row[7]]); // [Temps de jeu, Remarque]
-
-    // Le HTML va prendre les 10 dernières actions, mais ici on peut récupérer tout ou un peu plus.
-    // L'idéal est de laisser le HTML gérer la limite d'affichage si on veut un ascenseur.
+    // On ne garde que les colonnes nécessaires : Temps de jeu (index 1) et Remarque (index 7)
+    // Le HTML s'attend à un tableau de [temps, remarque]
+    lastActions = allData.map(row => [row[1], row[7]]); 
   }
   
   return {
@@ -97,6 +86,27 @@ function getDataForSidebar() {
     visitorScore: currentScoreVisiteur,
     localTeamName: localTeamName,
     visitorTeamName: visitorTeamName,
-    lastActions: lastActions // Les actions brutes seront formatées par le JS côté client
+    lastActions: lastActions 
   };
+}
+
+/**
+ * Met à jour la sidebar. Cette fonction est appelée depuis le code serveur
+ * (par exemple, après un recordEvent) pour signaler au client de se rafraîchir.
+ * IMPORTANT : Elle ne doit PAS recréer la sidebar, mais appeler le JS côté client.
+ */
+function updateSidebar() {
+  // getMatchTimeState(); // Pas nécessaire ici, getDataForSidebar le fait déjà.
+
+  // Appelle la fonction refreshSidebar() dans le JavaScript de la sidebar pour qu'elle se rafraîchisse.
+  // Assurez-vous que refreshSidebar est une fonction globale dans Sidebar.html
+  // et que la sidebar est déjà ouverte.
+  try {
+    const htmlOutput = HtmlService.createHtmlOutput('<script>if (window.refreshSidebar) window.refreshSidebar();</script>');
+    SpreadsheetApp.getUi().showSidebar(htmlOutput); // Ceci ne va pas rouvrir, juste exécuter le script
+  } catch (e) {
+    Logger.log("Erreur lors de la mise à jour de la sidebar: " + e.message);
+    // Si la sidebar n'est pas ouverte, ouvrez-la.
+    ouvrirTableauDeBord(); 
+  }
 }

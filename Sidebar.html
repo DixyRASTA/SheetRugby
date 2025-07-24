@@ -26,7 +26,7 @@
       margin-bottom: 10px;
     }
     /* Styles spécifiques au chrono et au score */
-    .timer-display, .score-display {
+    .timer-display, .score-values { /* Renommé en score-values pour regrouper les chiffres du score */
       font-size: 4em; /* Chiffres très gros */
       font-weight: bold;
       text-align: center;
@@ -36,13 +36,14 @@
     .timer-display {
       color: #ff6600; /* Orange pour le chrono */
     }
-    .score-label {
-      font-size: 0.9em;
-      color: #333; /* Noir pour les noms d'équipes */
-      margin-bottom: 5px;
-      text-align: center;
+    .score-names { /* Nouveau pour les noms d'équipes */
+        font-size: 1.2em; /* Ajustement de la taille pour les noms d'équipes */
+        font-weight: bold;
+        color: #333; /* Noir pour les noms d'équipes */
+        text-align: center;
+        margin-top: 5px; /* Petit espace au-dessus des scores */
     }
-    .score-value {
+    .score-values {
       color: #ff6600; /* Orange pour le score */
     }
     .score-separator {
@@ -87,27 +88,29 @@
   </div>
 
   <div class="content-section">
-    <div class="score-display">
-      <span class="score-label" id="localTeamName">Équipe Locale</span> 
-      <span class="score-value" id="localScore">0</span>
+    <div class="score-names">
+        <span id="localTeamName">Équipe Locale</span>
+        <span class="score-separator">&nbsp;</span> <span id="visitorTeamName">Équipe Visiteur</span>
+    </div>
+    <div class="score-values">
+      <span id="localScore">0</span>
       <span class="score-separator">-</span>
-      <span class="score-value" id="visitorScore">0</span>
-      <span class="score-label" id="visitorTeamName">Équipe Visiteur</span>
+      <span id="visitorScore">0</span>
     </div>
   </div>
 
   <div class="content-section">
     <h4>Dernières actions</h4>
     <div class="actions-list-container" id="lastActions">
-      <div class="action-item">
-        <span class="action-time">00:00</span>
-        <span class="action-remark">Match non démarré</span>
+      <div class="action-item" id="noActionsMessage">
+        <span class="action-time">--:--</span>
+        <span class="action-remark">Match non démarré / Aucune action.</span>
       </div>
     </div>
   </div>
 
   <script>
-    // Ces fonctions sont appelées depuis Code.gs pour mettre à jour l'UI
+    // Fonctions appelées depuis Apps Script pour mettre à jour l'UI
     function updateTimer(time) {
       document.getElementById('matchTimer').innerText = time;
     }
@@ -123,49 +126,63 @@
       const actionsContainer = document.getElementById('lastActions');
       actionsContainer.innerHTML = ''; // Vide le contenu existant
 
+      const noActionsMessage = document.getElementById('noActionsMessage');
+      if (noActionsMessage) noActionsMessage.style.display = 'none'; // Cache le message initial
+
       // Affiche au maximum les 10 dernières actions
       const displayLimit = 10;
-      const actionsToDisplay = actions.slice(Math.max(0, actions.length - displayLimit));
+      // .slice(-displayLimit) prend les 'displayLimit' derniers éléments du tableau
+      const actionsToDisplay = actions.slice(-displayLimit); 
 
       if (actionsToDisplay.length === 0) {
         actionsContainer.innerHTML = '<div class="action-item"><span class="action-remark">Aucune action enregistrée.</span></div>';
         return;
       }
 
-      actionsToDisplay.forEach(action => {
+      // Parcourt les actions pour les ajouter, la plus récente en haut
+      for (let i = actionsToDisplay.length - 1; i >= 0; i--) { // Boucle à l'envers pour ajouter les plus récentes en premier
+        const action = actionsToDisplay[i];
         const actionItem = document.createElement('div');
         actionItem.className = 'action-item';
 
         const timeSpan = document.createElement('span');
         timeSpan.className = 'action-time';
-        timeSpan.innerText = action[1]; // Colonne B (Temps de jeu)
+        timeSpan.innerText = action[0]; // Index 0 pour le temps de jeu [Temps, Remarque]
 
         const remarkSpan = document.createElement('span');
         remarkSpan.className = 'action-remark';
-        remarkSpan.innerText = action[7]; // Colonne H (Remarque)
+        remarkSpan.innerText = action[1]; // Index 1 pour la remarque [Temps, Remarque]
 
         actionItem.appendChild(timeSpan);
         actionItem.appendChild(remarkSpan);
-        actionsContainer.prepend(actionItem); // Ajoute au début pour avoir les plus récentes en haut
-      });
+        actionsContainer.appendChild(actionItem); // Ajoute à la fin, car on parcourt à l'envers
+      }
     }
 
-    // Gestion des messages asynchrones de Apps Script
-    google.script.run.withSuccessHandler(function(data) {
-      updateTimer(data.time);
-      updateScore(data.localScore, data.visitorScore, data.localTeamName, data.visitorTeamName);
-      updateLastActions(data.lastActions); // Initialisation des actions
-    }).getDataForSidebar();
+    // Fonction de rafraîchissement principale
+    function refreshSidebar() {
+      google.script.run
+        .withSuccessHandler(function(data) {
+          updateTimer(data.time);
+          updateScore(data.localScore, data.visitorScore, data.localTeamName, data.visitorTeamName);
+          // Seulement mettre à jour les actions si elles sont différentes ou sur un intervalle moins fréquent si besoin
+          // Pour l'instant, on rafraîchit tout pour la simplicité.
+          updateLastActions(data.lastActions); 
+        })
+        .getDataForSidebar();
+    }
 
-    // Rechargement périodique (toutes les 2 secondes) pour la fluidité du chrono
-    setInterval(function() {
-      google.script.run.withSuccessHandler(function(data) {
-        updateTimer(data.time);
-        updateScore(data.localScore, data.visitorScore, data.localTeamName, data.visitorTeamName);
-        // Note: updateLastActions n'est pas appelé ici pour des raisons de performance.
-        // Les actions sont mises à jour lors de l'enregistrement d'un événement.
-      }).getDataForSidebar();
-    }, 2000); // Mettre à jour toutes les 2 secondes
+    // Appel initial au chargement de la sidebar
+    document.addEventListener('DOMContentLoaded', refreshSidebar);
+
+    // Rechargement périodique pour la fluidité du chrono (toutes les 2 secondes)
+    setInterval(refreshSidebar, 2000); 
+
+    // Rend les fonctions globales pour qu'Apps Script puisse les appeler directement
+    window.updateTimer = updateTimer;
+    window.updateScore = updateScore;
+    window.updateLastActions = updateLastActions; // Rendre cette fonction globale aussi
+    window.refreshSidebar = refreshSidebar; // Rendre la fonction de rafraichissement globale
   </script>
 </body>
 </html>

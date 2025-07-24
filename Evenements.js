@@ -37,6 +37,7 @@ function recordEvent(timestamp, gameTime, teamName, action, player, finalScoreLo
   feuilleSaisie.appendRow(rowData);
   Logger.log(`Événement enregistré: ${action} pour ${teamName} - ${gameTime}`);
 
+  // Mettre à jour la sidebar après l'enregistrement
   updateSidebar();
 }
 
