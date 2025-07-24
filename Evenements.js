@@ -149,7 +149,7 @@ function deleteLastEvent() {
       // Cela demande une logique plus complexe pour "défaire" le score.
       // Pour l'instant, nous ne le ferons pas, l'utilisateur devra ajuster manuellement si besoin.
       
-      updateSidebar(); // Mettre à jour la sidebar après suppression
+      SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
       return true;
     } else {
       Logger.log("Annulation du dernier événement annulée par l'utilisateur.");

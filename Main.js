@@ -17,18 +17,18 @@ function onOpen() {
           .addItem('Coup d\'envoi 2ème MT', 'debutDeuxiemeMiTemps')
           .addItem('Fin de Match', 'finDeMatch')
           .addItem('Arrêter Jeu (Pause)', 'arretJeu')
-          .addItem('Reprendre Jeu', 'reprendreJeu'))
+          .addItem('Reprendre Jeu')) // Reprendre Jeu ne doit pas déclencher un prompt
       .addSeparator()
       .addSubMenu(ui.createMenu('Scores')
           .addItem('Essai', 'addEssai')
-          .addItem('Pénélité tentée', 'addPenalite')
+          .addItem('Pénalité tentée', 'addPenalite') // Correction de faute de frappe
           .addItem('Drop tenté', 'addDrop'))
       .addSeparator()
       .addSubMenu(ui.createMenu('Sanctions')
           .addItem('Carton Jaune', 'recordCartonJaunePrompt')
           .addItem('Carton Rouge', 'recordCartonRougePrompt')
           .addItem('Carton Bleu', 'recordCartonBleuPrompt')
-          .addItem('Evènement','promptAndRecordCustomEvent')) // <-- Assurez-vous que c'est bien le nom de la fonction générique
+          .addItem('Événement', 'promptAndRecordCustomEvent')) // Correction de faute de frappe et s'assurer que c'est le nom de la fonction générique
       .addSeparator()
       .addItem('Annuler dernier événement (attention!)', 'deleteLastEvent')
       .addToUi();
@@ -41,11 +41,12 @@ function onOpen() {
  * Ouvre le tableau de bord (sidebar) du match.
  */
 function ouvrirTableauDeBord() {
-  const ui = SpreadsheetApp.getUi(); // Déclarer ui ici si non déjà fait dans la portée globale
+  const ui = SpreadsheetApp.getUi(); 
   const html = HtmlService.createHtmlOutputFromFile('Sidebar')
       .setTitle('Tableau de Bord Match Rugby')
-      .setWidth(300); // Ajuste la largeur si nécessaire
-  ui.showSidebar(html); // <-- CORRECTION ICI : Utilise 'html' au lieu de 'htmlOutput'
+      .setWidth(300) 
+      .setSandboxMode(HtmlService.SandboxMode.IFRAME); // <-- CORRECTION CRUCIALE ICI : Ajout du mode sandbox
+  ui.showSidebar(html); 
 }
 
 
@@ -53,16 +54,16 @@ function ouvrirTableauDeBord() {
  * Fonction appelée par le client (dans la sidebar) pour récupérer le contenu HTML mis à jour.
  * C'est le lien entre le JS de la sidebar et les fonctions Apps Script côté serveur.
  */
-function getDataForSidebar() { // <-- CORRECTION ICI : Renommé de getSidebarContent à getDataForSidebar
+function getDataForSidebar() { 
   const timeState = getMatchTimeState();
   const scriptProperties = PropertiesService.getScriptProperties();
 
   const currentScoreLocal = scriptProperties.getProperty('currentScoreLocal') || '0';
   const currentScoreVisiteur = scriptProperties.getProperty('currentScoreVisiteur') || '0';
-  const alertMessage = timeState.message; // Non retourné, mais peut être utilisé pour le débogage
-  const currentMatchPhase = timeState.phase; // Non retourné, mais peut être utilisé pour le débogage
+  const alertMessage = timeState.message; 
+  const currentMatchPhase = timeState.phase; 
 
-  let timerStatus = "ARRÊTÉ"; // Non retourné, mais peut être utilisé pour le débogage
+  let timerStatus = "ARRÊTÉ"; 
   if (timeState.isTimerRunning) {
     timerStatus = "EN COURS";
   } else if (currentMatchPhase === 'non_demarre' || currentMatchPhase === 'fin_de_match') {
@@ -74,23 +75,23 @@ function getDataForSidebar() { // <-- CORRECTION ICI : Renommé de getSidebarCon
   }
 
   // Récupérer les noms des équipes
-  const teamNameLocal = getLocalTeamName(); // Assurez-vous que getLocalTeamName est accessible (TeamManager.gs)
-  const teamNameVisiteur = getVisitorTeamName(); // Assurez-vous que getVisitorTeamName est accessible (TeamManager.gs)
+  const teamNameLocal = getLocalTeamName(); 
+  const teamNameVisiteur = getVisitorTeamName(); 
 
   // Récupérer les dernières actions de la feuille "Saisie"
   const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Saisie");
-  let actions = []; // Initialiser le tableau d'actions
-  if (sheet && sheet.getLastRow() >= 3) { // Vérifier si la feuille existe et s'il y a des données (au moins 3 lignes pour l'en-tête + 1 ligne de données)
+  let actions = []; 
+  if (sheet && sheet.getLastRow() >= 3) { 
     const lastRow = sheet.getLastRow();
-    const startRow = Math.max(3, lastRow - 9); // Récupérer jusqu'à 10 dernières actions (lastRow - 10 + 1)
+    const startRow = Math.max(3, lastRow - 9); 
     const numRowsToFetch = lastRow - startRow + 1;
 
     // S'assurer qu'il y a des lignes à récupérer
     if (numRowsToFetch > 0) {
-      const actionsData = sheet.getRange(startRow, 1, numRowsToFetch, 8).getValues(); // Colonne 8 = H
+      const actionsData = sheet.getRange(startRow, 1, numRowsToFetch, 8).getValues(); 
       actions = actionsData.map(row => ({
-        gameTime: row[1], // Temps de jeu (colonne B, index 1)
-        remark: row[7]    // Remarque (colonne H, index 7)
+        gameTime: row[1], 
+        remark: row[7]    
       }));
     }
   } else {
@@ -104,6 +105,6 @@ function getDataForSidebar() { // <-- CORRECTION ICI : Renommé de getSidebarCon
     teamNameLocal: teamNameLocal,
     teamNameVisiteur: teamNameVisiteur,
     tempsDeJeu: timeState.tempsDeJeuFormatted,
-    actions: actions // Le nom 'actions' correspond à ce que Sidebar.html attend
+    actions: actions 
   };
 }
