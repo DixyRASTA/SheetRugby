@@ -54,30 +54,31 @@ function ouvrirTableauDeBord() {
  * C'est le lien entre le JS de la sidebar et les fonctions Apps Script côté serveur.
  */
 function getDataForSidebar() { 
-  const timeState = getMatchTimeState();
   const scriptProperties = PropertiesService.getScriptProperties();
+
+  // --- Vérification des propriétés avant calcul de l'état du temps ---
+  Logger.log('getDataForSidebar - Propriétés du script au début:');
+  Logger.log('currentScoreLocal: ' + scriptProperties.getProperty('currentScoreLocal'));
+  Logger.log('currentScoreVisiteur: ' + scriptProperties.getProperty('currentScoreVisiteur'));
+  Logger.log('localTeamName: ' + scriptProperties.getProperty('localTeamName'));
+  Logger.log('visitorTeamName: ' + scriptProperties.getProperty('visitorTeamName'));
+  Logger.log('isTimerRunning: ' + scriptProperties.getProperty('isTimerRunning'));
+  Logger.log('currentMatchPhase: ' + scriptProperties.getProperty('currentMatchPhase'));
+  Logger.log('startTime: ' + scriptProperties.getProperty('startTime'));
+  Logger.log('gameTimeAtLastPause: ' + scriptProperties.getProperty('gameTimeAtLastPause'));
+  
+  const timeState = getMatchTimeState();
 
   const currentScoreLocal = scriptProperties.getProperty('currentScoreLocal') || '0';
   const currentScoreVisiteur = scriptProperties.getProperty('currentScoreVisiteur') || '0';
-  const alertMessage = scriptProperties.getProperty('alertMessage') || ''; // S'assurer que alertMessage est bien récupéré des propriétés.
-  const currentMatchPhase = timeState.phase; 
+  const alertMessage = scriptProperties.getProperty('alertMessage') || '';
+  const currentMatchPhase = timeState.phase;
 
-  // ... (le reste de la fonction getDataForSidebar reste inchangé) ...
+  // Récupérer les noms des équipes directement des propriétés
+  const teamNameLocal = scriptProperties.getProperty('localTeamName') || 'Local'; 
+  const teamNameVisiteur = scriptProperties.getProperty('visitorTeamName') || 'Visiteur'; 
 
-  let timerStatus = "ARRÊTÉ"; 
-  if (timeState.isTimerRunning) {
-    timerStatus = "EN COURS";
-  } else if (currentMatchPhase === 'non_demarre' || currentMatchPhase === 'fin_de_match') {
-    timerStatus = "NON DÉMARRÉ";
-  } else if (currentMatchPhase === 'mi_temps') {
-    timerStatus = "MI-TEMPS";
-  } else if (currentMatchPhase === 'pause') {
-    timerStatus = "PAUSE";
-  }
-
-  // Récupérer les noms des équipes
-  const teamNameLocal = getLocalTeamName(); 
-  const teamNameVisiteur = getVisitorTeamName(); 
+  // ... (le reste de la logique pour `timerStatus` et `actions` reste inchangée) ...
 
   // Récupérer les dernières actions de la feuille "Saisie"
   const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Saisie");
@@ -96,9 +97,17 @@ function getDataForSidebar() {
       }));
     }
   } else {
-    // Si pas de données, renvoyer un message d'absence d'actions
     actions = [{ gameTime: '--:--', remark: 'Aucune action enregistrée.' }];
   }
+
+  // --- Vérification des données AVANT le retour ---
+  Logger.log('getDataForSidebar - Données retournées:');
+  Logger.log('scoreLocal: ' + currentScoreLocal);
+  Logger.log('scoreVisiteur: ' + currentScoreVisiteur);
+  Logger.log('teamNameLocal: ' + teamNameLocal);
+  Logger.log('teamNameVisiteur: ' + teamNameVisiteur);
+  Logger.log('tempsDeJeu: ' + timeState.tempsDeJeuFormatted);
+  Logger.log('actions: ' + JSON.stringify(actions)); // Utilisez JSON.stringify pour voir le contenu du tableau d'objets
 
   return {
     scoreLocal: currentScoreLocal,
@@ -107,6 +116,7 @@ function getDataForSidebar() {
     teamNameVisiteur: teamNameVisiteur,
     tempsDeJeu: timeState.tempsDeJeuFormatted,
     actions: actions,
-    alertMessage: alertMessage // Inclure le message d'alerte pour affichage potentiel dans la sidebar
+    alertMessage: alertMessage
   };
 }
+
