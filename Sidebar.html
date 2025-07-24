@@ -3,129 +3,169 @@
 <head>
   <base target="_top">
   <style>
+    /* Styles généraux */
     body {
-      font-family: Arial, sans-serif;
+      font-family: 'Arial', sans-serif;
       margin: 0;
-      padding: 15px;
-      background-color: #f4f4f4;
+      padding: 0;
+      background-color: #f0f0f0;
       color: #333;
     }
-    .container {
-      background-color: #fff;
-      padding: 20px;
-      border-radius: 8px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-    h2 {
-      color: #0056b3;
+    .sidebar-header {
+      background-color: #333; /* Fond noir pour l'en-tête */
+      color: #ff6600; /* Orange pour le texte du titre */
+      padding: 10px 15px;
       text-align: center;
-      margin-bottom: 20px;
-    }
-    .data-row {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 10px;
-      font-size: 1.1em;
-    }
-    .label {
+      font-size: 24px;
       font-weight: bold;
-      color: #555;
+      border-bottom: 2px solid #ff6600; /* Ligne orange en bas */
     }
-    .value {
-      color: #000;
-    }
-    .score-display {
-      display: flex;
-      justify-content: space-around;
-      align-items: center;
-      margin: 20px 0;
+    .content-section {
       padding: 15px;
-      background-color: #e9ecef;
-      border-radius: 5px;
+      border-bottom: 1px solid #ddd;
+      margin-bottom: 10px;
     }
-    .score-team {
+    /* Styles spécifiques au chrono et au score */
+    .timer-display, .score-display {
+      font-size: 4em; /* Chiffres très gros */
+      font-weight: bold;
+      text-align: center;
+      margin: 10px 0;
+      line-height: 1; /* Réduire l'espacement entre les lignes */
+    }
+    .timer-display {
+      color: #ff6600; /* Orange pour le chrono */
+    }
+    .score-label {
+      font-size: 0.9em;
+      color: #333; /* Noir pour les noms d'équipes */
+      margin-bottom: 5px;
       text-align: center;
     }
     .score-value {
-      font-size: 2.5em;
-      font-weight: bold;
-      color: #d9534f; /* Couleur pour le score */
+      color: #ff6600; /* Orange pour le score */
     }
-    .team-name {
-      font-size: 0.9em;
-      color: #666;
+    .score-separator {
+      color: #333;
+      margin: 0 10px;
     }
-    .timer-status {
-      text-align: center;
+    /* Dernière actions */
+    .actions-list-container {
+      max-height: 300px; /* Hauteur maximale pour l'ascenseur */
+      overflow-y: auto; /* Ajoute l'ascenseur si le contenu dépasse */
+      border: 1px solid #eee;
+      background-color: #fff;
+      padding: 5px;
+      border-radius: 5px;
       margin-top: 15px;
-      font-size: 1.2em;
-      font-weight: bold;
-      color: #28a745; /* Couleur pour le statut du timer (vert) */
     }
-    .alert-message {
-      margin-top: 15px;
-      padding: 10px;
-      background-color: #ffeeba;
-      border: 1px solid #ffc107;
-      border-radius: 4px;
-      color: #856404;
-      text-align: center;
+    .action-item {
+      display: flex; /* Utilise flexbox pour aligner temps et remarque */
+      padding: 5px 0;
+      border-bottom: 1px dotted #eee;
       font-size: 0.9em;
+    }
+    .action-item:last-child {
+      border-bottom: none; /* Pas de bordure pour le dernier élément */
+    }
+    .action-time {
+      flex-basis: 30%; /* 30% de largeur pour le temps */
+      font-weight: bold;
+      color: #555;
+    }
+    .action-remark {
+      flex-basis: 70%; /* 70% de largeur pour la remarque */
+      color: #333;
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h2>Tableau de Bord Match</h2>
+  <div class="sidebar-header">Match en direct</div>
 
+  <div class="content-section">
+    <div class="timer-display" id="matchTimer">00:00</div>
+  </div>
+
+  <div class="content-section">
     <div class="score-display">
-      <div class="score-team">
-        <div class="team-name">Locale</div>
-        <div id="scoreLocale" class="score-value">0</div>
-      </div>
-      <div class="score-team">
-        <div class="team-name">Visiteur</div>
-        <div id="scoreVisiteur" class="score-value">0</div>
-      </div>
+      <span class="score-label" id="localTeamName">Équipe Locale</span> 
+      <span class="score-value" id="localScore">0</span>
+      <span class="score-separator">-</span>
+      <span class="score-value" id="visitorScore">0</span>
+      <span class="score-label" id="visitorTeamName">Équipe Visiteur</span>
     </div>
+  </div>
 
-    <div class="data-row">
-      <span class="label">Temps de Jeu :</span>
-      <span id="tempsDeJeu" class="value">00:00:00</span>
+  <div class="content-section">
+    <h4>Dernières actions</h4>
+    <div class="actions-list-container" id="lastActions">
+      <div class="action-item">
+        <span class="action-time">00:00</span>
+        <span class="action-remark">Match non démarré</span>
+      </div>
     </div>
-    <div class="data-row">
-      <span class="label">Statut Chrono :</span>
-      <span id="timerStatus" class="value timer-status">ARRÊTÉ</span>
-    </div>
-    <div class="data-row">
-      <span class="label">Phase de Match :</span>
-      <span id="matchPhase" class="value">Non démarré</span>
-    </div>
-    <div id="alertMessage" class="alert-message"></div>
   </div>
 
   <script>
-    // Fonction pour mettre à jour l'interface utilisateur de la sidebar avec les données reçues
-    function updateClientSidebar(data) {
-      document.getElementById('scoreLocale').innerText = data.scoreLocal;
-      document.getElementById('scoreVisiteur').innerText = data.scoreVisiteur;
-      document.getElementById('tempsDeJeu').innerText = data.tempsDeJeu;
-      document.getElementById('timerStatus').innerText = data.timerStatus;
-      document.getElementById('matchPhase').innerText = data.matchPhase;
-      document.getElementById('alertMessage').innerText = data.alert;
+    // Ces fonctions sont appelées depuis Code.gs pour mettre à jour l'UI
+    function updateTimer(time) {
+      document.getElementById('matchTimer').innerText = time;
     }
 
-    // Fonction pour récupérer les données depuis le script Apps Script (côté serveur)
-    function fetchDataAndUpdate() {
-      // Appel asynchrone à la fonction getSidebarContent() dans Main.gs
-      google.script.run.withSuccessHandler(updateClientSidebar).getSidebarContent();
+    function updateScore(localScore, visitorScore, localName, visitorName) {
+      document.getElementById('localScore').innerText = localScore;
+      document.getElementById('visitorScore').innerText = visitorScore;
+      document.getElementById('localTeamName').innerText = localName;
+      document.getElementById('visitorTeamName').innerText = visitorName;
     }
 
-    // Appelle fetchDataAndUpdate toutes les secondes (1000 ms) pour rafraîchir l'affichage
-    setInterval(fetchDataAndUpdate, 1000);
+    function updateLastActions(actions) {
+      const actionsContainer = document.getElementById('lastActions');
+      actionsContainer.innerHTML = ''; // Vide le contenu existant
 
-    // Appelle fetchDataAndUpdate une première fois au chargement initial de la sidebar
-    document.addEventListener('DOMContentLoaded', fetchDataAndUpdate);
+      // Affiche au maximum les 10 dernières actions
+      const displayLimit = 10;
+      const actionsToDisplay = actions.slice(Math.max(0, actions.length - displayLimit));
+
+      if (actionsToDisplay.length === 0) {
+        actionsContainer.innerHTML = '<div class="action-item"><span class="action-remark">Aucune action enregistrée.</span></div>';
+        return;
+      }
+
+      actionsToDisplay.forEach(action => {
+        const actionItem = document.createElement('div');
+        actionItem.className = 'action-item';
+
+        const timeSpan = document.createElement('span');
+        timeSpan.className = 'action-time';
+        timeSpan.innerText = action[1]; // Colonne B (Temps de jeu)
+
+        const remarkSpan = document.createElement('span');
+        remarkSpan.className = 'action-remark';
+        remarkSpan.innerText = action[7]; // Colonne H (Remarque)
+
+        actionItem.appendChild(timeSpan);
+        actionItem.appendChild(remarkSpan);
+        actionsContainer.prepend(actionItem); // Ajoute au début pour avoir les plus récentes en haut
+      });
+    }
+
+    // Gestion des messages asynchrones de Apps Script
+    google.script.run.withSuccessHandler(function(data) {
+      updateTimer(data.time);
+      updateScore(data.localScore, data.visitorScore, data.localTeamName, data.visitorTeamName);
+      updateLastActions(data.lastActions); // Initialisation des actions
+    }).getDataForSidebar();
+
+    // Rechargement périodique (toutes les 2 secondes) pour la fluidité du chrono
+    setInterval(function() {
+      google.script.run.withSuccessHandler(function(data) {
+        updateTimer(data.time);
+        updateScore(data.localScore, data.visitorScore, data.localTeamName, data.visitorTeamName);
+        // Note: updateLastActions n'est pas appelé ici pour des raisons de performance.
+        // Les actions sont mises à jour lors de l'enregistrement d'un événement.
+      }).getDataForSidebar();
+    }, 2000); // Mettre à jour toutes les 2 secondes
   </script>
 </body>
 </html>

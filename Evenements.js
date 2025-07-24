@@ -36,7 +36,10 @@ function recordEvent(timestamp, gameTime, teamName, action, player, finalScoreLo
 
   feuilleSaisie.appendRow(rowData);
   Logger.log(`Événement enregistré: ${action} pour ${teamName} - ${gameTime}`);
+
+  updateSidebar();
 }
+
 /**
  * Récupère les N derniers événements enregistrés pour affichage (par exemple, dans la sidebar).
  * @param {number} count Le nombre d'événements à récupérer.
