@@ -13,7 +13,8 @@ function recordEvent(timestamp, gameTime, teamName, action, player, finalScoreLo
   const feuilleSaisie = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Saisie");
   if (!feuilleSaisie) {
     Logger.log("Erreur: La feuille 'Saisie' n'a pas été trouvée.");
-    SpreadsheetApp.getUi().alert("Erreur", "La feuille 'Saisie' est introuvable. Veuillez vérifier son nom.", SpreadsheetApp.getUi().ButtonSet.OK);
+    // SpreadsheetApp.getUi().alert("Erreur", "La feuille 'Saisie' est introuvable. Veuillez vérifier son nom.", SpreadsheetApp.getUi().ButtonSet.OK);
+    ouvrirTableauDeBord();
     return;
   }
 
@@ -149,7 +150,8 @@ function deleteLastEvent() {
       // Cela demande une logique plus complexe pour "défaire" le score.
       // Pour l'instant, nous ne le ferons pas, l'utilisateur devra ajuster manuellement si besoin.
       
-      SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
+      // SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
+      ouvrirTableauDeBord();
       return true;
     } else {
       Logger.log("Annulation du dernier événement annulée par l'utilisateur.");

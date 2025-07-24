@@ -8,7 +8,8 @@ function startMatchTimer() {
   scriptProperties.setProperty('startTime', currentTime.toString());
   scriptProperties.setProperty('isTimerRunning', 'true');
   Logger.log("Chronomètre démarré. StartTime: " + currentTime);
-  SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
+  // SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
+  ouvrirTableauDeBord();
 }
 
 /**
@@ -29,7 +30,8 @@ function pauseMatchTimer() {
   }
   scriptProperties.setProperty('isTimerRunning', 'false');
   scriptProperties.setProperty('startTime', '0'); // <-- TRÈS IMPORTANT : Réinitialiser le startTime après la pause
-  SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
+  // SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
+  ouvrirTableauDeBord();
 }
 
 /**
@@ -42,7 +44,8 @@ function resetMatchTimer() {
   scriptProperties.setProperty('gameTimeAtLastPause', '0');
   scriptProperties.setProperty('finalDisplayedTimeMs', '0'); // Réinitialiser le temps final aussi
   Logger.log("Chronomètre réinitialisé.");
-  SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
+  // SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
+  ouvrirTableauDeBord();
 }
 
 /**

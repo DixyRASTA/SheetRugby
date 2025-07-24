@@ -17,14 +17,16 @@ function recordCartonJaunePrompt() {
   if (!isGameActive()) { // Utilise une fonction de sécurité pour vérifier la phase de jeu
     ui.alert("Action impossible", "Veuillez démarrer le match ou reprendre le jeu pour enregistrer un carton.", ui.ButtonSet.OK);
     // Rafraîchir la sidebar après l'alerte
-    SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
+    // SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
+    ouvrirTableauDeBord();
     return;
   }
 
   const team = promptForTeam(); // Demande l'équipe (retourne le nom réel de l'équipe ou null)
   if (!team) {
       // Rafraîchir la sidebar si l'utilisateur annule le choix d'équipe
-      SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
+      // SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
+      ouvrirTableauDeBord();
       return; 
   }
 
@@ -43,14 +45,16 @@ function recordCartonRougePrompt() {
   if (!isGameActive()) { // Utilise une fonction de sécurité pour vérifier la phase de jeu
     ui.alert("Action impossible", "Veuillez démarrer le match ou reprendre le jeu pour enregistrer un carton.", ui.ButtonSet.OK);
     // Rafraîchir la sidebar après l'alerte
-    SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
+    // SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
+    ouvrirTableauDeBord();
     return;
   }
 
   const team = promptForTeam(); // Demande l'équipe
   if (!team) {
       // Rafraîchir la sidebar si l'utilisateur annule le choix d'équipe
-      SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
+      // SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
+      ouvrirTableauDeBord();
       return;
   }
 
@@ -69,14 +73,16 @@ function recordCartonBleuPrompt() {
   if (!isGameActive()) { // Utilise une fonction de sécurité pour vérifier la phase de jeu
     ui.alert("Action impossible", "Veuillez démarrer le match ou reprendre le jeu pour enregistrer un carton.", ui.ButtonSet.OK);
     // Rafraîchir la sidebar après l'alerte
-    SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
+    // SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
+    ouvrirTableauDeBord();
     return;
   }
 
   const team = promptForTeam(); // Demande l'équipe
   if (!team) {
       // Rafraîchir la sidebar si l'utilisateur annule le choix d'équipe
-      SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
+      // SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
+      ouvrirTableauDeBord();
       return;
   }
 
@@ -126,7 +132,8 @@ function recordSanctionEvent(teamName, sanctionType, playerName, remark) {
   Logger.log(message);
   ui.alert("Sanction enregistrée", message, ui.ButtonSet.OK);
   // CORRECTION : Remplacer updateSidebar() par l'appel direct au rafraîchissement de la sidebar
-  SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
+  // SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
+  ouvrirTableauDeBord();
 }
 
 /**
@@ -216,7 +223,8 @@ function promptAndRecordCustomEvent() {
   if (!isGameActive()) {
     ui.alert("Action impossible", "Veuillez démarrer le match ou reprendre le jeu pour enregistrer un événement.", ui.ButtonSet.OK);
     // Rafraîchir la sidebar après l'alerte
-    SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
+    // SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
+    ouvrirTableauDeBord();
     return;
   }
 
@@ -231,7 +239,8 @@ function promptAndRecordCustomEvent() {
   if (eventTypeResult.getSelectedButton() !== ui.Button.OK) {
     ui.alert("Annulé", "L'enregistrement de l'événement a été annulé.", ui.ButtonSet.OK);
     // Rafraîchir la sidebar si l'utilisateur annule
-    SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
+    // SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
+    ouvrirTableauDeBord();
     return;
   }
 
@@ -239,7 +248,8 @@ function promptAndRecordCustomEvent() {
   if (!customEventType) {
       ui.alert("Erreur", "Le type d'événement ne peut pas être vide.", ui.ButtonSet.OK);
       // Rafraîchir la sidebar si l'entrée est invalide
-      SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
+      // SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
+      ouvrirTableauDeBord();
       return;
   }
 
@@ -250,7 +260,8 @@ function promptAndRecordCustomEvent() {
   if (team === null) {
     ui.alert("Annulé", "L'enregistrement de l'événement a été annulé.", ui.ButtonSet.OK);
     // Rafraîchir la sidebar si l'utilisateur annule
-    SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
+    // SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
+    ouvrirTableauDeBord();
     return;
   }
 
@@ -282,7 +293,8 @@ function promptAndRecordCustomEvent() {
   Logger.log(message);
   ui.alert("Événement enregistré", message, ui.ButtonSet.OK);
   // CORRECTION : Remplacer updateSidebar() par l'appel direct au rafraîchissement de la sidebar
-  SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
+  // SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
+  ouvrirTableauDeBord();
 }
 
 /**

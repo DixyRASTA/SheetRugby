@@ -38,17 +38,16 @@ function onOpen() {
 }
 
 /**
- * Ouvre le tableau de bord (sidebar) du match.
+ * Ouvre ou rafraîchit le tableau de bord (sidebar) du match en s'assurant qu'il conserve ses propriétés.
  */
 function ouvrirTableauDeBord() {
   const ui = SpreadsheetApp.getUi(); 
   const html = HtmlService.createHtmlOutputFromFile('Sidebar')
       .setTitle('Tableau de Bord Match Rugby')
       .setWidth(300) 
-      .setSandboxMode(HtmlService.SandboxMode.IFRAME); // <-- CORRECTION CRUCIALE ICI : Ajout du mode sandbox
-  ui.showSidebar(html); 
+      .setSandboxMode(HtmlService.SandboxMode.IFRAME); // Assure que le mode sandbox est toujours appliqué
+  ui.showSidebar(html); // Affiche la sidebar avec les paramètres désirés
 }
-
 
 /**
  * Fonction appelée par le client (dans la sidebar) pour récupérer le contenu HTML mis à jour.
@@ -60,8 +59,10 @@ function getDataForSidebar() {
 
   const currentScoreLocal = scriptProperties.getProperty('currentScoreLocal') || '0';
   const currentScoreVisiteur = scriptProperties.getProperty('currentScoreVisiteur') || '0';
-  const alertMessage = timeState.message; 
+  const alertMessage = scriptProperties.getProperty('alertMessage') || ''; // S'assurer que alertMessage est bien récupéré des propriétés.
   const currentMatchPhase = timeState.phase; 
+
+  // ... (le reste de la fonction getDataForSidebar reste inchangé) ...
 
   let timerStatus = "ARRÊTÉ"; 
   if (timeState.isTimerRunning) {
@@ -105,6 +106,7 @@ function getDataForSidebar() {
     teamNameLocal: teamNameLocal,
     teamNameVisiteur: teamNameVisiteur,
     tempsDeJeu: timeState.tempsDeJeuFormatted,
-    actions: actions 
+    actions: actions,
+    alertMessage: alertMessage // Inclure le message d'alerte pour affichage potentiel dans la sidebar
   };
 }

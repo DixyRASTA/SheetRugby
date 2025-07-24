@@ -201,9 +201,8 @@
     // Rechargement périodique pour la fluidité du chrono (toutes les 2 secondes)
     setInterval(fetchDataAndUpdate, 2000); 
 
-    // Rend la fonction globale pour qu'Apps Script puisse l'appeler directement
-    // (pour les appels de retour depuis les actions des boutons)
-    window.refreshSidebar = fetchDataAndUpdate; 
+    // ATTENTION : Supprimez ou commentez cette ligne, elle n'est plus nécessaire.
+    // window.refreshSidebar = fetchDataAndUpdate; 
   </script>
 </body>
 </html>

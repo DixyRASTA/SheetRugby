@@ -49,7 +49,8 @@ function initialiserFeuilleEtProprietes() {
     ui.alert("Match initialisé", "Un nouveau match a été initialisé. Vous pouvez démarrer la 1ère mi-temps.", ui.ButtonSet.OK);
   } else {
     // Si l'utilisateur annule l'initialisation, rafraîchir la sidebar
-    SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
+    // SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
+    ouvrirTableauDeBord();
   }
 }
 
@@ -66,7 +67,9 @@ function debutPremiereMiTemps() {
   if (currentPhase !== 'non_demarre' && currentPhase !== 'fin_de_match' && currentPhase !== 'mi_temps') {
     scriptProperties.setProperty('alertMessage', 'Le match est déjà en cours ou dans une phase incorrecte.');
     // CORRECTION : Remplacer updateSidebar() par l'appel direct au rafraîchissement de la sidebar
-    SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
+    // SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
+    
+    ouvrirTableauDeBord();
     return;
   }
 
@@ -75,7 +78,9 @@ function debutPremiereMiTemps() {
   if (!kickoffTeam1stHalf) {
     ui.alert("Annulation", "Le coup d'envoi de la 1ère mi-temps a été annulé.");
     // CORRECTION : Rafraîchir la sidebar si l'utilisateur annule
-    SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
+    // SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
+    
+    ouvrirTableauDeBord();
     return;
   }
 
@@ -110,7 +115,8 @@ function debutPremiereMiTemps() {
   );
 
   // CORRECTION : Remplacer updateSidebar() par l'appel direct au rafraîchissement de la sidebar
-  SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
+  // SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
+  ouvrirTableauDeBord();
   ui.alert("Coup d'envoi 1ère mi-temps !", "Le match a commencé.", ui.ButtonSet.OK);
 }
 
@@ -127,7 +133,8 @@ function finPremiereMiTemps() {
   if (currentPhase !== 'premiere_mi_temps') {
     scriptProperties.setProperty('alertMessage', 'Impossible de terminer la 1ère mi-temps. Le match n\'est pas en 1ère MT.');
     // CORRECTION : Remplacer updateSidebar() par l'appel direct au rafraîchissement de la sidebar
-    SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
+    // SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
+    ouvrirTableauDeBord();
     return;
   }
 
@@ -161,7 +168,8 @@ function finPremiereMiTemps() {
   }
 
   // CORRECTION : Remplacer updateSidebar() par l'appel direct au rafraîchissement de la sidebar
-  SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
+  // SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
+  ouvrirTableauDeBord();
   ui.alert("Mi-temps", "La 1ère mi-temps est terminée.", ui.ButtonSet.OK); // Utilisation de ui
 }
 
@@ -178,7 +186,8 @@ function debutDeuxiemeMiTemps() {
   if (currentPhase !== 'mi_temps') {
     scriptProperties.setProperty('alertMessage', 'Impossible de démarrer la 2ème mi-temps. Le match n\'est pas en pause mi-temps.');
     // CORRECTION : Remplacer updateSidebar() par l'appel direct au rafraîchissement de la sidebar
-    SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
+    // SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
+    ouvrirTableauDeBord();
     return;
   }
 
@@ -207,7 +216,8 @@ function debutDeuxiemeMiTemps() {
   );
 
   // CORRECTION : Remplacer updateSidebar() par l'appel direct au rafraîchissement de la sidebar
-  SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
+  //SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
+  ouvrirTableauDeBord();
   ui.alert("Coup d'envoi 2ème mi-temps !", "Le jeu a repris.", ui.ButtonSet.OK);
 }
 
@@ -224,7 +234,8 @@ function finDeMatch() {
   if (currentPhase === 'non_demarre' || currentPhase === 'fin_de_match') {
     scriptProperties.setProperty('alertMessage', 'Impossible de terminer le match. Le match n\'a pas démarré ou est déjà terminé.');
     // CORRECTION : Remplacer updateSidebar() par l'appel direct au rafraîchissement de la sidebar
-    SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
+    // SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
+    ouvrirTableauDeBord();
     return;
   }
 
@@ -242,7 +253,8 @@ function finDeMatch() {
   recordEvent(new Date(), matchTimeState.tempsDeJeuFormatted, '', 'Fin de Match', '', currentScoreLocal, currentScoreVisiteur, 'Fin');
 
   // CORRECTION : Remplacer updateSidebar() par l'appel direct au rafraîchissement de la sidebar
-  SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
+  // SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
+  ouvrirTableauDeBord();
   ui.alert("Fin du Match !", "Le match est terminé.", ui.ButtonSet.OK); // Utilisation de ui
 }
 
@@ -284,7 +296,8 @@ function arretJeu() {
     Logger.log("arretJeu - Impossible d'arrêter. Phase actuelle: " + currentPhaseBeforeArret);
   }
   // CORRECTION : Remplacer updateSidebar() par l'appel direct au rafraîchissement de la sidebar
-  SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
+  // SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
+  ouvrirTableauDeBord();
   ui.alert("Jeu Arrêté", scriptProperties.getProperty('alertMessage'), ui.ButtonSet.OK);
 }
 
@@ -328,14 +341,16 @@ function reprendreJeu() {
                ", gameTimeAtLastPause: " + scriptProperties.getProperty('gameTimeAtLastPause'));
 
     // CORRECTION : Remplacer updateSidebar() par l'appel direct au rafraîchissement de la sidebar
-    SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
+    // SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
+    ouvrirTableauDeBord();
     ui.alert("Reprise du jeu", "Le jeu a repris.", ui.ButtonSet.OK);
 
   } else {
     scriptProperties.setProperty('alertMessage', 'Le jeu n\'est pas en pause pour être repris.');
     Logger.log("repriseJeu - Impossible de reprendre. Phase actuelle: " + currentPhaseAtStartOfReprise);
     // CORRECTION : Remplacer updateSidebar() par l'appel direct au rafraîchissement de la sidebar
-    SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
+    // SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
+    ouvrirTableauDeBord();
     ui.alert("Impossible de reprendre", "Le jeu n'est pas en pause.", ui.ButtonSet.OK);
   }
 }
