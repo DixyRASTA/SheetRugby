@@ -40,11 +40,16 @@ function initialiserFeuilleEtProprietes() {
     } catch (e) {
       Logger.log("Erreur lors de la réinitialisation de la feuille 'Saisie': " + e.message);
       ui.alert("Erreur", "Impossible de réinitialiser la feuille 'Saisie'. Vérifiez son nom ou ses permissions.", ui.ButtonSet.OK);
+      // Même en cas d'erreur ici, on pourrait vouloir rafraîchir la sidebar pour montrer l'état.
+      SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
     }
 
-    // Ouvre la sidebar APRES l'initialisation des données
+    // Ouvre la sidebar APRES l'initialisation des données (c'est son rôle principal)
     ouvrirTableauDeBord(); 
     ui.alert("Match initialisé", "Un nouveau match a été initialisé. Vous pouvez démarrer la 1ère mi-temps.", ui.ButtonSet.OK);
+  } else {
+    // Si l'utilisateur annule l'initialisation, rafraîchir la sidebar
+    SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
   }
 }
 
@@ -60,7 +65,8 @@ function debutPremiereMiTemps() {
   // Vérification de sécurité (sera enrichie avec SecurityManager plus tard)
   if (currentPhase !== 'non_demarre' && currentPhase !== 'fin_de_match' && currentPhase !== 'mi_temps') {
     scriptProperties.setProperty('alertMessage', 'Le match est déjà en cours ou dans une phase incorrecte.');
-    updateSidebar();
+    // CORRECTION : Remplacer updateSidebar() par l'appel direct au rafraîchissement de la sidebar
+    SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
     return;
   }
 
@@ -68,7 +74,8 @@ function debutPremiereMiTemps() {
   const kickoffTeam1stHalf = promptForKickOffTeam();
   if (!kickoffTeam1stHalf) {
     ui.alert("Annulation", "Le coup d'envoi de la 1ère mi-temps a été annulé.");
-    updateSidebar();
+    // CORRECTION : Rafraîchir la sidebar si l'utilisateur annule
+    SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
     return;
   }
 
@@ -79,7 +86,7 @@ function debutPremiereMiTemps() {
   scriptProperties.setProperty('kickoffTeam2ndHalf', kickoffTeam2ndHalf);
 
   scriptProperties.setProperty('currentMatchPhase', 'premiere_mi_temps');
-  startMatchTimer(); // Démarre le chronomètre
+  startMatchTimer(); // Démarre le chronomètre (et contient son propre rafraîchissement)
 
   scriptProperties.setProperty('alertMessage', '');
   
@@ -102,7 +109,8 @@ function debutPremiereMiTemps() {
     `Coup d'envoi par ${kickoffTeam1stHalf}`
   );
 
-  updateSidebar();
+  // CORRECTION : Remplacer updateSidebar() par l'appel direct au rafraîchissement de la sidebar
+  SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
   ui.alert("Coup d'envoi 1ère mi-temps !", "Le match a commencé.", ui.ButtonSet.OK);
 }
 
@@ -111,18 +119,19 @@ function debutPremiereMiTemps() {
  * Met le chronomètre en pause et enregistre l'événement.
  */
 function finPremiereMiTemps() {
-  const ui = SpreadsheetApp.getUi(); // Ajout de ui pour l'alerte
+  const ui = SpreadsheetApp.getUi(); 
   const scriptProperties = PropertiesService.getScriptProperties();
   const currentPhase = scriptProperties.getProperty('currentMatchPhase');
 
   // Vérification de sécurité
   if (currentPhase !== 'premiere_mi_temps') {
     scriptProperties.setProperty('alertMessage', 'Impossible de terminer la 1ère mi-temps. Le match n\'est pas en 1ère MT.');
-    updateSidebar();
+    // CORRECTION : Remplacer updateSidebar() par l'appel direct au rafraîchissement de la sidebar
+    SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
     return;
   }
 
-  pauseMatchTimer(); // Cette fonction met à jour gameTimeAtLastPause avec le temps RÉEL de la 1ère MT
+  pauseMatchTimer(); // Cette fonction met à jour gameTimeAtLastPause avec le temps RÉEL de la 1ère MT (et contient son propre rafraîchissement)
   
   const matchTimeState = getMatchTimeState(); // Récupère l'état avec le temps réel de fin de 1ère MT
   scriptProperties.setProperty('currentMatchPhase', 'mi_temps');
@@ -132,7 +141,6 @@ function finPremiereMiTemps() {
   const currentScoreLocal = parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10);
   const currentScoreVisiteur = parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10);
   
-  // *** CORRECTION ICI : Utilisation de recordEvent pour la fin de mi-temps ***
   recordEvent(
     new Date(),
     matchTimeState.tempsDeJeuFormatted,
@@ -152,7 +160,8 @@ function finPremiereMiTemps() {
     Logger.log("Erreur: La feuille 'Saisie' n'a pas été trouvée pour ajouter la délimitation.");
   }
 
-  updateSidebar();
+  // CORRECTION : Remplacer updateSidebar() par l'appel direct au rafraîchissement de la sidebar
+  SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
   ui.alert("Mi-temps", "La 1ère mi-temps est terminée.", ui.ButtonSet.OK); // Utilisation de ui
 }
 
@@ -168,7 +177,8 @@ function debutDeuxiemeMiTemps() {
   // Vérification de sécurité
   if (currentPhase !== 'mi_temps') {
     scriptProperties.setProperty('alertMessage', 'Impossible de démarrer la 2ème mi-temps. Le match n\'est pas en pause mi-temps.');
-    updateSidebar();
+    // CORRECTION : Remplacer updateSidebar() par l'appel direct au rafraîchissement de la sidebar
+    SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
     return;
   }
 
@@ -196,7 +206,8 @@ function debutDeuxiemeMiTemps() {
     `Coup d'envoi par ${kickoffTeam}` // Ajoutez le nom de l'équipe dans la remarque
   );
 
-  updateSidebar();
+  // CORRECTION : Remplacer updateSidebar() par l'appel direct au rafraîchissement de la sidebar
+  SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
   ui.alert("Coup d'envoi 2ème mi-temps !", "Le jeu a repris.", ui.ButtonSet.OK);
 }
 
@@ -205,18 +216,19 @@ function debutDeuxiemeMiTemps() {
  * Arrête le chronomètre et enregistre l'événement.
  */
 function finDeMatch() {
-  const ui = SpreadsheetApp.getUi(); // Ajout de ui pour l'alerte
+  const ui = SpreadsheetApp.getUi(); 
   const scriptProperties = PropertiesService.getScriptProperties();
   const currentPhase = scriptProperties.getProperty('currentMatchPhase');
 
   // Vérification de sécurité
   if (currentPhase === 'non_demarre' || currentPhase === 'fin_de_match') {
     scriptProperties.setProperty('alertMessage', 'Impossible de terminer le match. Le match n\'a pas démarré ou est déjà terminé.');
-    updateSidebar();
+    // CORRECTION : Remplacer updateSidebar() par l'appel direct au rafraîchissement de la sidebar
+    SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
     return;
   }
 
-  pauseMatchTimer(); // Arrête le chrono et met à jour gameTimeAtLastPause
+  pauseMatchTimer(); // Arrête le chrono et met à jour gameTimeAtLastPause (et contient son propre rafraîchissement)
   
   const matchTimeState = getMatchTimeState();
   // NOUVEAU : Enregistrer le temps final du match
@@ -229,7 +241,8 @@ function finDeMatch() {
   const currentScoreVisiteur = parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10);
   recordEvent(new Date(), matchTimeState.tempsDeJeuFormatted, '', 'Fin de Match', '', currentScoreLocal, currentScoreVisiteur, 'Fin');
 
-  updateSidebar();
+  // CORRECTION : Remplacer updateSidebar() par l'appel direct au rafraîchissement de la sidebar
+  SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
   ui.alert("Fin du Match !", "Le match est terminé.", ui.ButtonSet.OK); // Utilisation de ui
 }
 
@@ -246,13 +259,12 @@ function arretJeu() {
   if (currentPhaseBeforeArret === 'premiere_mi_temps' || currentPhaseBeforeArret === 'deuxieme_mi_temps') {
     scriptProperties.setProperty('previousMatchPhase', currentPhaseBeforeArret); // Stocke la phase avant la pause
     scriptProperties.setProperty('currentMatchPhase', 'pause'); // Définit la nouvelle phase comme "pause"
-    pauseMatchTimer(); // Met le chronomètre en pause
+    pauseMatchTimer(); // Met le chronomètre en pause (et contient son propre rafraîchissement)
 
     const matchTimeState = getMatchTimeState();
     const currentScoreLocal = parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10);
     const currentScoreVisiteur = parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10);
 
-    // *** CORRECTION ICI : Utilisation de recordEvent pour l'arrêt de jeu ***
     recordEvent(
       new Date(),
       matchTimeState.tempsDeJeuFormatted,
@@ -271,7 +283,8 @@ function arretJeu() {
     scriptProperties.setProperty('alertMessage', 'Le jeu n\'est pas en cours pour être arrêté.');
     Logger.log("arretJeu - Impossible d'arrêter. Phase actuelle: " + currentPhaseBeforeArret);
   }
-  updateSidebar();
+  // CORRECTION : Remplacer updateSidebar() par l'appel direct au rafraîchissement de la sidebar
+  SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
   ui.alert("Jeu Arrêté", scriptProperties.getProperty('alertMessage'), ui.ButtonSet.OK);
 }
 
@@ -291,13 +304,12 @@ function reprendreJeu() {
     // Restaure la phase précédente (avant la pause), par défaut à 'premiere_mi_temps' si indéfini.
     const phaseToResumeTo = previousPhase || 'premiere_mi_temps';
     scriptProperties.setProperty('currentMatchPhase', phaseToResumeTo); 
-    resumeMatchTimer(); // Appelle la fonction de TimeManager pour relancer le chrono
+    resumeMatchTimer(); // Appelle la fonction de TimeManager pour relancer le chrono (et contient son propre rafraîchissement)
 
     const matchTimeState = getMatchTimeState();
     const currentScoreLocal = parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10);
     const currentScoreVisiteur = parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10);
 
-    // *** CORRECTION ICI : Utilisation de recordEvent pour la reprise de jeu ***
     recordEvent(
       new Date(),
       matchTimeState.tempsDeJeuFormatted,
@@ -315,13 +327,15 @@ function reprendreJeu() {
                ", startTime: " + scriptProperties.getProperty('startTime') + 
                ", gameTimeAtLastPause: " + scriptProperties.getProperty('gameTimeAtLastPause'));
 
-    updateSidebar();
+    // CORRECTION : Remplacer updateSidebar() par l'appel direct au rafraîchissement de la sidebar
+    SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
     ui.alert("Reprise du jeu", "Le jeu a repris.", ui.ButtonSet.OK);
 
   } else {
     scriptProperties.setProperty('alertMessage', 'Le jeu n\'est pas en pause pour être repris.');
     Logger.log("repriseJeu - Impossible de reprendre. Phase actuelle: " + currentPhaseAtStartOfReprise);
-    updateSidebar();
+    // CORRECTION : Remplacer updateSidebar() par l'appel direct au rafraîchissement de la sidebar
+    SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
     ui.alert("Impossible de reprendre", "Le jeu n'est pas en pause.", ui.ButtonSet.OK);
   }
 }

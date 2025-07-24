@@ -7,8 +7,8 @@
     body {
       font-family: 'Arial', sans-serif;
       margin: 0;
-      padding: 0;
-      background-color: #f0f0f0;
+      padding: 15px;
+      background-color: #f4f4f4;
       color: #333;
     }
     .sidebar-header {
@@ -16,54 +16,57 @@
       color: #ff6600; /* Orange pour le texte du titre */
       padding: 10px 15px;
       text-align: center;
-      font-size: 24px;
-      font-weight: bold;
-      border-bottom: 2px solid #ff6600; /* Ligne orange en bas */
+      margin-bottom: 20px;
     }
-    .content-section {
-      padding: 15px;
-      border-bottom: 1px solid #ddd;
+    .data-row {
+      display: flex;
+      justify-content: space-between;
       margin-bottom: 10px;
+      font-size: 1.1em;
     }
-    /* Styles spécifiques au chrono et au score */
-    .timer-display, .score-values { /* Renommé en score-values pour regrouper les chiffres du score */
-      font-size: 4em; /* Chiffres très gros */
+    .label {
       font-weight: bold;
-      text-align: center;
-      margin: 10px 0;
-      line-height: 1; /* Réduire l'espacement entre les lignes */
+      color: #555;
     }
-    .timer-display {
-      color: #ff6600; /* Orange pour le chrono */
+    .value {
+      color: #000;
     }
-    .score-names { /* Nouveau pour les noms d'équipes */
-        font-size: 1.2em; /* Ajustement de la taille pour les noms d'équipes */
-        font-weight: bold;
-        color: #333; /* Noir pour les noms d'équipes */
-        text-align: center;
-        margin-top: 5px; /* Petit espace au-dessus des scores */
-    }
-    .score-values {
-      color: #ff6600; /* Orange pour le score */
-    }
-    .score-separator {
-      color: #333;
-      margin: 0 10px;
-    }
-    /* Dernière actions */
-    .actions-list-container {
-      max-height: 300px; /* Hauteur maximale pour l'ascenseur */
-      overflow-y: auto; /* Ajoute l'ascenseur si le contenu dépasse */
-      border: 1px solid #eee;
-      background-color: #fff;
-      padding: 5px;
+    .score-display {
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      margin: 20px 0;
+      padding: 15px;
+      background-color: #e9ecef;
       border-radius: 5px;
-      margin-top: 15px;
     }
-    .action-item {
-      display: flex; /* Utilise flexbox pour aligner temps et remarque */
-      padding: 5px 0;
-      border-bottom: 1px dotted #eee;
+    .score-team {
+      text-align: center;
+    }
+    .score-value {
+      font-size: 2.5em;
+      font-weight: bold;
+      color: #d9534f; /* Couleur pour le score */
+    }
+    .team-name {
+      font-size: 0.9em;
+      color: #666;
+    }
+    .timer-status {
+      text-align: center;
+      margin-top: 15px;
+      font-size: 1.2em;
+      font-weight: bold;
+      color: #28a745; /* Couleur pour le statut du timer (vert) */
+    }
+    .alert-message {
+      margin-top: 15px;
+      padding: 10px;
+      background-color: #ffeeba;
+      border: 1px solid #ffc107;
+      border-radius: 4px;
+      color: #856404;
+      text-align: center;
       font-size: 0.9em;
     }
     .action-item:last-child {
@@ -73,6 +76,8 @@
       flex-basis: 30%; /* 30% de largeur pour le temps */
       font-weight: bold;
       color: #555;
+      text-align: right; /* Aligner le temps à droite pour une meilleure lecture */
+      padding-right: 10px; /* Marge entre temps et remarque */
     }
     .action-remark {
       flex-basis: 70%; /* 70% de largeur pour la remarque */
@@ -87,10 +92,9 @@
     <div class="timer-display" id="matchTimer">00:00</div>
   </div>
 
-  <div class="content-section">
-    <div class="score-names">
-        <span id="localTeamName">Équipe Locale</span>
-        <span class="score-separator">&nbsp;</span> <span id="visitorTeamName">Équipe Visiteur</span>
+    <div class="data-row">
+      <span class="label">Temps de Jeu :</span>
+      <span id="tempsDeJeu" class="value">00:00:00</span>
     </div>
     <div class="score-values">
       <span id="localScore">0</span>
@@ -110,79 +114,27 @@
   </div>
 
   <script>
-    // Fonctions appelées depuis Apps Script pour mettre à jour l'UI
-    function updateTimer(time) {
-      document.getElementById('matchTimer').innerText = time;
+    // Fonction pour mettre à jour l'interface utilisateur de la sidebar avec les données reçues
+    function updateClientSidebar(data) {
+      document.getElementById('scoreLocale').innerText = data.scoreLocal;
+      document.getElementById('scoreVisiteur').innerText = data.scoreVisiteur;
+      document.getElementById('tempsDeJeu').innerText = data.tempsDeJeu;
+      document.getElementById('timerStatus').innerText = data.timerStatus;
+      document.getElementById('matchPhase').innerText = data.matchPhase;
+      document.getElementById('alertMessage').innerText = data.alert;
     }
 
-    function updateScore(localScore, visitorScore, localName, visitorName) {
-      document.getElementById('localScore').innerText = localScore;
-      document.getElementById('visitorScore').innerText = visitorScore;
-      document.getElementById('localTeamName').innerText = localName;
-      document.getElementById('visitorTeamName').innerText = visitorName;
+    // Fonction pour récupérer les données depuis le script Apps Script (côté serveur)
+    function fetchDataAndUpdate() {
+      // Appel asynchrone à la fonction getSidebarContent() dans Main.gs
+      google.script.run.withSuccessHandler(updateClientSidebar).getSidebarContent();
     }
 
-    function updateLastActions(actions) {
-      const actionsContainer = document.getElementById('lastActions');
-      actionsContainer.innerHTML = ''; // Vide le contenu existant
+    // Appelle fetchDataAndUpdate toutes les secondes (1000 ms) pour rafraîchir l'affichage
+    setInterval(fetchDataAndUpdate, 1000);
 
-      const noActionsMessage = document.getElementById('noActionsMessage');
-      if (noActionsMessage) noActionsMessage.style.display = 'none'; // Cache le message initial
-
-      // Affiche au maximum les 10 dernières actions
-      const displayLimit = 10;
-      // .slice(-displayLimit) prend les 'displayLimit' derniers éléments du tableau
-      const actionsToDisplay = actions.slice(-displayLimit); 
-
-      if (actionsToDisplay.length === 0) {
-        actionsContainer.innerHTML = '<div class="action-item"><span class="action-remark">Aucune action enregistrée.</span></div>';
-        return;
-      }
-
-      // Parcourt les actions pour les ajouter, la plus récente en haut
-      for (let i = actionsToDisplay.length - 1; i >= 0; i--) { // Boucle à l'envers pour ajouter les plus récentes en premier
-        const action = actionsToDisplay[i];
-        const actionItem = document.createElement('div');
-        actionItem.className = 'action-item';
-
-        const timeSpan = document.createElement('span');
-        timeSpan.className = 'action-time';
-        timeSpan.innerText = action[0]; // Index 0 pour le temps de jeu [Temps, Remarque]
-
-        const remarkSpan = document.createElement('span');
-        remarkSpan.className = 'action-remark';
-        remarkSpan.innerText = action[1]; // Index 1 pour la remarque [Temps, Remarque]
-
-        actionItem.appendChild(timeSpan);
-        actionItem.appendChild(remarkSpan);
-        actionsContainer.appendChild(actionItem); // Ajoute à la fin, car on parcourt à l'envers
-      }
-    }
-
-    // Fonction de rafraîchissement principale
-    function refreshSidebar() {
-      google.script.run
-        .withSuccessHandler(function(data) {
-          updateTimer(data.time);
-          updateScore(data.localScore, data.visitorScore, data.localTeamName, data.visitorTeamName);
-          // Seulement mettre à jour les actions si elles sont différentes ou sur un intervalle moins fréquent si besoin
-          // Pour l'instant, on rafraîchit tout pour la simplicité.
-          updateLastActions(data.lastActions); 
-        })
-        .getDataForSidebar();
-    }
-
-    // Appel initial au chargement de la sidebar
-    document.addEventListener('DOMContentLoaded', refreshSidebar);
-
-    // Rechargement périodique pour la fluidité du chrono (toutes les 2 secondes)
-    setInterval(refreshSidebar, 2000); 
-
-    // Rend les fonctions globales pour qu'Apps Script puisse les appeler directement
-    window.updateTimer = updateTimer;
-    window.updateScore = updateScore;
-    window.updateLastActions = updateLastActions; // Rendre cette fonction globale aussi
-    window.refreshSidebar = refreshSidebar; // Rendre la fonction de rafraichissement globale
+    // Appelle fetchDataAndUpdate une première fois au chargement initial de la sidebar
+    document.addEventListener('DOMContentLoaded', fetchDataAndUpdate);
   </script>
 </body>
 </html>

@@ -15,6 +15,8 @@ function isScoreAllowedForPhase() {
 
   if (currentPhase === 'non_demarre' || currentPhase === 'fin_de_match' || currentPhase === 'mi_temps' || currentPhase === 'pause') {
     ui.alert("Action impossible", "Veuillez démarrer le match ou reprendre le jeu avant d'ajouter un score.", ui.ButtonSet.OK);
+    // AJOUT IMPORTANT : Déclenche le rafraîchissement de la sidebar même en cas d'erreur
+    SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
     return false;
   }
   return true;
@@ -48,6 +50,8 @@ function addEssai() {
 
   if (teamChoice.getSelectedButton() !== ui.Button.OK) {
     ui.alert("Annulé", "L'ajout d'essai a été annulé.", ui.ButtonSet.OK);
+    // AJOUT IMPORTANT : Déclenche le rafraîchissement de la sidebar même si annulé
+    SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
     return;
   }
 
@@ -58,6 +62,8 @@ function addEssai() {
     scoringTeam = visitorTeamName;
   } else {
     ui.alert("Entrée invalide", "Veuillez entrer '1' ou '2'.", ui.ButtonSet.OK);
+    // AJOUT IMPORTANT : Déclenche le rafraîchissement de la sidebar même si l'entrée est invalide
+    SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
     return;
   }
 
@@ -117,7 +123,8 @@ function addEssai() {
   }
 
   scriptProperties.setProperty('alertMessage', '');
-  updateSidebar();
+  // CORRECTION : Remplacer updateSidebar() par l'appel direct au rafraîchissement de la sidebar
+  SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
   ui.alert("Essai", `Essai de l'équipe ${scoringTeam} et transformation gérée.`, ui.ButtonSet.OK);
 }
 
@@ -151,6 +158,8 @@ function addPenalite() {
   // Vérifier si l'utilisateur a annulé
   if (response.getSelectedButton() !== ui.Button.OK) {
     ui.alert("Annulé", "L'ajout de pénalité a été annulé.", ui.ButtonSet.OK);
+    // AJOUT IMPORTANT : Déclenche le rafraîchissement de la sidebar même si annulé
+    SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
     return;
   }
 
@@ -162,6 +171,8 @@ function addPenalite() {
     penalizedTeam = visitorTeamName;
   } else {
     ui.alert("Entrée invalide", "Veuillez entrer '1' ou '2'.", ui.ButtonSet.OK);
+    // AJOUT IMPORTANT : Déclenche le rafraîchissement de la sidebar même si l'entrée est invalide
+    SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
     return;
   }
 
@@ -201,7 +212,8 @@ function addPenalite() {
     );
   }
 
-  updateSidebar();
+  // CORRECTION : Remplacer updateSidebar() par l'appel direct au rafraîchissement de la sidebar
+  SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
   ui.alert("Pénalité", `Pénalité ${successResponse === ui.Button.YES ? 'réussie' : 'ratée'} par ${penalizedTeam}.`, ui.ButtonSet.OK);
 }
 
@@ -235,6 +247,8 @@ function addDrop() {
   // Vérifier si l'utilisateur a annulé
   if (response.getSelectedButton() !== ui.Button.OK) {
     ui.alert("Annulé", "L'ajout du drop a été annulé.", ui.ButtonSet.OK);
+    // AJOUT IMPORTANT : Déclenche le rafraîchissement de la sidebar même si annulé
+    SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
     return;
   }
 
@@ -246,6 +260,8 @@ function addDrop() {
     dropTeam = visitorTeamName;
   } else {
     ui.alert("Entrée invalide", "Veuillez entrer '1' ou '2'.", ui.ButtonSet.OK);
+    // AJOUT IMPORTANT : Déclenche le rafraîchissement de la sidebar même si l'entrée est invalide
+    SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
     return;
   }
 
@@ -281,10 +297,11 @@ function addDrop() {
       '',
       parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10),
       parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10),
-      `Drop raté par ${dropTeam}`
+      `Drop ratée par ${dropTeam}`
     );
   }
 
-  updateSidebar();
+  // CORRECTION : Remplacer updateSidebar() par l'appel direct au rafraîchissement de la sidebar
+  SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
   ui.alert("Drop", `Drop ${successResponse === ui.Button.YES ? 'réussi' : 'raté'} par ${dropTeam}.`, ui.ButtonSet.OK);
 }

@@ -8,6 +8,7 @@ function startMatchTimer() {
   scriptProperties.setProperty('startTime', currentTime.toString());
   scriptProperties.setProperty('isTimerRunning', 'true');
   Logger.log("Chronomètre démarré. StartTime: " + currentTime);
+  SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
 }
 
 /**
@@ -28,6 +29,7 @@ function pauseMatchTimer() {
   }
   scriptProperties.setProperty('isTimerRunning', 'false');
   scriptProperties.setProperty('startTime', '0'); // <-- TRÈS IMPORTANT : Réinitialiser le startTime après la pause
+  SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
 }
 
 /**
@@ -40,6 +42,7 @@ function resetMatchTimer() {
   scriptProperties.setProperty('gameTimeAtLastPause', '0');
   scriptProperties.setProperty('finalDisplayedTimeMs', '0'); // Réinitialiser le temps final aussi
   Logger.log("Chronomètre réinitialisé.");
+  SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
 }
 
 /**
@@ -56,6 +59,8 @@ function resumeMatchTimer(timeToResumeFrom) {
 
   // Démarrer le chronomètre
   startMatchTimer();
+  // L'appel au refresh se fait déjà dans startMatchTimer(), donc pas besoin ici.
+  // SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>')); // <-- LIGNE À SUPPRIMER
 }
 
 /**
@@ -65,23 +70,14 @@ function resumeMatchTimer(timeToResumeFrom) {
 function getMatchTimeState() {
   const scriptProperties = PropertiesService.getScriptProperties();
 
-  // Logs retirés ou commentés pour la production
-  // Logger.log("getMatchTimeState - Propriétés LUES AU DÉBUT:");
-  // Logger.log("  currentMatchPhase (lue): " + scriptProperties.getProperty('currentMatchPhase'));
-  // Logger.log("  isTimerRunning (lue): " + scriptProperties.getProperty('isTimerRunning'));
-  // Logger.log("  gameTimeAtEventMs (lue): " + scriptProperties.getProperty('gameTimeAtEventMs')); // N'est plus utilisé
-  // Logger.log("  startTime (lue): " + scriptProperties.getProperty('startTime'));
-  
   const isTimerRunning = scriptProperties.getProperty('isTimerRunning') === 'true';
   const currentPhase = scriptProperties.getProperty('currentMatchPhase') || 'non_demarre';
   const startTime = parseInt(scriptProperties.getProperty('startTime') || '0', 10);
   const gameTimeAtLastPause = parseInt(scriptProperties.getProperty('gameTimeAtLastPause') || '0', 10);
-  const alertMessage = scriptProperties.getProperty('alertMessage') || '';
+  const alertMessage = scriptProperties.getProperty('alertMessage') || ''; // Garder pour le retour si d'autres fonctions l'utilisent
 
   let tempsDeJeuMs;
 
-  // L'ancienne logique de "temps figé" pour awaiting_conversion/penalty_kick a été supprimée
-  // car le chrono ne gèle plus pour ces événements dans le nouveau flux.
   if (isTimerRunning && startTime > 0) {
     const currentTime = new Date().getTime();
     tempsDeJeuMs = gameTimeAtLastPause + (currentTime - startTime);
@@ -106,4 +102,5 @@ function getMatchTimeState() {
     phase: currentPhase,
     message: alertMessage
   };
+  // SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>')); // <-- LIGNE À SUPPRIMER
 }

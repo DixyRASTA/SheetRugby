@@ -28,7 +28,7 @@ function onOpen() {
           .addItem('Carton Jaune', 'recordCartonJaunePrompt')
           .addItem('Carton Rouge', 'recordCartonRougePrompt')
           .addItem('Carton Bleu', 'recordCartonBleuPrompt')
-          .addItem('Evènement','promptAndRecordCustomEvent'))
+          .addItem('Evènement','promptAndRecordCustomEvent')) // <-- Assurez-vous que c'est bien le nom de la fonction générique
       .addSeparator()
       .addItem('Annuler dernier événement (attention!)', 'deleteLastEvent')
       .addToUi();
@@ -43,19 +43,23 @@ function onOpen() {
  * Le rafraîchissement des données est géré par le JavaScript dans Sidebar.html.
  */
 function ouvrirTableauDeBord() {
-  const ui = SpreadsheetApp.getUi();
-  const htmlOutput = HtmlService.createHtmlOutputFromFile('Sidebar')
-      .setTitle('Match en direct')
-      .setWidth(300);
-  ui.showSidebar(htmlOutput);
+  const html = HtmlService.createTemplateFromFile('Sidebar').evaluate()
+      .setTitle('Tableau de Bord Match Rugby')
+      .setWidth(300); // Ajuste la largeur si nécessaire
+  SpreadsheetApp.getUi().showSidebar(html);
+}
+
+
+function updateSidebar() {
+  getMatchTimeState(); // Cela rafraîchit les propriétés du timer.
 }
 
 /**
- * Récupère toutes les données nécessaires pour mettre à jour la sidebar.
- * Cette fonction est appelée par le JavaScript côté client (Sidebar.html).
- * @returns {Object} Un objet contenant le temps de jeu, les scores, les noms d'équipes et les dernières actions.
+ * Fonction appelée par le client (dans la sidebar) pour récupérer le contenu HTML mis à jour.
+ * C'est le lien entre le JS de la sidebar et les fonctions Apps Script côté serveur.
  */
-function getDataForSidebar() {
+function getSidebarContent() {
+  const timeState = getMatchTimeState();
   const scriptProperties = PropertiesService.getScriptProperties();
 
   const matchTimeState = getMatchTimeState();
@@ -63,23 +67,27 @@ function getDataForSidebar() {
 
   const currentScoreLocal = scriptProperties.getProperty('currentScoreLocal') || '0';
   const currentScoreVisiteur = scriptProperties.getProperty('currentScoreVisiteur') || '0';
-  const localTeamName = getLocalTeamName(); 
-  const visitorTeamName = getVisitorTeamName(); 
+  const alertMessage = timeState.message;
+  const currentMatchPhase = timeState.phase;
 
-  const feuilleSaisie = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Saisie");
-  let lastActions = [];
-  if (feuilleSaisie && feuilleSaisie.getLastRow() > 2) { 
-    const dataRange = feuilleSaisie.getRange(3, 1, feuilleSaisie.getLastRow() - 2, 8); 
-    const allData = dataRange.getValues();
-    lastActions = allData.map(row => [row[1], row[7]]); 
+  let timerStatus = "ARRÊTÉ";
+  if (timeState.isTimerRunning) {
+    timerStatus = "EN COURS";
+  } else if (currentMatchPhase === 'non_demarre' || currentMatchPhase === 'fin_de_match') {
+    timerStatus = "NON DÉMARRÉ";
+  } else if (currentMatchPhase === 'mi_temps') {
+    timerStatus = "MI-TEMPS";
+  } else if (currentMatchPhase === 'pause') { // <-- Ajouté pour clarifier si le jeu est en pause manuelle
+    timerStatus = "PAUSE";
   }
-  
+  // Ligne supprimée: else if (currentMatchPhase === 'awaiting_conversion' || currentMatchPhase === 'awaiting_penalty_kick') { ... }
+
   return {
-    time: formattedTime,
-    localScore: currentScoreLocal,
-    visitorScore: currentScoreVisiteur,
-    localTeamName: localTeamName,
-    visitorTeamName: visitorTeamName,
-    lastActions: lastActions 
+    scoreLocal: currentScoreLocal,
+    scoreVisiteur: currentScoreVisiteur,
+    tempsDeJeu: timeState.tempsDeJeuFormatted,
+    timerStatus: timerStatus,
+    matchPhase: currentMatchPhase,
+    alert: alertMessage
   };
 }
