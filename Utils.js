@@ -21,20 +21,20 @@ function formatMillisecondsToHMS(milliseconds) {
 }
 
 /**
- * Formate un nombre de minutes entières en une chaîne de caractères HH:mm:ss.
- * Utilisé pour l'historique des événements qui sont enregistrés en minutes entières.
- * @param {number} minutes Le nombre de minutes entières à formater.
- * @return {string} Le temps formaté (HH:mm:ss).
+ * Formate un nombre de millisecondes en un format MM:SS.
+ *
+ * @param {number} milliseconds Le temps en millisecondes.
+ * @returns {string} Le temps formaté en "MM:SS".
  */
-function formatMinutesToHMS(minutes) {
-  if (typeof minutes !== 'number' || isNaN(minutes) || minutes < 0) {
-    return "00:00:00"; 
-  }
-  const totalSeconds = minutes * 60; // Convertir les minutes en secondes
-  const hours = Math.floor(totalSeconds / 3600);
-  const mins = Math.floor((totalSeconds % 3600) / 60);
-  const secs = totalSeconds % 60; // Secondes seront 00 si on travaille avec des minutes entières
+function formatMillisecondsToHMS(milliseconds) {
+  const totalSeconds = Math.floor(milliseconds / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
 
-  const pad = (num) => num.toString().padStart(2, '0');
-  return `${pad(hours)}:${pad(mins)}:${pad(secs)}`; 
+  // Utilise String.padStart pour s'assurer que les minutes et les secondes ont toujours deux chiffres
+  // même si les minutes dépassent 99.
+  const formattedMinutes = String(minutes).padStart(2, '0');
+  const formattedSeconds = String(seconds).padStart(2, '0');
+
+  return `${formattedMinutes}:${formattedSeconds}`;
 }
