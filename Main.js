@@ -21,19 +21,23 @@ function onOpen() {
       .addSeparator()
       .addSubMenu(ui.createMenu('Scores')
           .addItem('Essai', 'addEssai')
-          .addItem('Pénalité tentée', 'addPenalite') // Correction de faute de frappe
+          .addItem('Pénalité tentée', 'addPenalite')
           .addItem('Drop tenté', 'addDrop'))
       .addSeparator()
       .addSubMenu(ui.createMenu('Sanctions')
+          .addItem('Carton Blanc', 'recordCartonBlancPrompt')
           .addItem('Carton Jaune', 'recordCartonJaunePrompt')
           .addItem('Carton Rouge', 'recordCartonRougePrompt')
-          .addItem('Carton Bleu', 'recordCartonBleuPrompt')
-          .addItem('Événement', 'promptAndRecordCustomEvent')) // Correction de faute de frappe et s'assurer que c'est le nom de la fonction générique
+          .addItem('Essai de pénalité', 'addEssaiPenalite')
+          .addItem('Événement', 'promptAndRecordCustomEvent')
+          .addItem('Carton Bleu', 'recordCartonBleuPrompt'))
+          
       .addSeparator()
       .addItem('Annuler dernier événement (attention!)', 'deleteLastEvent')
       .addToUi();
   ui.createMenu('Initialisation')    
       .addItem('Initialiser Nouveau Match', 'initialiserFeuilleEtProprietes')
+      .addItem('Ouvrir Tableau de Bord', 'ouvrirTableauDeBord')
       .addToUi();
 }
 

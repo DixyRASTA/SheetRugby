@@ -1,67 +1,291 @@
-// --- CONSTANTES DE POINTS --- // (Ces constantes pourraient être déplacées dans un fichier commun si elles sont utilisées ailleurs)
-// const ESSAI_POINTS = 5; // Supprimé si déjà dans ScoreManager.gs
-// const TRANSFO_POINTS = 2; // Supprimé si déjà dans ScoreManager.gs
-// const PENALITE_POINTS = 3; // Supprimé si déjà dans ScoreManager.gs
-// const DROP_POINTS = 3; // Supprimé si déjà dans ScoreManager.gs
-
 /**
  * @file Gère la logique des sanctions (cartons) et des événements génériques.
  */
 
 /**
- * Enregistre un carton Jaune pour un joueur d'une équipe.
+ * Enregistre un carton Blanc pour un joueur d'une équipe.
  * Déclenche les prompts pour l'équipe et le joueur.
  */
-function recordCartonJaunePrompt() {
+function recordCartonBlancPrompt() {
   const ui = SpreadsheetApp.getUi();
-  if (!isGameActive()) { // Utilise une fonction de sécurité pour vérifier la phase de jeu
-    ui.alert("Action impossible", "Veuillez démarrer le match ou reprendre le jeu pour enregistrer un carton.", ui.ButtonSet.OK);
-    // Rafraîchir la sidebar après l'alerte
-    // SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
-    ouvrirTableauDeBord();
+  const scriptProperties = PropertiesService.getScriptProperties();
+
+  if (!isScoreAllowedForPhase()) {
     return;
   }
 
-  const team = promptForTeam(); // Demande l'équipe (retourne le nom réel de l'équipe ou null)
-  if (!team) {
-      // Rafraîchir la sidebar si l'utilisateur annule le choix d'équipe
-      // SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
-      ouvrirTableauDeBord();
-      return; 
+  const matchTimeState = getMatchTimeState();
+  const timeOfEvent = matchTimeState.tempsDeJeuMs;
+
+  const localTeamName = getLocalTeamName();
+  const visitorTeamName = getVisitorTeamName();
+
+  const teamChoice = ui.prompt(
+    'Carton Blanc - Équipe',
+    `Quelle équipe a reçu un carton blanc ?\n1. ${localTeamName}\n2. ${visitorTeamName}`,
+    ui.ButtonSet.OK_CANCEL
+  );
+
+  if (teamChoice.getSelectedButton() !== ui.Button.OK) {
+    ui.alert("Annulé", "L'ajout du carton blanc a été annulé.", ui.ButtonSet.OK);
+    ouvrirTableauDeBord(); // Rafraîchir la sidebar
+    return;
   }
 
-  const player = promptForPlayer(); // Demande le joueur (optionnel)
-  const remark = promptForRemark(); // Demande la remarque
+  let penalizedTeam;
+  if (teamChoice.getResponseText().trim() === '1') {
+    penalizedTeam = localTeamName;
+  } else if (teamChoice.getResponseText().trim() === '2') {
+    penalizedTeam = visitorTeamName;
+  } else {
+    ui.alert("Entrée invalide", "Veuillez entrer '1' ou '2'.", ui.ButtonSet.OK);
+    ouvrirTableauDeBord(); // Rafraîchir la sidebar
+    return;
+  }
 
-  recordSanctionEvent(team, 'Carton Jaune', player, remark); // Ajout du paramètre remark 
+  const playerResponse = ui.prompt(
+    'Carton Blanc - Joueur et Remarque',
+    `Nom du joueur de ${penalizedTeam} (optionnel) et/ou remarque (ex: "faute technique") :`,
+    ui.ButtonSet.OK_CANCEL
+  );
+
+  if (playerResponse.getSelectedButton() !== ui.Button.OK) {
+    ui.alert("Annulé", "L'ajout du carton Blanc a été annulé.", ui.ButtonSet.OK);
+    ouvrirTableauDeBord(); // Rafraîchir la sidebar
+    return;
+  }
+
+  const userInput = playerResponse.getResponseText().trim();
+  let joueur = '';
+  let remarque = '';
+
+  if (userInput.includes(',')) {
+    const parts = userInput.split(',', 2);
+    joueur = parts[0].trim();
+    remarque = parts[1].trim();
+  } else {
+    remarque = userInput;
+  }
+
+  // Si la remarque est vide après traitement, définir une remarque par défaut
+  if (!remarque) {
+    remarque = `Carton Blanc pour ${penalizedTeam}${joueur ? ' (' + joueur + ')' : ''}`;
+  } else {
+    remarque = `Carton Blanc pour ${penalizedTeam}${joueur ? ' (' + joueur + ')' : ''}: ${remarque}`;
+  }
+
+  if (!joueur && userInput && !userInput.includes(',')) {
+    joueur = userInput;
+  }
+
+  const currentScoreLocal = parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10);
+  const currentScoreVisiteur = parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10);
+
+  recordEvent(
+    new Date(),
+    formatMillisecondsToHMS(timeOfEvent),
+    penalizedTeam,
+    'Carton Blanc',
+    joueur,
+    currentScoreLocal,
+    currentScoreVisiteur,
+    remarque // Utilise la remarque (par défaut ou saisie)
+  );
+  scriptProperties.setProperty('alertMessage', '');
+  ouvrirTableauDeBord(); // Rafraîchir la sidebar
+  ui.alert("Carton Blanc", `Carton Blanc enregistré pour ${penalizedTeam}.`, ui.ButtonSet.OK);
+}
+
+
+function recordCartonJaunePrompt() {
+  const ui = SpreadsheetApp.getUi();
+  const scriptProperties = PropertiesService.getScriptProperties();
+
+  if (!isScoreAllowedForPhase()) { // Utilise la même vérification que pour les scores
+    return;
+  }
+
+  const matchTimeState = getMatchTimeState();
+  const timeOfEvent = matchTimeState.tempsDeJeuMs;
+
+  const localTeamName = getLocalTeamName();
+  const visitorTeamName = getVisitorTeamName();
+
+  const teamChoice = ui.prompt(
+    'Carton Jaune - Équipe',
+    `Quelle équipe a reçu un carton jaune ?\n1. ${localTeamName}\n2. ${visitorTeamName}`,
+    ui.ButtonSet.OK_CANCEL
+  );
+
+  if (teamChoice.getSelectedButton() !== ui.Button.OK) {
+    ui.alert("Annulé", "L'ajout du carton jaune a été annulé.", ui.ButtonSet.OK);
+    ouvrirTableauDeBord(); // Rafraîchir la sidebar
+    return;
+  }
+
+  let penalizedTeam;
+  if (teamChoice.getResponseText().trim() === '1') {
+    penalizedTeam = localTeamName;
+  } else if (teamChoice.getResponseText().trim() === '2') {
+    penalizedTeam = visitorTeamName;
+  } else {
+    ui.alert("Entrée invalide", "Veuillez entrer '1' ou '2'.", ui.ButtonSet.OK);
+    ouvrirTableauDeBord(); // Rafraîchir la sidebar
+    return;
+  }
+
+  const playerResponse = ui.prompt(
+    'Carton Jaune - Joueur et Remarque',
+    `Nom du joueur de ${penalizedTeam} (optionnel) et/ou remarque (ex: "faute technique", "plaquage haut") :`,
+    ui.ButtonSet.OK_CANCEL
+  );
+
+  if (playerResponse.getSelectedButton() !== ui.Button.OK) {
+    ui.alert("Annulé", "L'ajout du carton jaune a été annulé.", ui.ButtonSet.OK);
+    ouvrirTableauDeBord(); // Rafraîchir la sidebar
+    return;
+  }
+
+  const userInput = playerResponse.getResponseText().trim();
+  let joueur = '';
+  let remarque = '';
+
+  // Tente de séparer le nom du joueur et la remarque si une virgule est présente
+  if (userInput.includes(',')) {
+    const parts = userInput.split(',', 2); // Sépare en max 2 parties
+    joueur = parts[0].trim();
+    remarque = parts[1].trim();
+  } else {
+    // Si pas de virgule, tout est considéré comme remarque, joueur est vide
+    remarque = userInput;
+  }
+
+  // Si la remarque est vide après traitement, définir une remarque par défaut
+  if (!remarque) {
+    remarque = `Carton Jaune pour ${penalizedTeam}${joueur ? ' (' + joueur + ')' : ''}`;
+  } else {
+    // Si une remarque a été saisie, on peut la préfixer pour être plus explicite
+    remarque = `Carton Jaune pour ${penalizedTeam}${joueur ? ' (' + joueur + ')' : ''}: ${remarque}`;
+  }
+  
+  // Assurez-vous que le joueur est bien défini pour recordEvent
+  if (!joueur && userInput && !userInput.includes(',')) {
+    // Si l'utilisateur a juste tapé un nom sans virgule, on peut l'assigner au joueur
+    // et laisser la remarque par défaut générée ci-dessus.
+    joueur = userInput;
+  }
+  
+  const currentScoreLocal = parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10);
+  const currentScoreVisiteur = parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10);
+
+  recordEvent(
+    new Date(),
+    formatMillisecondsToHMS(timeOfEvent),
+    penalizedTeam,
+    'Carton Jaune',
+    joueur,
+    currentScoreLocal,
+    currentScoreVisiteur,
+    remarque // Utilise la remarque (par défaut ou saisie)
+  );
+
+  scriptProperties.setProperty('alertMessage', '');
+  ouvrirTableauDeBord(); // Rafraîchir la sidebar
+  ui.alert("Carton Jaune", `Carton Jaune enregistré pour ${penalizedTeam}.`, ui.ButtonSet.OK);
 }
 
 /**
- * Enregistre un carton Rouge pour un joueur d'une équipe.
- * Déclenche les prompts pour l'équipe et le joueur.
+ * Demande les détails d'un carton rouge et l'enregistre.
  */
 function recordCartonRougePrompt() {
   const ui = SpreadsheetApp.getUi();
-  if (!isGameActive()) { // Utilise une fonction de sécurité pour vérifier la phase de jeu
-    ui.alert("Action impossible", "Veuillez démarrer le match ou reprendre le jeu pour enregistrer un carton.", ui.ButtonSet.OK);
-    // Rafraîchir la sidebar après l'alerte
-    // SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
-    ouvrirTableauDeBord();
+  const scriptProperties = PropertiesService.getScriptProperties();
+
+  if (!isScoreAllowedForPhase()) {
     return;
   }
 
-  const team = promptForTeam(); // Demande l'équipe
-  if (!team) {
-      // Rafraîchir la sidebar si l'utilisateur annule le choix d'équipe
-      // SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
-      ouvrirTableauDeBord();
-      return;
+  const matchTimeState = getMatchTimeState();
+  const timeOfEvent = matchTimeState.tempsDeJeuMs;
+
+  const localTeamName = getLocalTeamName();
+  const visitorTeamName = getVisitorTeamName();
+
+  const teamChoice = ui.prompt(
+    'Carton Rouge - Équipe',
+    `Quelle équipe a reçu un carton rouge ?\n1. ${localTeamName}\n2. ${visitorTeamName}`,
+    ui.ButtonSet.OK_CANCEL
+  );
+
+  if (teamChoice.getSelectedButton() !== ui.Button.OK) {
+    ui.alert("Annulé", "L'ajout du carton rouge a été annulé.", ui.ButtonSet.OK);
+    ouvrirTableauDeBord(); // Rafraîchir la sidebar
+    return;
   }
 
-  const player = promptForPlayer(); // Demande le joueur (optionnel)
-  const remark = promptForRemark(); // Demande la remarque
+  let penalizedTeam;
+  if (teamChoice.getResponseText().trim() === '1') {
+    penalizedTeam = localTeamName;
+  } else if (teamChoice.getResponseText().trim() === '2') {
+    penalizedTeam = visitorTeamName;
+  } else {
+    ui.alert("Entrée invalide", "Veuillez entrer '1' ou '2'.", ui.ButtonSet.OK);
+    ouvrirTableauDeBord(); // Rafraîchir la sidebar
+    return;
+  }
 
-  recordSanctionEvent(team, 'Carton Rouge', player, remark); // Ajout du paramètre remark 
+  const playerResponse = ui.prompt(
+    'Carton Rouge - Joueur et Remarque',
+    `Nom du joueur de ${penalizedTeam} (optionnel) et/ou remarque (ex: "faute grave", "anti-jeu") :`,
+    ui.ButtonSet.OK_CANCEL
+  );
+
+  if (playerResponse.getSelectedButton() !== ui.Button.OK) {
+    ui.alert("Annulé", "L'ajout du carton rouge a été annulé.", ui.ButtonSet.OK);
+    ouvrirTableauDeBord(); // Rafraîchir la sidebar
+    return;
+  }
+
+  const userInput = playerResponse.getResponseText().trim();
+  let joueur = '';
+  let remarque = '';
+
+  if (userInput.includes(',')) {
+    const parts = userInput.split(',', 2);
+    joueur = parts[0].trim();
+    remarque = parts[1].trim();
+  } else {
+    remarque = userInput;
+  }
+
+  // Si la remarque est vide après traitement, définir une remarque par défaut
+  if (!remarque) {
+    remarque = `Carton Rouge pour ${penalizedTeam}${joueur ? ' (' + joueur + ')' : ''}`;
+  } else {
+    remarque = `Carton Rouge pour ${penalizedTeam}${joueur ? ' (' + joueur + ')' : ''}: ${remarque}`;
+  }
+
+  if (!joueur && userInput && !userInput.includes(',')) {
+    joueur = userInput;
+  }
+
+  const currentScoreLocal = parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10);
+  const currentScoreVisiteur = parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10);
+
+  recordEvent(
+    new Date(),
+    formatMillisecondsToHMS(timeOfEvent),
+    penalizedTeam,
+    'Carton Rouge',
+    joueur,
+    currentScoreLocal,
+    currentScoreVisiteur,
+    remarque // Utilise la remarque (par défaut ou saisie)
+  );
+
+  scriptProperties.setProperty('alertMessage', '');
+  ouvrirTableauDeBord(); // Rafraîchir la sidebar
+  ui.alert("Carton Rouge", `Carton Rouge enregistré pour ${penalizedTeam}.`, ui.ButtonSet.OK);
 }
 
 /**
@@ -70,71 +294,94 @@ function recordCartonRougePrompt() {
  */
 function recordCartonBleuPrompt() {
   const ui = SpreadsheetApp.getUi();
-  if (!isGameActive()) { // Utilise une fonction de sécurité pour vérifier la phase de jeu
-    ui.alert("Action impossible", "Veuillez démarrer le match ou reprendre le jeu pour enregistrer un carton.", ui.ButtonSet.OK);
-    // Rafraîchir la sidebar après l'alerte
-    // SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
-    ouvrirTableauDeBord();
+  const scriptProperties = PropertiesService.getScriptProperties();
+
+  if (!isScoreAllowedForPhase()) {
     return;
   }
 
-  const team = promptForTeam(); // Demande l'équipe
-  if (!team) {
-      // Rafraîchir la sidebar si l'utilisateur annule le choix d'équipe
-      // SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
-      ouvrirTableauDeBord();
-      return;
+  const matchTimeState = getMatchTimeState();
+  const timeOfEvent = matchTimeState.tempsDeJeuMs;
+
+  const localTeamName = getLocalTeamName();
+  const visitorTeamName = getVisitorTeamName();
+
+  const teamChoice = ui.prompt(
+    'Carton Beu - Équipe',
+    `Quelle équipe a reçu un carton bleu ?\n1. ${localTeamName}\n2. ${visitorTeamName}`,
+    ui.ButtonSet.OK_CANCEL
+  );
+
+  if (teamChoice.getSelectedButton() !== ui.Button.OK) {
+    ui.alert("Annulé", "L'ajout du carton bleu a été annulé.", ui.ButtonSet.OK);
+    ouvrirTableauDeBord(); // Rafraîchir la sidebar
+    return;
   }
 
-  const player = promptForPlayer(); // Demande le joueur (optionnel)
-  const remark = promptForRemark(); // Demande la remarque
+  let penalizedTeam;
+  if (teamChoice.getResponseText().trim() === '1') {
+    penalizedTeam = localTeamName;
+  } else if (teamChoice.getResponseText().trim() === '2') {
+    penalizedTeam = visitorTeamName;
+  } else {
+    ui.alert("Entrée invalide", "Veuillez entrer '1' ou '2'.", ui.ButtonSet.OK);
+    ouvrirTableauDeBord(); // Rafraîchir la sidebar
+    return;
+  }
 
-  recordSanctionEvent(team, 'Carton Bleu', player, remark); // Ajout du paramètre remark 
-}
+  const playerResponse = ui.prompt(
+    'Carton Bleu - Joueur et Remarque',
+    `Nom du joueur de ${penalizedTeam} (optionnel) et/ou remarque (ex: "faute grave", "anti-jeu") :`,
+    ui.ButtonSet.OK_CANCEL
+  );
 
-/**
- * Fonction interne pour enregistrer un événement de sanction (Carton Jaune/Rouge/Bleu).
- * Appelée par recordCarton...Prompt.
- * @param {string} teamName Le nom réel de l'équipe concernée.
- * @param {string} sanctionType Le type de sanction (ex: 'Carton Jaune').
- * @param {string} playerName Le nom du joueur concerné (vide si non applicable).
- * @param {string} remark Une remarque optionnelle.
- */
-function recordSanctionEvent(teamName, sanctionType, playerName, remark) {
-  const scriptProperties = PropertiesService.getScriptProperties();
-  const ui = SpreadsheetApp.getUi();
+  if (playerResponse.getSelectedButton() !== ui.Button.OK) {
+    ui.alert("Annulé", "L'ajout du carton Bleu a été annulé.", ui.ButtonSet.OK);
+    ouvrirTableauDeBord(); // Rafraîchir la sidebar
+    return;
+  }
 
-  const currentLocalScore = parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10);
-  const currentVisitorScore = parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10);
-  const matchTimeState = getMatchTimeState();
+  const userInput = playerResponse.getResponseText().trim();
+  let joueur = '';
+  let remarque = '';
+
+  if (userInput.includes(',')) {
+    const parts = userInput.split(',', 2);
+    joueur = parts[0].trim();
+    remarque = parts[1].trim();
+  } else {
+    remarque = userInput;
+  }
+
+  // Si la remarque est vide après traitement, définir une remarque par défaut
+  if (!remarque) {
+    remarque = `Carton Bleu pour ${penalizedTeam}${joueur ? ' (' + joueur + ')' : ''}`;
+  } else {
+    remarque = `Carton Bleu pour ${penalizedTeam}${joueur ? ' (' + joueur + ')' : ''}: ${remarque}`;
+  }
+
+  if (!joueur && userInput && !userInput.includes(',')) {
+    joueur = userInput;
+  }
+
+  const currentScoreLocal = parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10);
+  const currentScoreVisiteur = parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10);
 
   recordEvent(
     new Date(),
-    matchTimeState.tempsDeJeuFormatted,
-    teamName,
-    sanctionType,
-    playerName,
-    currentLocalScore,
-    currentVisitorScore,
-    remark // Passe la remarque
+    formatMillisecondsToHMS(timeOfEvent),
+    penalizedTeam,
+    'Carton Bleu',
+    joueur,
+    currentScoreLocal,
+    currentScoreVisiteur,
+    remarque // Utilise la remarque (par défaut ou saisie)
   );
-
-  let message = `${teamName}`;
-  if (playerName) {
-    message += ` (${playerName})`;
-  }
-  message += ` reçoit un ${sanctionType}.`;
-
-  if (remark) {
-    message += ` Remarque: ${remark}`;
-  }
-
-  Logger.log(message);
-  ui.alert("Sanction enregistrée", message, ui.ButtonSet.OK);
-  // CORRECTION : Remplacer updateSidebar() par l'appel direct au rafraîchissement de la sidebar
-  // SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
-  ouvrirTableauDeBord();
+  scriptProperties.setProperty('alertMessage', '');
+  ouvrirTableauDeBord(); // Rafraîchir la sidebar
+  ui.alert("Carton Bleu", `Carton Bleu enregistré pour ${penalizedTeam}.`, ui.ButtonSet.OK);
 }
+
 
 /**
  * Demande à l'utilisateur de choisir l'équipe (Locale ou Visiteur).

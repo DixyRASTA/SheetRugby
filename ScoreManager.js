@@ -3,6 +3,7 @@ const ESSAI_POINTS = 5;
 const TRANSFO_POINTS = 2;
 const PENALITE_POINTS = 3;
 const DROP_POINTS = 3;
+const ESSAI_PENALITE_POINTS = 7;
 
 /**
  * Fonction utilitaire interne pour vérifier si l'ajout d'un score est permis en phase actuelle.
@@ -314,4 +315,75 @@ function addDrop() {
   // SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
   ouvrirTableauDeBord();
   ui.alert("Drop", `Drop ${successResponse === ui.Button.YES ? 'réussi' : 'raté'} par ${dropTeam}.`, ui.ButtonSet.OK);
+}
+
+/**
+ * Gère un essai de penalité.
+ */
+function addEssaiPenalite() {
+  const scriptProperties = PropertiesService.getScriptProperties();
+  const ui = SpreadsheetApp.getUi();
+
+  if (!isScoreAllowedForPhase()) {
+    return;
+  }
+
+  // Récupérer le temps actuel du chronomètre pour l'enregistrement de l'essai
+  const matchTimeStateAtEssai = getMatchTimeState();
+  const timeOfEssaiMs = matchTimeStateAtEssai.tempsDeJeuMs;
+
+  // Demander quelle équipe a bénéficié l'essai de pénlité
+  const localTeamName = getLocalTeamName();
+  const visitorTeamName = getVisitorTeamName();
+
+  const teamChoice = ui.prompt(
+    'Essai de pénalité pour :',
+    `1. ${localTeamName}\n2. ${visitorTeamName}\nEntrez 1 ou 2:`,
+    ui.ButtonSet.OK_CANCEL
+  );
+
+  if (teamChoice.getSelectedButton() !== ui.Button.OK) {
+    ui.alert("Annulé", "L'ajout de l'essai a été annulé.", ui.ButtonSet.OK);
+    // AJOUT IMPORTANT : Déclenche le rafraîchissement de la sidebar même si annulé
+    // SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
+    ouvrirTableauDeBord();
+    return;
+  }
+
+  let scoringTeam;
+  if (teamChoice.getResponseText().trim() === '1') {
+    scoringTeam = localTeamName;
+  } else if (teamChoice.getResponseText().trim() === '2') {
+    scoringTeam = visitorTeamName;
+  } else {
+    ui.alert("Entrée invalide", "Veuillez entrer '1' ou '2'.", ui.ButtonSet.OK);
+    // AJOUT IMPORTANT : Déclenche le rafraîchissement de la sidebar même si l'entrée est invalide
+    // SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
+    ouvrirTableauDeBord();
+    return;
+  }
+
+  // Mettre à jour le score de l'essai de pénalité
+  const currentScoreKey = scoringTeam === localTeamName ? 'currentScoreLocal' : 'currentScoreVisiteur';
+  let currentScore = parseInt(scriptProperties.getProperty(currentScoreKey) || '0', 10);
+  currentScore += ESSAI_PENALITE_POINTS; // Ajouter 7 points pour l'essai
+  scriptProperties.setProperty(currentScoreKey, currentScore.toString());
+
+  // Enregistrer l'essai de pénalité
+  recordEvent(
+    new Date(),
+    formatMillisecondsToHMS(timeOfEssaiMs), // Temps de l'essai
+    scoringTeam,
+    'Essai de pénalité',
+    '', // Joueur non spécifié ici, à ajouter si besoin
+    parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10),
+    parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10),
+    `Essai de pénalité marqué par ${scoringTeam}`
+  );
+
+  scriptProperties.setProperty('alertMessage', '');
+  // CORRECTION : Remplacer updateSidebar() par l'appel direct au rafraîchissement de la sidebar
+  // SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
+  ouvrirTableauDeBord();
+  ui.alert("Essai de pénalité", `Essai de pénalité marqué par ${scoringTeam}.`, ui.ButtonSet.OK);
 }
