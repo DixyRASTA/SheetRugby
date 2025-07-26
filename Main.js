@@ -31,12 +31,12 @@ function onOpen() {
           .addItem('Essai de pénalité', 'addEssaiPenalite')
           .addItem('Événement', 'promptAndRecordCustomEvent')
           .addItem('Carton Bleu', 'recordCartonBleuPrompt'))
-          
       .addSeparator()
       .addItem('Annuler dernier événement (attention!)', 'deleteLastEvent')
       .addToUi();
   ui.createMenu('Initialisation')    
       .addItem('Initialiser Nouveau Match', 'initialiserFeuilleEtProprietes')
+      .addSeparator()
       .addItem('Ouvrir Tableau de Bord', 'ouvrirTableauDeBord')
       .addToUi();
 }
@@ -124,3 +124,25 @@ function getDataForSidebar() {
   };
 }
 
+/**
+ * Fonction principale pour l'API web (service exécutable).
+ * Répond aux requêtes GET et renvoie les données du match en JSON.
+ * @param {GoogleAppsScript.Events.DoGet} e L'événement de requête GET.
+ * @returns {GoogleAppsScript.HTML.HtmlOutput} Les données du match au format JSON.
+ */
+function doGet(e) {
+  // Récupère les données du match comme dans getDataForSidebar
+  const matchData = getDataForSidebar(); // Réutilise ta fonction existante pour récupérer les données !
+
+  // Ajoute l'heure de la dernière mise à jour de l'API (optionnel, mais utile)
+  matchData.lastUpdated = new Date().toISOString();
+
+  // Convertit l'objet JavaScript en chaîne JSON
+  const jsonString = JSON.stringify(matchData);
+
+  // Configure la réponse HTTP pour qu'elle soit du JSON
+  const output = ContentService.createTextOutput(jsonString);
+  output.setMimeType(ContentService.MimeType.JSON);
+
+  return output;
+}
