@@ -93,7 +93,7 @@ function recordCartonBlancPrompt() {
   );
   scriptProperties.setProperty('alertMessage', '');
   ouvrirTableauDeBord(); // Rafraîchir la sidebar
-  ui.alert("Carton Blanc", `Carton Blanc enregistré pour ${penalizedTeam}.`, ui.ButtonSet.OK);
+  ui.alert("Carton Blanc", `Carton Blanc pour ${penalizedTeam}.`, ui.ButtonSet.OK);
 }
 
 
@@ -191,7 +191,7 @@ function recordCartonJaunePrompt() {
 
   scriptProperties.setProperty('alertMessage', '');
   ouvrirTableauDeBord(); // Rafraîchir la sidebar
-  ui.alert("Carton Jaune", `Carton Jaune enregistré pour ${penalizedTeam}.`, ui.ButtonSet.OK);
+  ui.alert("Carton Jaune", `Carton Jaune pour ${penalizedTeam}.`, ui.ButtonSet.OK);
 }
 
 /**
@@ -285,7 +285,7 @@ function recordCartonRougePrompt() {
 
   scriptProperties.setProperty('alertMessage', '');
   ouvrirTableauDeBord(); // Rafraîchir la sidebar
-  ui.alert("Carton Rouge", `Carton Rouge enregistré pour ${penalizedTeam}.`, ui.ButtonSet.OK);
+  ui.alert("Carton Rouge", `Carton Rouge pour ${penalizedTeam}.`, ui.ButtonSet.OK);
 }
 
 /**
@@ -379,7 +379,7 @@ function recordCartonBleuPrompt() {
   );
   scriptProperties.setProperty('alertMessage', '');
   ouvrirTableauDeBord(); // Rafraîchir la sidebar
-  ui.alert("Carton Bleu", `Carton Bleu enregistré pour ${penalizedTeam}.`, ui.ButtonSet.OK);
+  ui.alert("Carton Bleu", `Carton Bleu pour ${penalizedTeam}.`, ui.ButtonSet.OK);
 }
 
 

@@ -86,7 +86,7 @@ function addEssai() {
     '', // Joueur non spécifié ici, à ajouter si besoin
     parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10),
     parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10),
-    `Essai marqué par ${scoringTeam}`
+    `Essai marqué pour ${scoringTeam}`
   );
 
   // Demander si la transformation est réussie
@@ -110,7 +110,7 @@ function addEssai() {
       '',
       parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10),
       parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10),
-      `Transformation réussie par ${scoringTeam}`
+      `Transformation réussie pour ${scoringTeam}`
     );
   } else {
     // Enregistrer la transformation ratée
@@ -122,7 +122,7 @@ function addEssai() {
       '',
       parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10),
       parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10),
-      `Transformation ratée par ${scoringTeam}`
+      `Transformation ratée pour ${scoringTeam}`
     );
   }
 
@@ -203,7 +203,7 @@ function addPenalite() {
       '', // Joueur (vide si non applicable ici)
       parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10),
       parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10),
-      `Pénalité réussie par ${penalizedTeam}`
+      `Pénalité réussie pour ${penalizedTeam}`
     );
   } else {
     // Enregistrer la pénalité ratée
@@ -215,7 +215,7 @@ function addPenalite() {
       '', // Joueur (vide si non applicable ici)
       parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10),
       parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10),
-      `Pénalité ratée par ${penalizedTeam}`
+      `Pénalité ratée pour ${penalizedTeam}`
     );
   }
 
@@ -295,7 +295,7 @@ function addDrop() {
       '',
       parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10),
       parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10),
-      `Drop réussi par ${dropTeam}`
+      `Drop réussi pour ${dropTeam}`
     );
   } else {
     // Enregistrer le drop raté
@@ -307,7 +307,7 @@ function addDrop() {
       '',
       parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10),
       parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10),
-      `Drop ratée par ${dropTeam}`
+      `Drop ratée pour ${dropTeam}`
     );
   }
 
@@ -378,12 +378,12 @@ function addEssaiPenalite() {
     '', // Joueur non spécifié ici, à ajouter si besoin
     parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10),
     parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10),
-    `Essai de pénalité marqué par ${scoringTeam}`
+    `Essai de pénalité pour ${scoringTeam}`
   );
 
   scriptProperties.setProperty('alertMessage', '');
   // CORRECTION : Remplacer updateSidebar() par l'appel direct au rafraîchissement de la sidebar
   // SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
   ouvrirTableauDeBord();
-  ui.alert("Essai de pénalité", `Essai de pénalité marqué par ${scoringTeam}.`, ui.ButtonSet.OK);
+  ui.alert("Essai de pénalité", `Essai de pénalité pour ${scoringTeam}.`, ui.ButtonSet.OK);
 }
