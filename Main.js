@@ -84,14 +84,15 @@ function getDataForSidebar() {
 
   // ... (le reste de la logique pour `timerStatus` et `actions` reste inchangée) ...
 
-  // Récupérer les dernières actions de la feuille "Saisie"
+  // Récupérer TOUTES les actions de la feuille "Saisie"
   const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Saisie");
   let actions = []; 
+  // Vérifie si la feuille existe et s'il y a des données (au moins jusqu'à la ligne 3 pour les actions)
   if (sheet && sheet.getLastRow() >= 3) { 
     const lastRow = sheet.getLastRow();
-    const startRow = Math.max(3, lastRow - 9); 
+    const startRow = 3; // On commence toujours à la ligne 3 pour les actions
     const numRowsToFetch = lastRow - startRow + 1;
-
+    
     // S'assurer qu'il y a des lignes à récupérer
     if (numRowsToFetch > 0) {
       const actionsData = sheet.getRange(startRow, 1, numRowsToFetch, 8).getValues(); 
