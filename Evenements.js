@@ -13,7 +13,6 @@ function recordEvent(timestamp, gameTime, teamName, action, player, finalScoreLo
   const feuilleSaisie = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Saisie");
   if (!feuilleSaisie) {
     Logger.log("Erreur: La feuille 'Saisie' n'a pas été trouvée.");
-    // SpreadsheetApp.getUi().alert("Erreur", "La feuille 'Saisie' est introuvable. Veuillez vérifier son nom.", SpreadsheetApp.getUi().ButtonSet.OK);
     ouvrirTableauDeBord();
     return;
   }
@@ -33,49 +32,9 @@ function recordEvent(timestamp, gameTime, teamName, action, player, finalScoreLo
   feuilleSaisie.appendRow(rowData);
   Logger.log(`Événement enregistré: ${action} pour ${teamName} - ${gameTime}`);
 
-  // IMPORTANT : AU LIEU D'APPELER updateSidebar(), NOUS ALLONS APPELER DIRECTEMENT LE JS CÔTÉ CLIENT.
-  // Cela n'est possible que si la sidebar est déjà ouverte.
-  // La sidebar va se rafraîchir d'elle-même via son setInterval pour le chrono.
-  // Pour les actions, nous allons déclencher un rafraîchissement via google.script.run.
-  
-  // Utilise HtmlService pour envoyer un signal à la sidebar déjà ouverte.
-  // Cette partie sera gérée par la fonction globale refreshSidebar() dans Sidebar.html.
-  try {
-    // Cela envoie un message au client pour qu'il rafraîchisse ses données.
-    // Cette fonction n'est PAS destinée à être appelée directement dans Apps Script pour une interface utilisateur,
-    // mais elle est appelée implicitement par le mécanisme de communication asynchrone
-    // via google.script.run dans le HTML.
-    // Cependant, pour s'assurer que les actions se rafraîchissent APRÈS un événement,
-    // on doit "forcer" ce rafraîchissement.
-    // La manière la plus propre est que recordEvent se contente d'enregistrer.
-    // C'est le setInterval du client qui est la source unique de vérité.
-    // Donc, la ligne updateSidebar() est en fait le problème.
-
-    // RETIRER updateSidebar(); ici.
-    // La sidebar se rafraîchira d'elle-même via son intervalle de 2 secondes,
-    // ce qui inclura les nouvelles actions.
-    // L'ajout de updateSidebar() à la fin de recordEvent est ce qui cause le clignotement
-    // si updateSidebar() contient showSidebar().
-
-    // Pour que la sidebar se rafraîchisse APRÈS UN ÉVÉNEMENT sans clignoter,
-    // il faut que l'appel `google.script.run.withSuccessHandler(...)` dans Sidebar.html
-    // soit déclenché par un événement serveur.
-
-    // Solution alternative et la plus simple :
-    // Laissez le setInterval dans Sidebar.html faire son travail pour les actions aussi.
-    // Avec un intervalle de 2 secondes, les actions apparaîtront dans les 2 secondes après enregistrement.
-    // C'est le compromis le plus simple pour éviter de rouvrir la sidebar.
-    
-    // Donc, la ligne "updateSidebar();" doit être RETIRÉE DE recordEvent().
-    // La sidebar va se rafraîchir d'elle-même.
-    // Si tu veux une mise à jour INSTANTANÉE des actions, la solution devient plus complexe
-    // et implique l'utilisation de `google.script.run.withUserObject(this).refreshSidebarClient()`
-    // combiné à une fonction côté HTML `refreshSidebarClient()`.
-    // Pour l'instant, testons sans, car c'est la cause de ton problème de clignotement/fermeture.
-
-  } catch (e) {
-    Logger.log("Erreur lors de l'enregistrement de l'événement ou la mise à jour de la sidebar: " + e.message);
-  }
+  // La mise à jour de l'interface utilisateur est gérée par le setInterval de la sidebar.
+  // Plus besoin de `updateSidebar()` ici, car cela causait des clignotements.
+  // La logique a été simplifiée pour laisser la sidebar se rafraîchir d'elle-même.
 }
 
 /**
@@ -128,7 +87,8 @@ function deleteLastEvent() {
   const feuilleSaisie = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Saisie");
   
   if (!feuilleSaisie) {
-    ui.alert("Erreur", "La feuille 'Saisie' est introuvable. Impossible d'annuler le dernier événement.", ui.ButtonSet.OK);
+    // ui.alert("Erreur", "La feuille 'Saisie' est introuvable. Impossible d'annuler le dernier événement.", ui.ButtonSet.OK);
+    Logger.log("Erreur: La feuille 'Saisie' est introuvable. Impossible d'annuler le dernier événement.");
     return false;
   }
 
@@ -144,13 +104,8 @@ function deleteLastEvent() {
     if (response == ui.Button.YES) {
       feuilleSaisie.deleteRow(lastRow);
       Logger.log("Dernier événement supprimé de la feuille 'Saisie'.");
-      ui.alert("Succès", "Le dernier événement a été annulé.", ui.ButtonSet.OK);
+      // ui.alert("Succès", "Le dernier événement a été annulé.", ui.ButtonSet.OK);
       
-      // OPTIONNEL: Mettre à jour les scores dans les propriétés si le dernier événement annulé était un score.
-      // Cela demande une logique plus complexe pour "défaire" le score.
-      // Pour l'instant, nous ne le ferons pas, l'utilisateur devra ajuster manuellement si besoin.
-      
-      // SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
       ouvrirTableauDeBord();
       return true;
     } else {
@@ -158,7 +113,8 @@ function deleteLastEvent() {
       return false;
     }
   } else {
-    ui.alert("Information", "Il n'y a pas d'événements à annuler dans la feuille 'Saisie'.", ui.ButtonSet.OK);
+    // ui.alert("Information", "Il n'y a pas d'événements à annuler dans la feuille 'Saisie'.", ui.ButtonSet.OK);
+    Logger.log("Il n'y a pas d'événements à annuler dans la feuille 'Saisie'.");
     return false;
   }
 }

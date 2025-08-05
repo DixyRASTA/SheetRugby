@@ -276,7 +276,7 @@ function addDrop() {
   }
 
   // Demander si le drop est réussi
-  const successResponse = ui.alert('Drop réussi ?', 'Le drop est-il réussi ?', ui.ButtonSet.YES_NO);
+  const successResponse = ui.alert('Drop réussi ?', 'Le  drop est-il réussi ?', ui.ButtonSet.YES_NO);
 
   // Mettre à jour le score et écrire dans la feuille
   const currentScoreKey = dropTeam === localTeamName ? 'currentScoreLocal' : 'currentScoreVisiteur';

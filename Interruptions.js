@@ -35,7 +35,7 @@ function initialiserFeuilleEtProprietes() {
       const feuilleSaisie = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Saisie");
       if (feuilleSaisie && feuilleSaisie.getLastRow() > 2) {
         feuilleSaisie.getRange(3, 1, feuilleSaisie.getLastRow() - 2, feuilleSaisie.getLastColumn()).clearContent();
-        Logger.log("Feuille 'Saisie' réinitialisée.");
+        Logger.log(" feuille 'Saisie' réinitialisée.");
       }
     } catch (e) {
       Logger.log("Erreur lors de la réinitialisation de la feuille 'Saisie': " + e.message);
