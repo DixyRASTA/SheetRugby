@@ -250,7 +250,7 @@ function finDeMatch() {
   // Enregistrer l'événement "Fin de Match" avec le temps final
   const currentScoreLocal = parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10);
   const currentScoreVisiteur = parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10);
-  recordEvent(new Date(), matchTimeState.tempsDeJeuFormatted, '', 'Fin de Match', '', currentScoreLocal, currentScoreVisiteur, 'Fin');
+  recordEvent(new Date(), matchTimeState.tempsDeJeuFormatted, '', 'Fin du Match', '', currentScoreLocal, currentScoreVisiteur, 'Fin du match');
 
   // CORRECTION : Remplacer updateSidebar() par l'appel direct au rafraîchissement de la sidebar
   // SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
