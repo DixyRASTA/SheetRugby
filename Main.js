@@ -10,7 +10,7 @@
  */
 function onOpen() {
   const ui = SpreadsheetApp.getUi();
-  ui.createMenu('Match Rugby')
+  ui.createMenu('🏉')
       .addSubMenu(ui.createMenu('Phases de Match')
           .addItem('Coup d\'envoi 1ère MT', 'debutPremiereMiTemps')
           .addItem('Fin 1ère MT', 'finPremiereMiTemps')
@@ -25,19 +25,18 @@ function onOpen() {
           .addItem('Drop tenté', 'addDrop'))
       .addSeparator()
       .addSubMenu(ui.createMenu('Sanctions')
-          .addItem('Carton Blanc', 'recordCartonBlancPrompt')
-          .addItem('Carton Jaune', 'recordCartonJaunePrompt')
-          .addItem('Carton Rouge', 'recordCartonRougePrompt')
+          .addItem('⬜ Carton Blanc', 'recordCartonBlancPrompt')
+          .addItem('🟨 Carton Jaune', 'recordCartonJaunePrompt')
+          .addItem('🟥 Carton Rouge', 'recordCartonRougePrompt')
+          .addItem('🟦 Carton Bleu', 'recordCartonBleuPrompt')
           .addItem('Essai de pénalité', 'addEssaiPenalite')
-          .addItem('Événement', 'promptAndRecordCustomEvent')
-          .addItem('Carton Bleu', 'recordCartonBleuPrompt'))
+          .addItem('Événement', 'promptAndRecordCustomEvent'))
       .addSeparator()
-      .addItem('Annuler dernier événement (attention!)', 'deleteLastEvent')
-      .addToUi();
-  ui.createMenu('Initialisation')    
-      .addItem('Initialiser Nouveau Match', 'initialiserFeuilleEtProprietes')
+      .addItem('❌ Annuler dernier événement (attention!)', 'deleteLastEvent')
+      .addSeparator()   
+      .addItem('📊 Ouvrir Tableau de Bord', 'ouvrirTableauDeBord')
       .addSeparator()
-      .addItem('Ouvrir Tableau de Bord', 'ouvrirTableauDeBord')
+      .addItem('⚠️ Initialiser Nouveau Match', 'initialiserFeuilleEtProprietes')
       .addToUi();
 }
 

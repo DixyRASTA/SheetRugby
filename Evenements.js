@@ -78,8 +78,11 @@ function getLatestEvents(count = 5) {
   return derniersEvenements;
 }
 
+
+
 /**
- * Supprime la dernière ligne d'événement enregistrée dans la feuille "Saisie".
+ * Supprime la dernière ligne d'événement enregistrée dans la feuille "Saisie"
+ * et remet à jour les scores en conséquence.
  * @returns {boolean} True si un événement a été supprimé, false sinon.
  */
 function deleteLastEvent() {
@@ -87,7 +90,6 @@ function deleteLastEvent() {
   const feuilleSaisie = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Saisie");
   
   if (!feuilleSaisie) {
-    // ui.alert("Erreur", "La feuille 'Saisie' est introuvable. Impossible d'annuler le dernier événement.", ui.ButtonSet.OK);
     Logger.log("Erreur: La feuille 'Saisie' est introuvable. Impossible d'annuler le dernier événement.");
     return false;
   }
@@ -96,15 +98,36 @@ function deleteLastEvent() {
   const dataStartRow = 3; // Les données commencent à la ligne 3
 
   if (lastRow >= dataStartRow) {
+    // Récupérer les données de la dernière ligne avant suppression
+    const lastEventData = feuilleSaisie.getRange(lastRow, 1, 1, 8).getValues()[0];
+    const lastEventInfo = {
+      heure: lastEventData[0],
+      tempsJeu: lastEventData[1],
+      equipe: lastEventData[2],
+      action: lastEventData[3],
+      joueur: lastEventData[4],
+      scoreLocal: lastEventData[5],
+      scoreVisiteur: lastEventData[6],
+      remarque: lastEventData[7]
+    };
+
     const response = ui.alert(
       'Confirmation',
-      'Voulez-vous vraiment annuler le dernier événement enregistré ?',
+      `Voulez-vous vraiment annuler le dernier événement ?\n\n` +
+      `${lastEventInfo.tempsJeu} - ${lastEventInfo.action}` +
+      `${lastEventInfo.equipe ? ' (' + lastEventInfo.equipe + ')' : ''}` +
+      `${lastEventInfo.joueur ? ' - ' + lastEventInfo.joueur : ''}\n` +
+      `Score actuel: ${lastEventInfo.scoreLocal} - ${lastEventInfo.scoreVisiteur}`,
       ui.ButtonSet.YES_NO
     );
+
     if (response == ui.Button.YES) {
+      // Supprimer la ligne
       feuilleSaisie.deleteRow(lastRow);
       Logger.log("Dernier événement supprimé de la feuille 'Saisie'.");
-      // ui.alert("Succès", "Le dernier événement a été annulé.", ui.ButtonSet.OK);
+
+      // Recalculer et mettre à jour les scores
+      updateScoresAfterDeletion();
       
       ouvrirTableauDeBord();
       return true;
@@ -113,8 +136,44 @@ function deleteLastEvent() {
       return false;
     }
   } else {
-    // ui.alert("Information", "Il n'y a pas d'événements à annuler dans la feuille 'Saisie'.", ui.ButtonSet.OK);
     Logger.log("Il n'y a pas d'événements à annuler dans la feuille 'Saisie'.");
+    ui.alert("Information", "Il n'y a pas d'événements à annuler.", ui.ButtonSet.OK);
     return false;
   }
 }
+
+/**
+ * Met à jour les scores dans les propriétés du script après suppression d'un événement.
+ * Prend le score de la dernière ligne restante, ou remet à 0-0 s'il n'y a plus d'événements.
+ */
+function updateScoresAfterDeletion() {
+  const feuilleSaisie = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Saisie");
+  const scriptProperties = PropertiesService.getScriptProperties();
+  
+  if (!feuilleSaisie) {
+    Logger.log("Erreur: Impossible de mettre à jour les scores, feuille 'Saisie' introuvable.");
+    return;
+  }
+
+  const lastRow = feuilleSaisie.getLastRow();
+  const dataStartRow = 3;
+
+  let newScoreLocal = '0';
+  let newScoreVisiteur = '0';
+
+  // S'il reste des événements, prendre le score de la dernière ligne
+  if (lastRow >= dataStartRow) {
+    const lastEventData = feuilleSaisie.getRange(lastRow, 6, 1, 2).getValues()[0];
+    newScoreLocal = String(lastEventData[0] || '0');
+    newScoreVisiteur = String(lastEventData[1] || '0');
+  }
+
+  // Mettre à jour les propriétés
+  scriptProperties.setProperties({
+    'currentScoreLocal': newScoreLocal,
+    'currentScoreVisiteur': newScoreVisiteur
+  });
+
+  Logger.log(`Scores mis à jour après suppression: ${newScoreLocal} - ${newScoreVisiteur}`);
+}
+
