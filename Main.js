@@ -35,7 +35,8 @@ function onOpen() {
       .addItem('❌ Annuler dernier événement (attention!)', 'deleteLastEvent')
       .addSeparator()   
       .addItem('📊 Ouvrir Tableau de Bord', 'ouvrirTableauDeBord')
-      .addSeparator()
+      .addToUi()
+  ui.createMenu('⚙️')
       .addItem('⚠️ Initialiser Nouveau Match', 'initialiserFeuilleEtProprietes')
       .addToUi();
 }

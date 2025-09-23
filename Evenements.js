@@ -5,7 +5,8 @@
  * @param {string} teamName Le nom de l'équipe concernée (Ex: "XV du Poireau", "Stade Toulousain", ou vide si non applicable).
  * @param {string} action Le type d'action (Ex: "Essai", "Coup d'envoi", "Carton Jaune").
  * @param {string} player Le nom du joueur concerné (vide si non applicable).
- * @param {number} finalScoreLocal Le score de l'équipe locale APRÈS l'événement.
+ * @param {number} finalScoreLocal Le
+ score de l'équipe locale APRÈS l'événement.
  * @param {number} finalScoreVisitor Le score de l'équipe visiteur APRÈS l'événement.
  * @param {string} remark Une remarque ou un détail supplémentaire sur l'événement.
  */

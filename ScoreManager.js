@@ -6,384 +6,481 @@ const DROP_POINTS = 3;
 const ESSAI_PENALITE_POINTS = 7;
 
 /**
- * Fonction utilitaire interne pour vérifier si l'ajout d'un score est permis en phase actuelle.
- * @returns {boolean} True si l'action est permise, false sinon.
+ * Fonction utilitaire pour récupérer le nom d'un joueur à partir de son numéro
+ * @param {string|number} playerNumber Le numéro du joueur (1-22)
+ * @param {string} teamName Le nom de l'équipe pour déterminer quelle feuille utiliser
+ * @returns {string} Le nom du joueur ou une chaîne vide si non trouvé
  */
-function isScoreAllowedForPhase() {
-  const scriptProperties = PropertiesService.getScriptProperties();
-  const ui = SpreadsheetApp.getUi();
-  const currentPhase = scriptProperties.getProperty('currentMatchPhase');
-
-  if (currentPhase === 'non_demarre' || currentPhase === 'fin_de_match' || currentPhase === 'mi_temps' || currentPhase === 'pause') {
-    ui.alert("Action impossible", "Veuillez démarrer le match ou reprendre le jeu avant d'ajouter un score.", ui.ButtonSet.OK);
-    // AJOUT IMPORTANT : Déclenche le rafraîchissement de la sidebar même en cas d'erreur
-    // SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
-    ouvrirTableauDeBord();
-    return false;
+function getPlayerNameByNumber(playerNumber, teamName) {
+  if (!playerNumber || playerNumber.toString().trim() === '') {
+    return '';
   }
-  return true;
+  
+  const num = parseInt(playerNumber, 10);
+  if (isNaN(num) || num < 1 || num > 22) {
+    Logger.log(`Numéro de joueur invalide: ${playerNumber}`);
+    return '';
+  }
+  
+  try {
+    // Déterminer quelle feuille utiliser selon l'équipe
+    const localTeamName = getLocalTeamName();
+    const isLocalTeam = teamName === localTeamName;
+    const sheetName = isLocalTeam ? "Joueurs 1" : "Joueurs 2";
+    
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(sheetName);
+    if (!sheet) {
+      Logger.log(`Erreur: La feuille '${sheetName}' n'a pas été trouvée.`);
+      return '';
+    }
+    
+    // Supposant que les numéros sont en colonne A (1-22) et les noms en colonne B
+    // Ligne 1 = joueur n°1, ligne 2 = joueur n°2, etc.
+    const playerName = sheet.getRange(num, 2).getValue();
+    
+    if (playerName && playerName.toString().trim() !== '') {
+      Logger.log(`Joueur trouvé dans ${sheetName}: N°${num} = ${playerName}`);
+      return playerName.toString().trim();
+    } else {
+      Logger.log(`Aucun nom trouvé pour le joueur N°${num} dans ${sheetName}`);
+      return '';
+    }
+    
+  } catch (error) {
+    Logger.log(`Erreur lors de la récupération du joueur N°${num}: ${error.message}`);
+    return '';
+  }
+}
+
+/**
+ * Fonction utilitaire pour demander le numéro de joueur avec gestion d'erreur
+ * @param {string} action Le type d'action (pour le message)
+ * @param {string} teamName Le nom de l'équipe
+ * @returns {Object} Objet contenant {playerNumber: string, playerName: string, cancelled: boolean}
+ */
+function promptForPlayer(action, teamName) {
+  const ui = SpreadsheetApp.getUi();
+  
+  const playerPrompt = ui.prompt(
+    `${action} - Joueur`,
+    `Numéro du joueur de ${teamName} (1-22) ?\n(Laissez vide si non applicable)`,
+    ui.ButtonSet.OK_CANCEL
+  );
+  
+  if (playerPrompt.getSelectedButton() !== ui.Button.OK) {
+    return { playerNumber: '', playerName: '', cancelled: true };
+  }
+  
+  const playerNumberInput = playerPrompt.getResponseText().trim();
+  let playerName = '';
+  
+  if (playerNumberInput !== '') {
+    const num = parseInt(playerNumberInput, 10);
+    if (isNaN(num) || num < 1 || num > 22) {
+      ui.alert("Numéro invalide", "Le numéro de joueur doit être compris entre 1 et 22.", ui.ButtonSet.OK);
+      // On ne bloque pas, on continue avec un joueur vide
+      return { playerNumber: '', playerName: '', cancelled: false };
+    } else {
+      playerName = getPlayerNameByNumber(num, teamName);
+  if (playerName === '') {
+        ui.alert("Joueur non trouvé", `Aucun nom trouvé pour le joueur N°${num} dans la feuille correspondante.`, ui.ButtonSet.OK);
+        // On continue avec le numéro mais sans nom
+        playerName = `Joueur N°${num}`;
+      }
+    }
+  }
+  
+  return { 
+    playerNumber: playerNumberInput, 
+    playerName: playerName, 
+    cancelled: false 
+  };
+}
+
+/**
+* Fonction utilitaire interne pour vérifier si l'ajout d'un score est permis en phase actuelle.
+* @returns {boolean} True si l'action est permise, false sinon.
+*/
+function isScoreAllowedForPhase() {
+const scriptProperties = PropertiesService.getScriptProperties();
+const ui = SpreadsheetApp.getUi();
+const currentPhase = scriptProperties.getProperty('currentMatchPhase');
+
+if (currentPhase === 'non_demarre' || currentPhase === 'fin_de_match' || currentPhase === 'mi_temps' || currentPhase === 'pause') {
+ui.alert("Action impossible", "Veuillez démarrer le match ou reprendre le jeu avant d'ajouter un score.", ui.ButtonSet.OK);
+ouvrirTableauDeBord();
+return false;
+}
+return true;
 }
 
 // --- FONCTION POUR GÉRER LES ESSAIS ---
 /**
- * Gère un essai.
- */
+* Gère un essai.
+*/
 function addEssai() {
-  const scriptProperties = PropertiesService.getScriptProperties();
-  const ui = SpreadsheetApp.getUi();
+const scriptProperties = PropertiesService.getScriptProperties();
+const ui = SpreadsheetApp.getUi();
 
-  if (!isScoreAllowedForPhase()) {
-    return;
-  }
+if (!isScoreAllowedForPhase()) {
+return;
+}
 
-  // Récupérer le temps actuel du chronomètre pour l'enregistrement de l'essai
-  const matchTimeStateAtEssai = getMatchTimeState();
-  const timeOfEssaiMs = matchTimeStateAtEssai.tempsDeJeuMs;
+// Récupérer le temps actuel du chronomètre pour l'enregistrement de l'essai
+const matchTimeStateAtEssai = getMatchTimeState();
+const timeOfEssaiMs = matchTimeStateAtEssai.tempsDeJeuMs;
 
-  // Demander quelle équipe a marqué l'essai
-  const localTeamName = getLocalTeamName();
-  const visitorTeamName = getVisitorTeamName();
+// Demander quelle équipe a marqué l'essai
+const localTeamName = getLocalTeamName();
+const visitorTeamName = getVisitorTeamName();
 
-  const teamChoice = ui.prompt(
-    'Essai marqué par:',
-    `1. ${localTeamName}\n2. ${visitorTeamName}\nEntrez 1 ou 2:`,
-    ui.ButtonSet.OK_CANCEL
-  );
+const teamChoice = ui.prompt(
+'Essai marqué par:',
+`1. ${localTeamName}\n2. ${visitorTeamName}\nEntrez 1 ou 2:`,
+ui.ButtonSet.OK_CANCEL
+);
 
-  if (teamChoice.getSelectedButton() !== ui.Button.OK) {
-    ui.alert("Annulé", "L'ajout d'essai a été annulé.", ui.ButtonSet.OK);
-    // AJOUT IMPORTANT : Déclenche le rafraîchissement de la sidebar même si annulé
-    // SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
-    ouvrirTableauDeBord();
-    return;
-  }
+if (teamChoice.getSelectedButton() !== ui.Button.OK) {
+ui.alert("Annulé", "L'ajout d'essai a été annulé.", ui.ButtonSet.OK);
+ouvrirTableauDeBord();
+return;
+}
 
-  let scoringTeam;
-  if (teamChoice.getResponseText().trim() === '1') {
-    scoringTeam = localTeamName;
-  } else if (teamChoice.getResponseText().trim() === '2') {
-    scoringTeam = visitorTeamName;
-  } else {
-    ui.alert("Entrée invalide", "Veuillez entrer '1' ou '2'.", ui.ButtonSet.OK);
-    // AJOUT IMPORTANT : Déclenche le rafraîchissement de la sidebar même si l'entrée est invalide
-    // SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
-    ouvrirTableauDeBord();
-    return;
-  }
+let scoringTeam;
+if (teamChoice.getResponseText().trim() === '1') {
+scoringTeam = localTeamName;
+} else if (teamChoice.getResponseText().trim() === '2') {
+scoringTeam = visitorTeamName;
+} else {
+ui.alert("Entrée invalide", "Veuillez entrer '1' ou '2'.", ui.ButtonSet.OK);
+ouvrirTableauDeBord();
+return;
+}
 
-  // Mettre à jour le score de l'essai
-  const currentScoreKey = scoringTeam === localTeamName ? 'currentScoreLocal' : 'currentScoreVisiteur';
-  let currentScore = parseInt(scriptProperties.getProperty(currentScoreKey) || '0', 10);
-  currentScore += ESSAI_POINTS; // Ajouter 5 points pour l'essai
-  scriptProperties.setProperty(currentScoreKey, currentScore.toString());
+// NOUVEAU : Demander le joueur qui a marqué l'essai
+const playerInfo = promptForPlayer('Essai', scoringTeam);
+if (playerInfo.cancelled) {
+ui.alert("Annulé", "L'ajout d'essai a été annulé.", ui.ButtonSet.OK);
+ouvrirTableauDeBord();
+return;
+}
 
-  // Enregistrer l'essai
-  recordEvent(
-    new Date(),
-    formatMillisecondsToHMS(timeOfEssaiMs), // Temps de l'essai
-    scoringTeam,
-    'Essai',
-    '', // Joueur non spécifié ici, à ajouter si besoin
-    parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10),
-    parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10),
-    `Essai marqué pour ${scoringTeam}`
-  );
+// Mettre à jour le score de l'essai
+const currentScoreKey = scoringTeam === localTeamName ? 'currentScoreLocal' : 'currentScoreVisiteur';
+let currentScore = parseInt(scriptProperties.getProperty(currentScoreKey) || '0', 10);
+currentScore += ESSAI_POINTS; // Ajouter 5 points pour l'essai
+scriptProperties.setProperty(currentScoreKey, currentScore.toString());
 
-  // Demander si la transformation est réussie
-  const conversionResponse = ui.alert('Transformation', 'La transformation est-elle réussie ?', ui.ButtonSet.YES_NO);
+// Enregistrer l'essai avec le nom du joueur
+recordEvent(
+new Date(),
+formatMillisecondsToHMS(timeOfEssaiMs), // Temps de l'essai
+scoringTeam,
+'Essai',
+playerInfo.playerName, // NOUVEAU : Nom du joueur récupéré
+parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10),
+parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10),
+`Essai marqué par ${playerInfo.playerName || 'joueur non spécifié'} pour ${scoringTeam}`
+);
 
-  // Récupérer le temps actuel pour l'enregistrement de la transformation
-  const matchTimeStateAtConversion = getMatchTimeState();
-  const timeOfConversionMs = matchTimeStateAtConversion.tempsDeJeuMs;
+// Demander si la transformation est réussie
+const conversionResponse = ui.alert('Transformation', 'La transformation est-elle réussie ?', ui.ButtonSet.YES_NO);
 
-  if (conversionResponse === ui.Button.YES) {
-    let conversionScore = parseInt(scriptProperties.getProperty(currentScoreKey) || '0', 10);
-    conversionScore += TRANSFO_POINTS; // Ajouter 2 points pour la transformation réussie
-    scriptProperties.setProperty(currentScoreKey, conversionScore.toString());
+// Récupérer le temps actuel pour l'enregistrement de la transformation
+const matchTimeStateAtConversion = getMatchTimeState();
+const timeOfConversionMs = matchTimeStateAtConversion.tempsDeJeuMs;
 
-    // Enregistrer la transformation réussie
-    recordEvent(
-      new Date(),
-      formatMillisecondsToHMS(timeOfConversionMs), // Temps de la transformation
-      scoringTeam,
-      'Transformation réussie',
-      '',
-      parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10),
-      parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10),
-      `Transformation réussie pour ${scoringTeam}`
-    );
-  } else {
-    // Enregistrer la transformation ratée
-    recordEvent(
-      new Date(),
-      formatMillisecondsToHMS(timeOfConversionMs), // Temps de la transformation
-      scoringTeam,
-      'Transformation ratée',
-      '',
-      parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10),
-      parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10),
-      `Transformation ratée pour ${scoringTeam}`
-    );
-  }
+// NOUVEAU : Demander le buteur pour la transformation
+const conversionPlayerInfo = promptForPlayer('Transformation', scoringTeam);
+if (conversionPlayerInfo.cancelled) {
+// Si annulé, on continue sans joueur pour la transformation
+conversionPlayerInfo.playerName = '';
+}
 
-  scriptProperties.setProperty('alertMessage', '');
-  // CORRECTION : Remplacer updateSidebar() par l'appel direct au rafraîchissement de la sidebar
-  // SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
-  ouvrirTableauDeBord();
-  ui.alert("Essai", `Essai de l'équipe ${scoringTeam} et transformation gérée.`, ui.ButtonSet.OK);
+if (conversionResponse === ui.Button.YES) {
+let conversionScore = parseInt(scriptProperties.getProperty(currentScoreKey) || '0', 10);
+conversionScore += TRANSFO_POINTS; // Ajouter 2 points pour la transformation réussie
+scriptProperties.setProperty(currentScoreKey, conversionScore.toString());
+
+// Enregistrer la transformation réussie
+recordEvent(
+new Date(),
+formatMillisecondsToHMS(timeOfConversionMs), // Temps de la transformation
+scoringTeam,
+'Transformation réussie',
+conversionPlayerInfo.playerName, // NOUVEAU : Nom du buteur
+parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10),
+parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10),
+`Transformation réussie par ${conversionPlayerInfo.playerName || 'joueur non spécifié'} pour ${scoringTeam}`
+);
+} else {
+// Enregistrer la transformation ratée
+recordEvent(
+new Date(),
+formatMillisecondsToHMS(timeOfConversionMs), // Temps de la transformation
+scoringTeam,
+'Transformation ratée',
+conversionPlayerInfo.playerName, // NOUVEAU : Nom du buteur
+parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10),
+parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10),
+`Transformation ratée par ${conversionPlayerInfo.playerName || 'joueur non spécifié'} pour ${scoringTeam}`
+);
+}
+
+scriptProperties.setProperty('alertMessage', '');
+ouvrirTableauDeBord();
+ui.alert("Essai", `Essai de l'équipe ${scoringTeam} et transformation gérée.`, ui.ButtonSet.OK);
 }
 
 // --- FONCTION POUR GÉRER LES PÉNALITÉS ---
 /**
- * Gère une tentative de pénalité.
- */
+* Gère une tentative de pénalité.
+*/
 function addPenalite() {
-  const scriptProperties = PropertiesService.getScriptProperties();
-  const ui = SpreadsheetApp.getUi();
+const scriptProperties = PropertiesService.getScriptProperties();
+const ui = SpreadsheetApp.getUi();
 
-  if (!isScoreAllowedForPhase()) {
-    return;
-  }
+if (!isScoreAllowedForPhase()) {
+return;
+}
 
-  // Récupérer le temps actuel du chronomètre
-  const currentRunningTimeState = getMatchTimeState();
-  const timeOfPenalty = currentRunningTimeState.tempsDeJeuMs;
+// Récupérer le temps actuel du chronomètre
+const currentRunningTimeState = getMatchTimeState();
+const timeOfPenalty = currentRunningTimeState.tempsDeJeuMs;
 
-  // Récupérer les noms des équipes
-  const localTeamName = getLocalTeamName();
-  const visitorTeamName = getVisitorTeamName();
+// Récupérer les noms des équipes
+const localTeamName = getLocalTeamName();
+const visitorTeamName = getVisitorTeamName();
 
-  // Demander quelle équipe bénéficie de la pénalité
-  const response = ui.prompt(
-    'Pénalité pour quelle équipe ?',
-    `1. ${localTeamName}\n2. ${visitorTeamName}\nEntrez 1 ou 2:`,
-    ui.ButtonSet.OK_CANCEL
-  );
+// Demander quelle équipe bénéficie de la pénalité
+const response = ui.prompt(
+'Pénalité pour quelle équipe ?',
+`1. ${localTeamName}\n2. ${visitorTeamName}\nEntrez 1 ou 2:`,
+ui.ButtonSet.OK_CANCEL
+);
 
-  // Vérifier si l'utilisateur a annulé
-  if (response.getSelectedButton() !== ui.Button.OK) {
-    ui.alert("Annulé", "L'ajout de pénalité a été annulé.", ui.ButtonSet.OK);
-    // AJOUT IMPORTANT : Déclenche le rafraîchissement de la sidebar même si annulé
-    // SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
-    ouvrirTableauDeBord();
-    return;
-  }
+// Vérifier si l'utilisateur a annulé
+if (response.getSelectedButton() !== ui.Button.OK) {
+ui.alert("Annulé", "L'ajout de pénalité a été annulé.", ui.ButtonSet.OK);
+ouvrirTableauDeBord();
+return;
+}
 
-  // Déterminer l'équipe qui bénéficie de la pénalité
-  let penalizedTeam;
-  if (response.getResponseText().trim() === '1') {
-    penalizedTeam = localTeamName;
-  } else if (response.getResponseText().trim() === '2') {
-    penalizedTeam = visitorTeamName;
-  } else {
-    ui.alert("Entrée invalide", "Veuillez entrer '1' ou '2'.", ui.ButtonSet.OK);
-    // AJOUT IMPORTANT : Déclenche le rafraîchissement de la sidebar même si l'entrée est invalide
-    // SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
-    ouvrirTableauDeBord();
-    return;
-  }
+// Déterminer l'équipe qui bénéficie de la pénalité
+let penalizedTeam;
+if (response.getResponseText().trim() === '1') {
+penalizedTeam = localTeamName;
+} else if (response.getResponseText().trim() === '2') {
+penalizedTeam = visitorTeamName;
+} else {
+ui.alert("Entrée invalide", "Veuillez entrer '1' ou '2'.", ui.ButtonSet.OK);
+ouvrirTableauDeBord();
+return;
+}
 
-  // Demander si la pénalité est réussie
-  const successResponse = ui.alert('Pénalité réussie ?', 'La pénalité est-elle réussie ?', ui.ButtonSet.YES_NO);
+// NOUVEAU : Demander le joueur qui tire la pénalité
+const playerInfo = promptForPlayer('Pénalité', penalizedTeam);
+if (playerInfo.cancelled) {
+ui.alert("Annulé", "L'ajout de pénalité a été annulé.", ui.ButtonSet.OK);
+ouvrirTableauDeBord();
+return;
+}
 
-  // Mettre à jour le score et écrire dans la feuille
-  const currentScoreKey = penalizedTeam === localTeamName ? 'currentScoreLocal' : 'currentScoreVisiteur';
-  let currentScore = parseInt(scriptProperties.getProperty(currentScoreKey) || '0', 10);
+// Demander si la pénalité est réussie
+const successResponse = ui.alert('Pénalité réussie ?', 'La pénalité est-elle réussie ?', ui.ButtonSet.YES_NO);
 
-  if (successResponse === ui.Button.YES) {
-    currentScore += PENALITE_POINTS; // Ajouter 3 points pour la pénalité réussie
-    scriptProperties.setProperty(currentScoreKey, currentScore.toString());
+// Mettre à jour le score et écrire dans la feuille
+const currentScoreKey = penalizedTeam === localTeamName ? 'currentScoreLocal' : 'currentScoreVisiteur';
+let currentScore = parseInt(scriptProperties.getProperty(currentScoreKey) || '0', 10);
 
-    // Enregistrer la pénalité réussie
-    recordEvent(
-      new Date(),
-      formatMillisecondsToHMS(timeOfPenalty),
-      penalizedTeam,
-      'Pénalité réussie',
-      '', // Joueur (vide si non applicable ici)
-      parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10),
-      parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10),
-      `Pénalité réussie pour ${penalizedTeam}`
-    );
-  } else {
-    // Enregistrer la pénalité ratée
-    recordEvent(
-      new Date(),
-      formatMillisecondsToHMS(timeOfPenalty),
-      penalizedTeam,
-      'Pénalité ratée',
-      '', // Joueur (vide si non applicable ici)
-      parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10),
-      parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10),
-      `Pénalité ratée pour ${penalizedTeam}`
-    );
-  }
+if (successResponse === ui.Button.YES) {
+currentScore += PENALITE_POINTS; // Ajouter 3 points pour la pénalité réussie
+scriptProperties.setProperty(currentScoreKey, currentScore.toString());
 
-  // CORRECTION : Remplacer updateSidebar() par l'appel direct au rafraîchissement de la sidebar
-  // SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
-  ouvrirTableauDeBord();
-  ui.alert("Pénalité", `Pénalité ${successResponse === ui.Button.YES ? 'réussie' : 'ratée'} par ${penalizedTeam}.`, ui.ButtonSet.OK);
+// Enregistrer la pénalité réussie
+recordEvent(
+new Date(),
+formatMillisecondsToHMS(timeOfPenalty),
+penalizedTeam,
+'Pénalité réussie',
+playerInfo.playerName, // NOUVEAU : Nom du buteur
+parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10),
+parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10),
+`Pénalité réussie par ${playerInfo.playerName || 'joueur non spécifié'} pour ${penalizedTeam}`
+);
+} else {
+// Enregistrer la pénalité ratée
+recordEvent(
+new Date(),
+formatMillisecondsToHMS(timeOfPenalty),
+penalizedTeam,
+'Pénalité ratée',
+playerInfo.playerName, // NOUVEAU : Nom du buteur
+parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10),
+parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10),
+`Pénalité ratée par ${playerInfo.playerName || 'joueur non spécifié'} pour ${penalizedTeam}`
+);
+}
+
+ouvrirTableauDeBord();
+ui.alert("Pénalité", `Pénalité ${successResponse === ui.Button.YES ? 'réussie' : 'ratée'} par ${playerInfo.playerName || 'joueur non spécifié'}.`, ui.ButtonSet.OK);
 }
 
 // --- FONCTIONS POUR GÉRER LES DROPS ---
 /**
- * Gère une tentative de drop.
- */
+* Gère une tentative de drop.
+*/
 function addDrop() {
-  const scriptProperties = PropertiesService.getScriptProperties();
-  const ui = SpreadsheetApp.getUi();
+const scriptProperties = PropertiesService.getScriptProperties();
+const ui = SpreadsheetApp.getUi();
 
-  if (!isScoreAllowedForPhase()) {
-    return;
-  }
+if (!isScoreAllowedForPhase()) {
+return;
+}
 
-  // Récupérer le temps actuel du chronomètre
-  const currentRunningTimeState = getMatchTimeState();
-  const timeOfDrop = currentRunningTimeState.tempsDeJeuMs;
+// Récupérer le temps actuel du chronomètre
+const currentRunningTimeState = getMatchTimeState();
+const timeOfDrop = currentRunningTimeState.tempsDeJeuMs;
 
-  // Récupérer les noms des équipes
-  const localTeamName = getLocalTeamName();
-  const visitorTeamName = getVisitorTeamName();
+// Récupérer les noms des équipes
+const localTeamName = getLocalTeamName();
+const visitorTeamName = getVisitorTeamName();
 
-  // Demander quelle équipe bénéficie du drop
-  const response = ui.prompt(
-    'Drop pour quelle équipe ?',
-    `1. ${localTeamName}\n2. ${visitorTeamName}\nEntrez 1 ou 2:`,
-    ui.ButtonSet.OK_CANCEL
-  );
+// Demander quelle équipe bénéficie du drop
+const response = ui.prompt(
+'Drop pour quelle équipe ?',
+`1. ${localTeamName}\n2. ${visitorTeamName}\nEntrez 1 ou 2:`,
+ui.ButtonSet.OK_CANCEL
+);
 
-  // Vérifier si l'utilisateur a annulé
-  if (response.getSelectedButton() !== ui.Button.OK) {
-    ui.alert("Annulé", "L'ajout du drop a été annulé.", ui.ButtonSet.OK);
-    // AJOUT IMPORTANT : Déclenche le rafraîchissement de la sidebar même si annulé
-    // SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
-    ouvrirTableauDeBord();
-    return;
-  }
+// Vérifier si l'utilisateur a annulé
+if (response.getSelectedButton() !== ui.Button.OK) {
+ui.alert("Annulé", "L'ajout du drop a été annulé.", ui.ButtonSet.OK);
+ouvrirTableauDeBord();
+return;
+}
 
-  // Déterminer l'équipe qui bénéficie du drop
-  let dropTeam;
-  if (response.getResponseText().trim() === '1') {
-    dropTeam = localTeamName;
-  } else if (response.getResponseText().trim() === '2') {
-    dropTeam = visitorTeamName;
-  } else {
-    ui.alert("Entrée invalide", "Veuillez entrer '1' ou '2'.", ui.ButtonSet.OK);
-    // AJOUT IMPORTANT : Déclenche le rafraîchissement de la sidebar même si l'entrée est invalide
-    // SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
-    ouvrirTableauDeBord();
-    return;
-  }
+// Déterminer l'équipe qui bénéficie du drop
+let dropTeam;
+if (response.getResponseText().trim() === '1') {
+dropTeam = localTeamName;
+} else if (response.getResponseText().trim() === '2') {
+dropTeam = visitorTeamName;
+} else {
+ui.alert("Entrée invalide", "Veuillez entrer '1' ou '2'.", ui.ButtonSet.OK);
+ouvrirTableauDeBord();
+return;
+}
 
-  // Demander si le drop est réussi
-  const successResponse = ui.alert('Drop réussi ?', 'Le  drop est-il réussi ?', ui.ButtonSet.YES_NO);
+// NOUVEAU : Demander le joueur qui tire le drop
+const playerInfo = promptForPlayer('Drop', dropTeam);
+if (playerInfo.cancelled) {
+ui.alert("Annulé", "L'ajout du drop a été annulé.", ui.ButtonSet.OK);
+ouvrirTableauDeBord();
+return;
+}
 
-  // Mettre à jour le score et écrire dans la feuille
-  const currentScoreKey = dropTeam === localTeamName ? 'currentScoreLocal' : 'currentScoreVisiteur';
-  let currentScore = parseInt(scriptProperties.getProperty(currentScoreKey) || '0', 10);
+// Demander si le drop est réussi
+const successResponse = ui.alert('Drop réussi ?', 'Le drop est-il réussi ?', ui.ButtonSet.YES_NO);
 
-  if (successResponse === ui.Button.YES) {
-    currentScore += DROP_POINTS; // Ajouter 3 points pour le drop réussi
-    scriptProperties.setProperty(currentScoreKey, currentScore.toString());
+// Mettre à jour le score et écrire dans la feuille
+const currentScoreKey = dropTeam === localTeamName ? 'currentScoreLocal' : 'currentScoreVisiteur';
+let currentScore = parseInt(scriptProperties.getProperty(currentScoreKey) || '0', 10);
 
-    // Enregistrer le drop réussi
-    recordEvent(
-      new Date(),
-      formatMillisecondsToHMS(timeOfDrop),
-      dropTeam,
-      'Drop réussi',
-      '',
-      parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10),
-      parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10),
-      `Drop réussi pour ${dropTeam}`
-    );
-  } else {
-    // Enregistrer le drop raté
-    recordEvent(
-      new Date(),
-      formatMillisecondsToHMS(timeOfDrop),
-      dropTeam,
-      'Drop raté',
-      '',
-      parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10),
-      parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10),
-      `Drop ratée pour ${dropTeam}`
-    );
-  }
+if (successResponse === ui.Button.YES) {
+currentScore += DROP_POINTS; // Ajouter 3 points pour le drop réussi
+scriptProperties.setProperty(currentScoreKey, currentScore.toString());
 
-  // CORRECTION : Remplacer updateSidebar() par l'appel direct au rafraîchissement de la sidebar
-  // SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
-  ouvrirTableauDeBord();
-  ui.alert("Drop", `Drop ${successResponse === ui.Button.YES ? 'réussi' : 'raté'} par ${dropTeam}.`, ui.ButtonSet.OK);
+// Enregistrer le drop réussi
+recordEvent(
+new Date(),
+formatMillisecondsToHMS(timeOfDrop),
+dropTeam,
+'Drop réussi',
+playerInfo.playerName, // NOUVEAU : Nom du buteur
+parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10),
+parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10),
+`Drop réussi par ${playerInfo.playerName || 'joueur non spécifié'} pour ${dropTeam}`
+);
+} else {
+// Enregistrer le drop raté
+recordEvent(
+new Date(),
+formatMillisecondsToHMS(timeOfDrop),
+dropTeam,
+'Drop raté',
+playerInfo.playerName, // NOUVEAU : Nom du buteur
+parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10),
+parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10),
+`Drop raté par ${playerInfo.playerName || 'joueur non spécifié'} pour ${dropTeam}`
+);
+}
+
+ouvrirTableauDeBord();
+ui.alert("Drop", `Drop ${successResponse === ui.Button.YES ? 'réussi' : 'raté'} par ${playerInfo.playerName || 'joueur non spécifié'}.`, ui.ButtonSet.OK);
 }
 
 /**
- * Gère un essai de penalité.
- */
+* Gère un essai de penalité.
+*/
 function addEssaiPenalite() {
-  const scriptProperties = PropertiesService.getScriptProperties();
-  const ui = SpreadsheetApp.getUi();
+const scriptProperties = PropertiesService.getScriptProperties();
+const ui = SpreadsheetApp.getUi();
 
-  if (!isScoreAllowedForPhase()) {
-    return;
-  }
+if (!isScoreAllowedForPhase()) {
+return;
+}
 
-  // Récupérer le temps actuel du chronomètre pour l'enregistrement de l'essai
-  const matchTimeStateAtEssai = getMatchTimeState();
-  const timeOfEssaiMs = matchTimeStateAtEssai.tempsDeJeuMs;
+// Récupérer le temps actuel du chronomètre pour l'enregistrement de l'essai
+const matchTimeStateAtEssai = getMatchTimeState();
+const timeOfEssaiMs = matchTimeStateAtEssai.tempsDeJeuMs;
 
-  // Demander quelle équipe a bénéficié l'essai de pénlité
-  const localTeamName = getLocalTeamName();
-  const visitorTeamName = getVisitorTeamName();
+// Demander quelle équipe a bénéficié l'essai de pénalité
+const localTeamName = getLocalTeamName();
+const visitorTeamName = getVisitorTeamName();
 
-  const teamChoice = ui.prompt(
-    'Essai de pénalité pour :',
-    `1. ${localTeamName}\n2. ${visitorTeamName}\nEntrez 1 ou 2:`,
-    ui.ButtonSet.OK_CANCEL
-  );
+const teamChoice = ui.prompt(
+'Essai de pénalité pour :',
+`1. ${localTeamName}\n2. ${visitorTeamName}\nEntrez 1 ou 2:`,
+ui.ButtonSet.OK_CANCEL
+);
 
-  if (teamChoice.getSelectedButton() !== ui.Button.OK) {
-    ui.alert("Annulé", "L'ajout de l'essai a été annulé.", ui.ButtonSet.OK);
-    // AJOUT IMPORTANT : Déclenche le rafraîchissement de la sidebar même si annulé
-    // SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
-    ouvrirTableauDeBord();
-    return;
-  }
+if (teamChoice.getSelectedButton() !== ui.Button.OK) {
+ui.alert("Annulé", "L'ajout de l'essai a été annulé.", ui.ButtonSet.OK);
+ouvrirTableauDeBord();
+return;
+}
 
-  let scoringTeam;
-  if (teamChoice.getResponseText().trim() === '1') {
-    scoringTeam = localTeamName;
-  } else if (teamChoice.getResponseText().trim() === '2') {
-    scoringTeam = visitorTeamName;
-  } else {
-    ui.alert("Entrée invalide", "Veuillez entrer '1' ou '2'.", ui.ButtonSet.OK);
-    // AJOUT IMPORTANT : Déclenche le rafraîchissement de la sidebar même si l'entrée est invalide
-    // SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
-    ouvrirTableauDeBord();
-    return;
-  }
+let scoringTeam;
+if (teamChoice.getResponseText().trim() === '1') {
+scoringTeam = localTeamName;
+} else if (teamChoice.getResponseText().trim() === '2') {
+scoringTeam = visitorTeamName;
+} else {
+ui.alert("Entrée invalide", "Veuillez entrer '1' ou '2'.", ui.ButtonSet.OK);
+ouvrirTableauDeBord();
+return;
+}
 
-  // Mettre à jour le score de l'essai de pénalité
-  const currentScoreKey = scoringTeam === localTeamName ? 'currentScoreLocal' : 'currentScoreVisiteur';
-  let currentScore = parseInt(scriptProperties.getProperty(currentScoreKey) || '0', 10);
-  currentScore += ESSAI_PENALITE_POINTS; // Ajouter 7 points pour l'essai
-  scriptProperties.setProperty(currentScoreKey, currentScore.toString());
+// Mettre à jour le score de l'essai de pénalité
+const currentScoreKey = scoringTeam === localTeamName ? 'currentScoreLocal' : 'currentScoreVisiteur';
+let currentScore = parseInt(scriptProperties.getProperty(currentScoreKey) || '0', 10);
+currentScore += ESSAI_PENALITE_POINTS; // Ajouter 7 points pour l'essai
+scriptProperties.setProperty(currentScoreKey, currentScore.toString());
 
-  // Enregistrer l'essai de pénalité
-  recordEvent(
-    new Date(),
-    formatMillisecondsToHMS(timeOfEssaiMs), // Temps de l'essai
-    scoringTeam,
-    'Essai de pénalité',
-    '', // Joueur non spécifié ici, à ajouter si besoin
-    parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10),
-    parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10),
-    `Essai de pénalité pour ${scoringTeam}`
-  );
+// Enregistrer l'essai de pénalité (pas de joueur spécifique pour un essai de pénalité)
+recordEvent(
+new Date(),
+formatMillisecondsToHMS(timeOfEssaiMs), // Temps de l'essai
+scoringTeam,
+'Essai de pénalité',
+'', // Pas de joueur spécifique pour un essai de pénalité
+parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10),
+parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10),
+`Essai de pénalité pour ${scoringTeam}`
+);
 
-  scriptProperties.setProperty('alertMessage', '');
-  // CORRECTION : Remplacer updateSidebar() par l'appel direct au rafraîchissement de la sidebar
-  // SpreadsheetApp.getUi().showSidebar(HtmlService.createHtmlOutput('<script>if(window.refreshSidebar) { window.refreshSidebar(); }</script>'));
-  ouvrirTableauDeBord();
-  ui.alert("Essai de pénalité", `Essai de pénalité pour ${scoringTeam}.`, ui.ButtonSet.OK);
+scriptProperties.setProperty('alertMessage', '');
+ouvrirTableauDeBord();
+ui.alert("Essai de pénalité", `Essai de pénalité pour ${scoringTeam}.`, ui.ButtonSet.OK);
 }
