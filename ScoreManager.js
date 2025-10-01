@@ -186,10 +186,6 @@ parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10),
 // Demander si la transformation est réussie
 const conversionResponse = ui.alert('Transformation', 'La transformation est-elle réussie ?', ui.ButtonSet.YES_NO);
 
-// Récupérer le temps actuel pour l'enregistrement de la transformation
-const matchTimeStateAtConversion = getMatchTimeState();
-const timeOfConversionMs = matchTimeStateAtConversion.tempsDeJeuMs;
-
 // NOUVEAU : Demander le buteur pour la transformation
 const conversionPlayerInfo = promptForPlayer('Transformation', scoringTeam);
 if (conversionPlayerInfo.cancelled) {
@@ -197,15 +193,16 @@ if (conversionPlayerInfo.cancelled) {
 conversionPlayerInfo.playerName = '';
 }
 
+// CORRECTION : Utiliser le même temps que l'essai pour la transformation
 if (conversionResponse === ui.Button.YES) {
 let conversionScore = parseInt(scriptProperties.getProperty(currentScoreKey) || '0', 10);
 conversionScore += TRANSFO_POINTS; // Ajouter 2 points pour la transformation réussie
 scriptProperties.setProperty(currentScoreKey, conversionScore.toString());
 
-// Enregistrer la transformation réussie
+// Enregistrer la transformation réussie avec le MÊME temps que l'essai
 recordEvent(
 new Date(),
-formatMillisecondsToHMS(timeOfConversionMs), // Temps de la transformation
+formatMillisecondsToHMS(timeOfEssaiMs), // CORRECTION : Utilise le temps de l'essai
 scoringTeam,
 'Transformation réussie',
 conversionPlayerInfo.playerName, // NOUVEAU : Nom du buteur
@@ -214,10 +211,10 @@ parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10),
 `Transformation réussie par ${conversionPlayerInfo.playerName || 'joueur non spécifié'} pour ${scoringTeam}`
 );
 } else {
-// Enregistrer la transformation ratée
+// Enregistrer la transformation ratée avec le MÊME temps que l'essai
 recordEvent(
 new Date(),
-formatMillisecondsToHMS(timeOfConversionMs), // Temps de la transformation
+formatMillisecondsToHMS(timeOfEssaiMs), // CORRECTION : Utilise le temps de l'essai
 scoringTeam,
 'Transformation ratée',
 conversionPlayerInfo.playerName, // NOUVEAU : Nom du buteur
