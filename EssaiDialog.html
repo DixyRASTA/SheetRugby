@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    
+    .form-container {
+      background: white;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      max-width: 400px;
+      margin: 0 auto;
+    }
+    
+    h2 {
+      color: #1a73e8;
+      margin-bottom: 20px;
+      font-size: 20px;
+      text-align: center;
+    }
+    
+    .form-group {
+      margin-bottom: 20px;
+    }
+    
+    label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #333;
+      font-size: 14px;
+    }
+    
+    .required::after {
+      content: " *";
+      color: #d93025;
+    }
+    
+    select, input[type="number"] {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+      background: white;
+      transition: border-color 0.3s;
+    }
+    
+    select:focus, input:focus {
+      outline: none;
+      border-color: #1a73e8;
+      box-shadow: 0 0 0 2px rgba(26,115,232,0.1);
+    }
+    
+    .radio-group {
+      display: flex;
+      gap: 20px;
+      margin-top: 8px;
+    }
+    
+    .radio-option {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+    }
+    
+    input[type="radio"] {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+    }
+    
+    .radio-option label {
+      margin: 0;
+      font-weight: normal;
+      cursor: pointer;
+    }
+    
+    .button-group {
+      display: flex;
+      gap: 10px;
+      margin-top: 25px;
+    }
+    
+    button {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      border-radius: 4px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    
+    .btn-primary {
+      background: #1a73e8;
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      background: #1557b0;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(26,115,232,0.3);
+    }
+    
+    .btn-secondary {
+      background: #f1f3f4;
+      color: #5f6368;
+    }
+    
+    .btn-secondary:hover {
+      background: #e8eaed;
+    }
+    
+    .help-text {
+      font-size: 12px;
+      color: #666;
+      margin-top: 4px;
+      font-style: italic;
+    }
+    
+    .error {
+      color: #d93025;
+      font-size: 12px;
+      margin-top: 4px;
+      display: none;
+    }
+    
+    .player-name {
+      margin-top: 8px;
+      padding: 8px;
+      background: #e8f0fe;
+      border-radius: 4px;
+      color: #1967d2;
+      font-weight: 600;
+      font-size: 13px;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="form-container">
+    <h2>🏉 Enregistrer un Essai</h2>
+    
+    <form id="essaiForm">
+      <!-- Équipe -->
+      <div class="form-group">
+        <label class="required">Équipe qui a marqué</label>
+        <select id="equipe" required>
+          <option value="">-- Sélectionner --</option>
+          <option value="1">1. <?= localTeamName ?></option>
+          <option value="2">2. <?= visitorTeamName ?></option>
+        </select>
+      </div>
+      
+      <!-- Joueur Essai -->
+      <div class="form-group">
+        <label>Numéro du joueur (essai)</label>
+        <input type="number" id="joueurEssai" min="1" max="22" placeholder="1-22 (optionnel)">
+        <div class="help-text">Laissez vide si inconnu</div>
+        <div class="player-name" id="nomJoueurEssai"></div>
+        <div class="error" id="errorJoueurEssai">Numéro doit être entre 1 et 22</div>
+      </div>
+      
+      <!-- Transformation -->
+      <div class="form-group">
+        <label class="required">Transformation</label>
+        <div class="radio-group">
+          <div class="radio-option">
+            <input type="radio" id="transfoReussie" name="transformation" value="reussie" required>
+            <label for="transfoReussie">✅ Réussie</label>
+          </div>
+          <div class="radio-option">
+            <input type="radio" id="transfoRatee" name="transformation" value="ratee" required>
+            <label for="transfoRatee">❌ Ratée</label>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Joueur Transformation -->
+      <div class="form-group">
+        <label>Numéro du buteur (transformation)</label>
+        <input type="number" id="joueurTransfo" min="1" max="22" placeholder="1-22 (optionnel)">
+        <div class="help-text">Laissez vide si inconnu</div>
+        <div class="player-name" id="nomJoueurTransfo"></div>
+        <div class="error" id="errorJoueurTransfo">Numéro doit être entre 1 et 22</div>
+      </div>
+      
+      <!-- Boutons -->
+      <div class="button-group">
+        <button type="button" class="btn-secondary" onclick="annuler()">Annuler</button>
+        <button type="submit" class="btn-primary">Valider</button>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    // Récupérer les noms de joueurs en temps réel
+    document.getElementById('joueurEssai').addEventListener('input', function() {
+      const numero = this.value;
+      const equipe = document.getElementById('equipe').value;
+      checkPlayerNumber(numero, 'joueurEssai', equipe);
+    });
+    
+    document.getElementById('joueurTransfo').addEventListener('input', function() {
+      const numero = this.value;
+      const equipe = document.getElementById('equipe').value;
+      checkPlayerNumber(numero, 'joueurTransfo', equipe);
+    });
+    
+    document.getElementById('equipe').addEventListener('change', function() {
+      // Revalider les joueurs si l'équipe change
+      const joueurEssai = document.getElementById('joueurEssai').value;
+      const joueurTransfo = document.getElementById('joueurTransfo').value;
+      const equipe = this.value;
+      
+      if (joueurEssai) checkPlayerNumber(joueurEssai, 'joueurEssai', equipe);
+      if (joueurTransfo) checkPlayerNumber(joueurTransfo, 'joueurTransfo', equipe);
+    });
+    
+    function checkPlayerNumber(numero, fieldId, equipe) {
+      const errorDiv = document.getElementById('error' + fieldId.charAt(0).toUpperCase() + fieldId.slice(1));
+      const nameDiv = document.getElementById('nom' + fieldId.charAt(0).toUpperCase() + fieldId.slice(1));
+      
+      if (!numero || numero === '') {
+        errorDiv.style.display = 'none';
+        nameDiv.style.display = 'none';
+        return;
+      }
+      
+      const num = parseInt(numero);
+      if (num < 1 || num > 22) {
+        errorDiv.style.display = 'block';
+        nameDiv.style.display = 'none';
+        return;
+      }
+      
+      errorDiv.style.display = 'none';
+      
+      if (equipe) {
+        // Appel au serveur pour récupérer le nom
+        google.script.run
+          .withSuccessHandler(function(playerName) {
+            if (playerName) {
+              nameDiv.textContent = '👤 ' + playerName;
+              nameDiv.style.display = 'block';
+            } else {
+              nameDiv.textContent = '⚠️ Joueur non trouvé';
+              nameDiv.style.display = 'block';
+            }
+          })
+          .getPlayerNameForDialog(numero, equipe);
+      }
+    }
+    
+    // Soumission du formulaire
+    document.getElementById('essaiForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      const data = {
+        equipe: document.getElementById('equipe').value,
+        joueurEssai: document.getElementById('joueurEssai').value,
+        joueurTransfo: document.getElementById('joueurTransfo').value,
+        transformation: document.querySelector('input[name="transformation"]:checked').value
+      };
+      
+      // Envoyer au serveur
+      google.script.run
+        .withSuccessHandler(function() {
+          google.script.host.close();
+        })
+        .processEssaiFromDialog(data);
+    });
+    
+    function annuler() {
+      google.script.host.close();
+    }
+  </script>
+</body>
+</html>

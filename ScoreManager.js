@@ -118,116 +118,136 @@ return true;
 /**
 * Gère un essai.
 */
+/**
+ * Ouvre le dialogue HTML pour enregistrer un essai
+ * REMPLACE la fonction addEssai() existante
+ */
 function addEssai() {
-const scriptProperties = PropertiesService.getScriptProperties();
-const ui = SpreadsheetApp.getUi();
-
-if (!isScoreAllowedForPhase()) {
-return;
+  if (!isScoreAllowedForPhase()) {
+    return;
+  }
+  
+  // Créer le template HTML
+  const template = HtmlService.createTemplateFromFile('EssaiDialog');
+  
+  // Passer les noms d'équipes au template
+  template.localTeamName = getLocalTeamName();
+  template.visitorTeamName = getVisitorTeamName();
+  
+  // Évaluer et afficher le dialogue
+  const html = template.evaluate()
+    .setWidth(450)
+    .setHeight(550);
+  
+  SpreadsheetApp.getUi().showModalDialog(html, 'Enregistrer un Essai');
 }
 
-// Récupérer le temps actuel du chronomètre pour l'enregistrement de l'essai
-const matchTimeStateAtEssai = getMatchTimeState();
-const timeOfEssaiMs = matchTimeStateAtEssai.tempsDeJeuMs;
-
-// Demander quelle équipe a marqué l'essai
-const localTeamName = getLocalTeamName();
-const visitorTeamName = getVisitorTeamName();
-
-const teamChoice = ui.prompt(
-'Essai marqué par:',
-`1. ${localTeamName}\n2. ${visitorTeamName}\nEntrez 1 ou 2:`,
-ui.ButtonSet.OK_CANCEL
-);
-
-if (teamChoice.getSelectedButton() !== ui.Button.OK) {
-ui.alert("Annulé", "L'ajout d'essai a été annulé.", ui.ButtonSet.OK);
-ouvrirTableauDeBord();
-return;
+/**
+ * Fonction appelée par le dialogue HTML pour récupérer le nom d'un joueur
+ * @param {string} playerNumber Le numéro du joueur
+ * @param {string} teamChoice "1" pour local, "2" pour visiteur
+ * @returns {string} Le nom du joueur ou chaîne vide
+ */
+function getPlayerNameForDialog(playerNumber, teamChoice) {
+  if (!playerNumber || playerNumber === '') {
+    return '';
+  }
+  
+  const localTeamName = getLocalTeamName();
+  const visitorTeamName = getVisitorTeamName();
+  const teamName = teamChoice === '1' ? localTeamName : visitorTeamName;
+  
+  return getPlayerNameByNumber(playerNumber, teamName);
 }
 
-let scoringTeam;
-if (teamChoice.getResponseText().trim() === '1') {
-scoringTeam = localTeamName;
-} else if (teamChoice.getResponseText().trim() === '2') {
-scoringTeam = visitorTeamName;
-} else {
-ui.alert("Entrée invalide", "Veuillez entrer '1' ou '2'.", ui.ButtonSet.OK);
-ouvrirTableauDeBord();
-return;
+/**
+ * Traite les données du formulaire d'essai
+ * @param {Object} data Les données du formulaire
+ */
+function processEssaiFromDialog(data) {
+  const scriptProperties = PropertiesService.getScriptProperties();
+  const ui = SpreadsheetApp.getUi();
+  
+  // Récupérer le temps de l'essai
+  const matchTimeStateAtEssai = getMatchTimeState();
+  const timeOfEssaiMs = matchTimeStateAtEssai.tempsDeJeuMs;
+  
+  // Déterminer l'équipe
+  const localTeamName = getLocalTeamName();
+  const visitorTeamName = getVisitorTeamName();
+  const scoringTeam = data.equipe === '1' ? localTeamName : visitorTeamName;
+  
+  // Récupérer les noms des joueurs
+  let joueurEssaiName = '';
+  if (data.joueurEssai && data.joueurEssai !== '') {
+    joueurEssaiName = getPlayerNameByNumber(data.joueurEssai, scoringTeam);
+    if (!joueurEssaiName) {
+      joueurEssaiName = `Joueur N°${data.joueurEssai}`;
+    }
+  }
+  
+  let joueurTransfoName = '';
+  if (data.joueurTransfo && data.joueurTransfo !== '') {
+    joueurTransfoName = getPlayerNameByNumber(data.joueurTransfo, scoringTeam);
+    if (!joueurTransfoName) {
+      joueurTransfoName = `Joueur N°${data.joueurTransfo}`;
+    }
+  }
+  
+  // Mettre à jour le score de l'essai
+  const currentScoreKey = scoringTeam === localTeamName ? 'currentScoreLocal' : 'currentScoreVisiteur';
+  let currentScore = parseInt(scriptProperties.getProperty(currentScoreKey) || '0', 10);
+  currentScore += ESSAI_POINTS;
+  scriptProperties.setProperty(currentScoreKey, currentScore.toString());
+  
+  // Enregistrer l'essai
+  recordEvent(
+    new Date(),
+    formatMillisecondsToHMS(timeOfEssaiMs),
+    scoringTeam,
+    'Essai',
+    joueurEssaiName,
+    parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10),
+    parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10),
+    `Essai marqué par ${joueurEssaiName || 'joueur non spécifié'} pour ${scoringTeam}`
+  );
+  
+  // Traiter la transformation
+  if (data.transformation === 'reussie') {
+    let conversionScore = parseInt(scriptProperties.getProperty(currentScoreKey) || '0', 10);
+    conversionScore += TRANSFO_POINTS;
+    scriptProperties.setProperty(currentScoreKey, conversionScore.toString());
+    
+    recordEvent(
+      new Date(),
+      formatMillisecondsToHMS(timeOfEssaiMs), // Même temps que l'essai
+      scoringTeam,
+      'Transformation réussie',
+      joueurTransfoName,
+      parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10),
+      parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10),
+      `Transformation réussie par ${joueurTransfoName || 'joueur non spécifié'} pour ${scoringTeam}`
+    );
+  } else {
+    recordEvent(
+      new Date(),
+      formatMillisecondsToHMS(timeOfEssaiMs), // Même temps que l'essai
+      scoringTeam,
+      'Transformation ratée',
+      joueurTransfoName,
+      parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10),
+      parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10),
+      `Transformation ratée par ${joueurTransfoName || 'joueur non spécifié'} pour ${scoringTeam}`
+    );
+  }
+  
+  scriptProperties.setProperty('alertMessage', '');
+  ouvrirTableauDeBord();
+  
+  // Message de confirmation
+  ui.alert("Essai", `Essai enregistré pour ${scoringTeam}\nTransformation: ${data.transformation === 'reussie' ? 'Réussie ✅' : 'Ratée ❌'}`, ui.ButtonSet.OK);
 }
 
-// NOUVEAU : Demander le joueur qui a marqué l'essai
-const playerInfo = promptForPlayer('Essai', scoringTeam);
-if (playerInfo.cancelled) {
-ui.alert("Annulé", "L'ajout d'essai a été annulé.", ui.ButtonSet.OK);
-ouvrirTableauDeBord();
-return;
-}
-
-// Mettre à jour le score de l'essai
-const currentScoreKey = scoringTeam === localTeamName ? 'currentScoreLocal' : 'currentScoreVisiteur';
-let currentScore = parseInt(scriptProperties.getProperty(currentScoreKey) || '0', 10);
-currentScore += ESSAI_POINTS; // Ajouter 5 points pour l'essai
-scriptProperties.setProperty(currentScoreKey, currentScore.toString());
-
-// Enregistrer l'essai avec le nom du joueur
-recordEvent(
-new Date(),
-formatMillisecondsToHMS(timeOfEssaiMs), // Temps de l'essai
-scoringTeam,
-'Essai',
-playerInfo.playerName, // NOUVEAU : Nom du joueur récupéré
-parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10),
-parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10),
-`Essai marqué par ${playerInfo.playerName || 'joueur non spécifié'} pour ${scoringTeam}`
-);
-
-// Demander si la transformation est réussie
-const conversionResponse = ui.alert('Transformation', 'La transformation est-elle réussie ?', ui.ButtonSet.YES_NO);
-
-// NOUVEAU : Demander le buteur pour la transformation
-const conversionPlayerInfo = promptForPlayer('Transformation', scoringTeam);
-if (conversionPlayerInfo.cancelled) {
-// Si annulé, on continue sans joueur pour la transformation
-conversionPlayerInfo.playerName = '';
-}
-
-// CORRECTION : Utiliser le même temps que l'essai pour la transformation
-if (conversionResponse === ui.Button.YES) {
-let conversionScore = parseInt(scriptProperties.getProperty(currentScoreKey) || '0', 10);
-conversionScore += TRANSFO_POINTS; // Ajouter 2 points pour la transformation réussie
-scriptProperties.setProperty(currentScoreKey, conversionScore.toString());
-
-// Enregistrer la transformation réussie avec le MÊME temps que l'essai
-recordEvent(
-new Date(),
-formatMillisecondsToHMS(timeOfEssaiMs), // CORRECTION : Utilise le temps de l'essai
-scoringTeam,
-'Transformation réussie',
-conversionPlayerInfo.playerName, // NOUVEAU : Nom du buteur
-parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10),
-parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10),
-`Transformation réussie par ${conversionPlayerInfo.playerName || 'joueur non spécifié'} pour ${scoringTeam}`
-);
-} else {
-// Enregistrer la transformation ratée avec le MÊME temps que l'essai
-recordEvent(
-new Date(),
-formatMillisecondsToHMS(timeOfEssaiMs), // CORRECTION : Utilise le temps de l'essai
-scoringTeam,
-'Transformation ratée',
-conversionPlayerInfo.playerName, // NOUVEAU : Nom du buteur
-parseInt(scriptProperties.getProperty('currentScoreLocal') || '0', 10),
-parseInt(scriptProperties.getProperty('currentScoreVisiteur') || '0', 10),
-`Transformation ratée par ${conversionPlayerInfo.playerName || 'joueur non spécifié'} pour ${scoringTeam}`
-);
-}
-
-scriptProperties.setProperty('alertMessage', '');
-ouvrirTableauDeBord();
-ui.alert("Essai", `Essai de l'équipe ${scoringTeam} et transformation gérée.`, ui.ButtonSet.OK);
-}
 
 // --- FONCTION POUR GÉRER LES PÉNALITÉS ---
 /**
