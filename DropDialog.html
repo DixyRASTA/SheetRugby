@@ -132,18 +132,6 @@
       background: #e8eaed;
     }
     
-    .loading {
-      display: none;
-      text-align: center;
-      margin-top: 10px;
-      color: #1a73e8;
-      font-size: 14px;
-    }
-    
-    .loading.active {
-      display: block;
-    }
-    
     .help-text {
       font-size: 12px;
       color: #666;
@@ -168,16 +156,28 @@
       font-size: 13px;
       display: none;
     }
+    
+    .loading {
+      display: none;
+      text-align: center;
+      margin-top: 10px;
+      color: #1a73e8;
+      font-size: 14px;
+    }
+    
+    .loading.active {
+      display: block;
+    }
   </style>
 </head>
 <body>
   <div class="form-container">
-    <h2>🏉 Enregistrer un Essai</h2>
+    <h2>⚡ Tentative de Drop</h2>
     
-    <form id="essaiForm">
+    <form id="dropForm">
       <!-- Équipe -->
       <div class="form-group">
-        <label class="required">Équipe qui a marqué</label>
+        <label class="required">Équipe bénéficiaire</label>
         <select id="equipe" required>
           <option value="">-- Sélectionner --</option>
           <option value="1">1. <?= localTeamName ?></option>
@@ -185,37 +185,28 @@
         </select>
       </div>
       
-      <!-- Joueur Essai -->
+      <!-- Joueur Buteur -->
       <div class="form-group">
-        <label>Numéro du joueur (essai)</label>
-        <input type="number" id="joueurEssai" min="1" max="22" placeholder="1-22 (optionnel)">
+        <label>Numéro du buteur</label>
+        <input type="number" id="joueurButeur" min="1" max="22" placeholder="1-22 (optionnel)">
         <div class="help-text">Laissez vide si inconnu</div>
-        <div class="player-name" id="nomJoueurEssai"></div>
-        <div class="error" id="errorJoueurEssai">Numéro doit être entre 1 et 22</div>
+        <div class="player-name" id="nomJoueurButeur"></div>
+        <div class="error" id="errorJoueurButeur">Numéro doit être entre 1 et 22</div>
       </div>
       
-      <!-- Transformation -->
+      <!-- Résultat -->
       <div class="form-group">
-        <label class="required">Transformation</label>
+        <label class="required">Résultat de la tentative</label>
         <div class="radio-group">
           <div class="radio-option">
-            <input type="radio" id="transfoReussie" name="transformation" value="reussie" required>
-            <label for="transfoReussie">✅ Réussie</label>
+            <input type="radio" id="dropReussi" name="resultat" value="reussi" required>
+            <label for="dropReussi">✅ Réussi (3 pts)</label>
           </div>
           <div class="radio-option">
-            <input type="radio" id="transfoRatee" name="transformation" value="ratee" required>
-            <label for="transfoRatee">❌ Ratée</label>
+            <input type="radio" id="dropRate" name="resultat" value="rate" required>
+            <label for="dropRate">❌ Raté</label>
           </div>
         </div>
-      </div>
-      
-      <!-- Joueur Transformation -->
-      <div class="form-group">
-        <label>Numéro du buteur (transformation)</label>
-        <input type="number" id="joueurTransfo" min="1" max="22" placeholder="1-22 (optionnel)">
-        <div class="help-text">Laissez vide si inconnu</div>
-        <div class="player-name" id="nomJoueurTransfo"></div>
-        <div class="error" id="errorJoueurTransfo">Numéro doit être entre 1 et 22</div>
       </div>
       
       <!-- Boutons -->
@@ -232,32 +223,24 @@
     // Variable pour empêcher les doubles soumissions
     let isSubmitting = false;
     
-    // Récupérer les noms de joueurs en temps réel
-    document.getElementById('joueurEssai').addEventListener('input', function() {
+    // Récupérer le nom du joueur en temps réel
+    document.getElementById('joueurButeur').addEventListener('input', function() {
       const numero = this.value;
       const equipe = document.getElementById('equipe').value;
-      checkPlayerNumber(numero, 'joueurEssai', equipe);
-    });
-    
-    document.getElementById('joueurTransfo').addEventListener('input', function() {
-      const numero = this.value;
-      const equipe = document.getElementById('equipe').value;
-      checkPlayerNumber(numero, 'joueurTransfo', equipe);
+      checkPlayerNumber(numero, equipe);
     });
     
     document.getElementById('equipe').addEventListener('change', function() {
-      // Revalider les joueurs si l'équipe change
-      const joueurEssai = document.getElementById('joueurEssai').value;
-      const joueurTransfo = document.getElementById('joueurTransfo').value;
+      // Revalider le joueur si l'équipe change
+      const joueurButeur = document.getElementById('joueurButeur').value;
       const equipe = this.value;
       
-      if (joueurEssai) checkPlayerNumber(joueurEssai, 'joueurEssai', equipe);
-      if (joueurTransfo) checkPlayerNumber(joueurTransfo, 'joueurTransfo', equipe);
+      if (joueurButeur) checkPlayerNumber(joueurButeur, equipe);
     });
     
-    function checkPlayerNumber(numero, fieldId, equipe) {
-      const errorDiv = document.getElementById('error' + fieldId.charAt(0).toUpperCase() + fieldId.slice(1));
-      const nameDiv = document.getElementById('nom' + fieldId.charAt(0).toUpperCase() + fieldId.slice(1));
+    function checkPlayerNumber(numero, equipe) {
+      const errorDiv = document.getElementById('errorJoueurButeur');
+      const nameDiv = document.getElementById('nomJoueurButeur');
       
       if (!numero || numero === '') {
         errorDiv.style.display = 'none';
@@ -291,7 +274,7 @@
     }
     
     // Soumission du formulaire
-    document.getElementById('essaiForm').addEventListener('submit', function(e) {
+    document.getElementById('dropForm').addEventListener('submit', function(e) {
       e.preventDefault();
       
       // SÉCURITÉ : Empêcher les doubles soumissions
@@ -314,9 +297,8 @@
       
       const data = {
         equipe: document.getElementById('equipe').value,
-        joueurEssai: document.getElementById('joueurEssai').value,
-        joueurTransfo: document.getElementById('joueurTransfo').value,
-        transformation: document.querySelector('input[name="transformation"]:checked').value
+        joueurButeur: document.getElementById('joueurButeur').value,
+        resultat: document.querySelector('input[name="resultat"]:checked').value
       };
       
       // Envoyer au serveur
@@ -335,7 +317,7 @@
           document.getElementById('loading').classList.remove('active');
           alert('Erreur lors de l\'enregistrement: ' + error.message);
         })
-        .processEssaiFromDialog(data);
+        .processDropFromDialog(data);
     });
     
     function annuler() {

@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    
+    .form-container {
+      background: white;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      max-width: 400px;
+      margin: 0 auto;
+    }
+    
+    h2 {
+      color: #d93025;
+      margin-bottom: 20px;
+      font-size: 20px;
+      text-align: center;
+    }
+    
+    .info-box {
+      background: #fef7e0;
+      border-left: 4px solid #f9ab00;
+      padding: 12px;
+      margin-bottom: 20px;
+      border-radius: 4px;
+      font-size: 13px;
+      color: #5f6368;
+    }
+    
+    .form-group {
+      margin-bottom: 20px;
+    }
+    
+    label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #333;
+      font-size: 14px;
+    }
+    
+    .required::after {
+      content: " *";
+      color: #d93025;
+    }
+    
+    select {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+      background: white;
+      transition: border-color 0.3s;
+    }
+    
+    select:focus {
+      outline: none;
+      border-color: #d93025;
+      box-shadow: 0 0 0 2px rgba(217,48,37,0.1);
+    }
+    
+    .button-group {
+      display: flex;
+      gap: 10px;
+      margin-top: 25px;
+    }
+    
+    button {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      border-radius: 4px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+    
+    .btn-primary {
+      background: #d93025;
+      color: white;
+    }
+    
+    .btn-primary:hover:not(:disabled) {
+      background: #b71c1c;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(217,48,37,0.3);
+    }
+    
+    .btn-secondary {
+      background: #f1f3f4;
+      color: #5f6368;
+    }
+    
+    .btn-secondary:hover:not(:disabled) {
+      background: #e8eaed;
+    }
+    
+    .loading {
+      display: none;
+      text-align: center;
+      margin-top: 10px;
+      color: #d93025;
+      font-size: 14px;
+    }
+    
+    .loading.active {
+      display: block;
+    }
+    
+    .points-display {
+      text-align: center;
+      font-size: 32px;
+      font-weight: bold;
+      color: #d93025;
+      margin: 15px 0;
+      padding: 15px;
+      background: linear-gradient(135deg, #fff5f5 0%, #ffe0e0 100%);
+      border-radius: 8px;
+      border: 2px solid #d93025;
+    }
+  </style>
+</head>
+<body>
+  <div class="form-container">
+    <h2>🚨 Essai de Pénalité</h2>
+    
+    <div class="info-box">
+      ⚖️ L'essai de pénalité est accordé par l'arbitre en cas de faute empêchant un essai probable.
+    </div>
+    
+    <div class="points-display">
+      + 7 points
+    </div>
+    
+    <form id="essaiPenaliteForm">
+      <!-- Équipe -->
+      <div class="form-group">
+        <label class="required">Équipe bénéficiaire</label>
+        <select id="equipe" required>
+          <option value="">-- Sélectionner --</option>
+          <option value="1">1. <?= localTeamName ?></option>
+          <option value="2">2. <?= visitorTeamName ?></option>
+        </select>
+      </div>
+      
+      <!-- Boutons -->
+      <div class="button-group">
+        <button type="button" class="btn-secondary" id="btnAnnuler" onclick="annuler()">Annuler</button>
+        <button type="submit" class="btn-primary" id="btnValider">Valider</button>
+      </div>
+      
+      <div class="loading" id="loading">⏳ Enregistrement en cours...</div>
+    </form>
+  </div>
+
+  <script>
+    // Variable pour empêcher les doubles soumissions
+    let isSubmitting = false;
+    
+    // Soumission du formulaire
+    document.getElementById('essaiPenaliteForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      // SÉCURITÉ : Empêcher les doubles soumissions
+      if (isSubmitting) {
+        console.log('Soumission déjà en cours, ignorée');
+        return;
+      }
+      
+      isSubmitting = true;
+      
+      // Désactiver les boutons
+      const btnValider = document.getElementById('btnValider');
+      const btnAnnuler = document.getElementById('btnAnnuler');
+      btnValider.disabled = true;
+      btnAnnuler.disabled = true;
+      btnValider.textContent = 'Enregistrement...';
+      
+      // Afficher le message de chargement
+      document.getElementById('loading').classList.add('active');
+      
+      const data = {
+        equipe: document.getElementById('equipe').value
+      };
+      
+      // Envoyer au serveur
+      google.script.run
+        .withSuccessHandler(function() {
+          // Fermer le dialogue après succès
+          google.script.host.close();
+        })
+        .withFailureHandler(function(error) {
+          // En cas d'erreur, réactiver les boutons
+          console.error('Erreur:', error);
+          isSubmitting = false;
+          btnValider.disabled = false;
+          btnAnnuler.disabled = false;
+          btnValider.textContent = 'Valider';
+          document.getElementById('loading').classList.remove('active');
+          alert('Erreur lors de l\'enregistrement: ' + error.message);
+        })
+        .processEssaiPenaliteFromDialog(data);
+    });
+    
+    function annuler() {
+      // SÉCURITÉ : Empêcher l'annulation pendant la soumission
+      if (isSubmitting) {
+        return;
+      }
+      google.script.host.close();
+    }
+  </script>
+</body>
+</html>
