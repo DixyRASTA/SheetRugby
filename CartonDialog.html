@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    
+    .form-container {
+      background: white;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      max-width: 450px;
+      margin: 0 auto;
+    }
+    
+    h2 {
+      color: #5f6368;
+      margin-bottom: 20px;
+      font-size: 20px;
+      text-align: center;
+    }
+    
+    .form-group {
+      margin-bottom: 20px;
+    }
+    
+    label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #333;
+      font-size: 14px;
+    }
+    
+    .required::after {
+      content: " *";
+      color: #d93025;
+    }
+    
+    select, input[type="number"] {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+      background: white;
+      transition: border-color 0.3s;
+    }
+    
+    select:focus, input:focus {
+      outline: none;
+      border-color: #1a73e8;
+      box-shadow: 0 0 0 2px rgba(26,115,232,0.1);
+    }
+    
+    .carton-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 8px;
+    }
+    
+    .carton-option {
+      position: relative;
+    }
+    
+    .carton-option input[type="radio"] {
+      position: absolute;
+      opacity: 0;
+      cursor: pointer;
+    }
+    
+    .carton-label {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 15px;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      background: white;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-weight: 600;
+      font-size: 14px;
+    }
+    
+    .carton-option input[type="radio"]:checked + .carton-label {
+      transform: scale(1.05);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    
+    .carton-blanc + .carton-label {
+      border-color: #9e9e9e;
+      color: #424242;
+    }
+    
+    .carton-blanc:checked + .carton-label {
+      background: #f5f5f5;
+      border-color: #424242;
+    }
+    
+    .carton-jaune + .carton-label {
+      border-color: #fbc02d;
+      color: #f57f17;
+    }
+    
+    .carton-jaune:checked + .carton-label {
+      background: #fff9c4;
+      border-color: #f57f17;
+    }
+    
+    .carton-rouge + .carton-label {
+      border-color: #d32f2f;
+      color: #b71c1c;
+    }
+    
+    .carton-rouge:checked + .carton-label {
+      background: #ffebee;
+      border-color: #b71c1c;
+    }
+    
+    .carton-bleu + .carton-label {
+      border-color: #1976d2;
+      color: #0d47a1;
+    }
+    
+    .carton-bleu:checked + .carton-label {
+      background: #e3f2fd;
+      border-color: #0d47a1;
+    }
+    
+    .button-group {
+      display: flex;
+      gap: 10px;
+      margin-top: 25px;
+    }
+    
+    button {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      border-radius: 4px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+    
+    .btn-primary {
+      background: #1a73e8;
+      color: white;
+    }
+    
+    .btn-primary:hover:not(:disabled) {
+      background: #1557b0;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(26,115,232,0.3);
+    }
+    
+    .btn-secondary {
+      background: #f1f3f4;
+      color: #5f6368;
+    }
+    
+    .btn-secondary:hover:not(:disabled) {
+      background: #e8eaed;
+    }
+    
+    .help-text {
+      font-size: 12px;
+      color: #666;
+      margin-top: 4px;
+      font-style: italic;
+    }
+    
+    .error {
+      color: #d93025;
+      font-size: 12px;
+      margin-top: 4px;
+      display: none;
+    }
+    
+    .player-name {
+      margin-top: 8px;
+      padding: 8px;
+      background: #e8f0fe;
+      border-radius: 4px;
+      color: #1967d2;
+      font-weight: 600;
+      font-size: 13px;
+      display: none;
+    }
+    
+    .loading {
+      display: none;
+      text-align: center;
+      margin-top: 10px;
+      color: #1a73e8;
+      font-size: 14px;
+    }
+    
+    .loading.active {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div class="form-container">
+    <h2>📋 Enregistrer un Carton</h2>
+    
+    <form id="cartonForm">
+      <!-- Type de carton -->
+      <div class="form-group">
+        <label class="required">Type de carton</label>
+        <div class="carton-grid">
+          <div class="carton-option">
+            <input type="radio" id="cartonBlanc" name="carton" value="Carton Blanc" class="carton-blanc" required>
+            <label for="cartonBlanc" class="carton-label">⬜ Blanc</label>
+          </div>
+          <div class="carton-option">
+            <input type="radio" id="cartonJaune" name="carton" value="Carton Jaune" class="carton-jaune" required>
+            <label for="cartonJaune" class="carton-label">🟨 Jaune</label>
+          </div>
+          <div class="carton-option">
+            <input type="radio" id="cartonRouge" name="carton" value="Carton Rouge" class="carton-rouge" required>
+            <label for="cartonRouge" class="carton-label">🟥 Rouge</label>
+          </div>
+          <div class="carton-option">
+            <input type="radio" id="cartonBleu" name="carton" value="Carton Bleu" class="carton-bleu" required>
+            <label for="cartonBleu" class="carton-label">🟦 Bleu</label>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Équipe -->
+      <div class="form-group">
+        <label class="required">Équipe sanctionnée</label>
+        <select id="equipe" required>
+          <option value="">-- Sélectionner --</option>
+          <option value="1">1. <?= localTeamName ?></option>
+          <option value="2">2. <?= visitorTeamName ?></option>
+        </select>
+      </div>
+      
+      <!-- Joueur -->
+      <div class="form-group">
+        <label>Numéro du joueur sanctionné</label>
+        <input type="number" id="joueur" min="1" max="22" placeholder="1-22 (optionnel)">
+        <div class="help-text">Laissez vide si non identifié</div>
+        <div class="player-name" id="nomJoueur"></div>
+        <div class="error" id="errorJoueur">Numéro doit être entre 1 et 22</div>
+      </div>
+      
+      <!-- Boutons -->
+      <div class="button-group">
+        <button type="button" class="btn-secondary" id="btnAnnuler" onclick="annuler()">Annuler</button>
+        <button type="submit" class="btn-primary" id="btnValider">Valider</button>
+      </div>
+      
+      <div class="loading" id="loading">⏳ Enregistrement en cours...</div>
+    </form>
+  </div>
+
+  <script>
+    // Variable pour empêcher les doubles soumissions
+    let isSubmitting = false;
+    
+    // Récupérer le nom du joueur en temps réel
+    document.getElementById('joueur').addEventListener('input', function() {
+      const numero = this.value;
+      const equipe = document.getElementById('equipe').value;
+      checkPlayerNumber(numero, equipe);
+    });
+    
+    document.getElementById('equipe').addEventListener('change', function() {
+      // Revalider le joueur si l'équipe change
+      const joueur = document.getElementById('joueur').value;
+      const equipe = this.value;
+      
+      if (joueur) checkPlayerNumber(joueur, equipe);
+    });
+    
+    function checkPlayerNumber(numero, equipe) {
+      const errorDiv = document.getElementById('errorJoueur');
+      const nameDiv = document.getElementById('nomJoueur');
+      
+      if (!numero || numero === '') {
+        errorDiv.style.display = 'none';
+        nameDiv.style.display = 'none';
+        return;
+      }
+      
+      const num = parseInt(numero);
+      if (num < 1 || num > 22) {
+        errorDiv.style.display = 'block';
+        nameDiv.style.display = 'none';
+        return;
+      }
+      
+      errorDiv.style.display = 'none';
+      
+      if (equipe) {
+        // Appel au serveur pour récupérer le nom
+        google.script.run
+          .withSuccessHandler(function(playerName) {
+            if (playerName) {
+              nameDiv.textContent = '👤 ' + playerName;
+              nameDiv.style.display = 'block';
+            } else {
+              nameDiv.textContent = '⚠️ Joueur non trouvé';
+              nameDiv.style.display = 'block';
+            }
+          })
+          .getPlayerNameForDialog(numero, equipe);
+      }
+    }
+    
+    // Soumission du formulaire
+    document.getElementById('cartonForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      // SÉCURITÉ : Empêcher les doubles soumissions
+      if (isSubmitting) {
+        console.log('Soumission déjà en cours, ignorée');
+        return;
+      }
+      
+      isSubmitting = true;
+      
+      // Désactiver les boutons
+      const btnValider = document.getElementById('btnValider');
+      const btnAnnuler = document.getElementById('btnAnnuler');
+      btnValider.disabled = true;
+      btnAnnuler.disabled = true;
+      btnValider.textContent = 'Enregistrement...';
+      
+      // Afficher le message de chargement
+      document.getElementById('loading').classList.add('active');
+      
+      const data = {
+        carton: document.querySelector('input[name="carton"]:checked').value,
+        equipe: document.getElementById('equipe').value,
+        joueur: document.getElementById('joueur').value
+      };
+      
+      // Envoyer au serveur
+      google.script.run
+        .withSuccessHandler(function() {
+          // Fermer le dialogue après succès
+          google.script.host.close();
+        })
+        .withFailureHandler(function(error) {
+          // En cas d'erreur, réactiver les boutons
+          console.error('Erreur:', error);
+          isSubmitting = false;
+          btnValider.disabled = false;
+          btnAnnuler.disabled = false;
+          btnValider.textContent = 'Valider';
+          document.getElementById('loading').classList.remove('active');
+          alert('Erreur lors de l\'enregistrement: ' + error.message);
+        })
+        .processCartonFromDialog(data);
+    });
+    
+    function annuler() {
+      // SÉCURITÉ : Empêcher l'annulation pendant la soumission
+      if (isSubmitting) {
+        return;
+      }
+      google.script.host.close();
+    }
+  </script>
+</body>
+</html>
