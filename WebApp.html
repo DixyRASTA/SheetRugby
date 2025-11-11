@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Feuille de Match Rugby</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+      -webkit-tap-highlight-color: transparent;
+    }
+    
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    
+    .header {
+      background: white;
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+    
+    h1 {
+      color: #333;
+      font-size: 24px;
+      margin-bottom: 15px;
+      text-align: center;
+    }
+    
+    .score-board {
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      gap: 20px;
+    }
+    
+    .team {
+      flex: 1;
+      text-align: center;
+    }
+    
+    .team-name {
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 5px;
+    }
+    
+    .team-score {
+      font-size: 48px;
+      font-weight: bold;
+      color: #667eea;
+    }
+    
+    .vs {
+      font-size: 20px;
+      color: #999;
+      font-weight: bold;
+    }
+    
+    .timer {
+      text-align: center;
+      font-size: 18px;
+      color: #666;
+      margin-top: 10px;
+      font-weight: 600;
+    }
+    
+    .actions {
+      background: white;
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+    
+    .actions h2 {
+      color: #333;
+      font-size: 18px;
+      margin-bottom: 15px;
+    }
+    
+    .button-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 15px;
+    }
+    
+    .action-btn {
+      padding: 20px;
+      border: none;
+      border-radius: 12px;
+      font-size: 18px;
+      font-weight: bold;
+      color: white;
+      cursor: pointer;
+      transition: all 0.3s;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+      touch-action: manipulation;
+    }
+    
+    .action-btn:active {
+      transform: scale(0.95);
+    }
+    
+    .btn-essai {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    
+    .btn-penalite {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    }
+    
+    .btn-drop {
+      background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    }
+    
+    .btn-carton {
+      background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+    }
+    
+    .loading {
+      display: none;
+      text-align: center;
+      padding: 20px;
+      color: white;
+      font-size: 16px;
+    }
+    
+    .loading.active {
+      display: block;
+    }
+    
+    /* Modal */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.8);
+      z-index: 1000;
+      padding: 20px;
+      overflow-y: auto;
+    }
+    
+    .modal.active {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .modal-content {
+      background: white;
+      border-radius: 16px;
+      padding: 30px;
+      max-width: 500px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    
+    .modal h2 {
+      color: #333;
+      margin-bottom: 20px;
+    }
+    
+    .form-group {
+      margin-bottom: 20px;
+    }
+    
+    .form-group label {
+      display: block;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+    
+    .form-group select,
+    .form-group input {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      font-size: 16px;
+    }
+    
+    .form-group select:focus,
+    .form-group input:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+    
+    .radio-group {
+      display: flex;
+      gap: 15px;
+      margin-top: 10px;
+    }
+    
+    .radio-option {
+      flex: 1;
+    }
+    
+    .radio-option input[type="radio"] {
+      display: none;
+    }
+    
+    .radio-label {
+      display: block;
+      padding: 15px;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-weight: 600;
+    }
+    
+    .radio-option input:checked + .radio-label {
+      background: #667eea;
+      color: white;
+      border-color: #667eea;
+    }
+    
+    .button-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 25px;
+    }
+    
+    .btn-modal {
+      flex: 1;
+      padding: 15px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    
+    .btn-cancel {
+      background: #f1f3f4;
+      color: #5f6368;
+    }
+    
+    .btn-submit {
+      background: #667eea;
+      color: white;
+    }
+    
+    .btn-submit:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    
+    .player-name-display {
+      margin-top: 8px;
+      padding: 10px;
+      background: #e8f0fe;
+      border-radius: 6px;
+      color: #1967d2;
+      font-weight: 600;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- En-tête avec score -->
+    <div class="header">
+      <h1>🏉 Feuille de Match Rugby</h1>
+      <div class="score-board">
+        <div class="team">
+          <div class="team-name" id="teamLocal">Équipe Locale</div>
+          <div class="team-score" id="scoreLocal">0</div>
+        </div>
+        <div class="vs">-</div>
+        <div class="team">
+          <div class="team-name" id="teamVisitor">Équipe Visiteur</div>
+          <div class="team-score" id="scoreVisitor">0</div>
+        </div>
+      </div>
+      <div class="timer" id="timer">00:00</div>
+    </div>
+    
+    <!-- Boutons d'action -->
+    <div class="actions">
+      <h2>Actions</h2>
+      <div class="button-grid">
+        <button class="action-btn btn-essai" onclick="openEssaiModal()">
+          🏉 Essai
+        </button>
+        <button class="action-btn btn-penalite" onclick="alert('Bientôt disponible')">
+          🎯 Pénalité
+        </button>
+        <button class="action-btn btn-drop" onclick="alert('Bientôt disponible')">
+          ⚡ Drop
+        </button>
+        <button class="action-btn btn-carton" onclick="alert('Bientôt disponible')">
+          📋 Carton
+        </button>
+      </div>
+    </div>
+    
+    <div class="loading" id="loading">⏳ Chargement des données...</div>
+  </div>
+
+  <!-- Modal Essai -->
+  <div class="modal" id="essaiModal">
+    <div class="modal-content">
+      <h2>🏉 Enregistrer un Essai</h2>
+      <form id="essaiForm">
+        <div class="form-group">
+          <label>Équipe qui a marqué *</label>
+          <select id="equipeEssai" required>
+            <option value="">-- Sélectionner --</option>
+            <option value="1">Équipe Locale</option>
+            <option value="2">Équipe Visiteur</option>
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label>Numéro du joueur (essai)</label>
+          <input type="number" id="joueurEssai" min="1" max="22" placeholder="1-22 (optionnel)">
+          <div class="player-name-display" id="nomJoueurEssai"></div>
+        </div>
+        
+        <div class="form-group">
+          <label>Transformation *</label>
+          <div class="radio-group">
+            <div class="radio-option">
+              <input type="radio" id="transfoReussie" name="transformation" value="reussie" required>
+              <label for="transfoReussie" class="radio-label">✅ Réussie</label>
+            </div>
+            <div class="radio-option">
+              <input type="radio" id="transfoRatee" name="transformation" value="ratee" required>
+              <label for="transfoRatee" class="radio-label">❌ Ratée</label>
+            </div>
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label>Numéro du buteur (transformation)</label>
+          <input type="number" id="joueurTransfo" min="1" max="22" placeholder="1-22 (optionnel)">
+          <div class="player-name-display" id="nomJoueurTransfo"></div>
+        </div>
+        
+        <div class="button-row">
+          <button type="button" class="btn-modal btn-cancel" onclick="closeEssaiModal()">Annuler</button>
+          <button type="submit" class="btn-modal btn-submit" id="btnSubmitEssai">Valider</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    let isSubmitting = false;
+    
+    // Charger les données au démarrage
+    window.onload = function() {
+      loadMatchData();
+      // Rafraîchir toutes les 5 secondes
+      setInterval(loadMatchData, 5000);
+    };
+    
+    // Charger les données du match
+    function loadMatchData() {
+      document.getElementById('loading').classList.add('active');
+      
+      google.script.run
+        .withSuccessHandler(function(data) {
+          document.getElementById('loading').classList.remove('active');
+          
+          // Mettre à jour le score
+          document.getElementById('scoreLocal').textContent = data.scoreLocal || '0';
+          document.getElementById('scoreVisiteur').textContent = data.scoreVisiteur || '0';
+          
+          // Mettre à jour les noms d'équipes
+          document.getElementById('teamLocal').textContent = data.teamNameLocal || 'Équipe Locale';
+          document.getElementById('teamVisitor').textContent = data.teamNameVisiteur || 'Équipe Visiteur';
+          
+          // Mettre à jour le chrono
+          document.getElementById('timer').textContent = data.tempsDeJeu || '00:00';
+          
+          // Mettre à jour les options du formulaire
+          const selectEquipe = document.getElementById('equipeEssai');
+          selectEquipe.options[1].text = '1. ' + (data.teamNameLocal || 'Équipe Locale');
+          selectEquipe.options[2].text = '2. ' + (data.teamNameVisiteur || 'Équipe Visiteur');
+        })
+        .withFailureHandler(function(error) {
+          document.getElementById('loading').classList.remove('active');
+          console.error('Erreur:', error);
+        })
+        .getMatchData();
+    }
+    
+    // Ouvrir le modal essai
+    function openEssaiModal() {
+      document.getElementById('essaiModal').classList.add('active');
+    }
+    
+    // Fermer le modal essai
+    function closeEssaiModal() {
+      if (isSubmitting) return;
+      document.getElementById('essaiModal').classList.remove('active');
+      document.getElementById('essaiForm').reset();
+      isSubmitting = false;
+    }
+    
+    // Gestion du formulaire essai
+    document.getElementById('essaiForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      if (isSubmitting) {
+        console.log('Soumission déjà en cours');
+        return;
+      }
+      
+      isSubmitting = true;
+      const btnSubmit = document.getElementById('btnSubmitEssai');
+      btnSubmit.disabled = true;
+      btnSubmit.textContent = 'Enregistrement...';
+      
+      const data = {
+        equipe: document.getElementById('equipeEssai').value,
+        joueurEssai: document.getElementById('joueurEssai').value,
+        joueurTransfo: document.getElementById('joueurTransfo').value,
+        transformation: document.querySelector('input[name="transformation"]:checked').value
+      };
+      
+      google.script.run
+        .withSuccessHandler(function() {
+          alert('✅ Essai enregistré !');
+          closeEssaiModal();
+          loadMatchData();
+          btnSubmit.disabled = false;
+          btnSubmit.textContent = 'Valider';
+        })
+        .withFailureHandler(function(error) {
+          alert('❌ Erreur: ' + error.message);
+          isSubmitting = false;
+          btnSubmit.disabled = false;
+          btnSubmit.textContent = 'Valider';
+        })
+        .processEssaiFromDialog(data);
+    });
+    
+    // Récupération des noms de joueurs (à implémenter)
+    document.getElementById('joueurEssai').addEventListener('input', function() {
+      // TODO: Appeler getPlayerNameForDialog
+    });
+    
+    document.getElementById('joueurTransfo').addEventListener('input', function() {
+      // TODO: Appeler getPlayerNameForDialog
+    });
+  </script>
+</body>
+</html>

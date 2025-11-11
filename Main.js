@@ -133,10 +133,11 @@ function getDataForSidebar() {
  * Répond aux requêtes GET et renvoie les données du match en JSON.
  * @param {GoogleAppsScript.Events.DoGet} e L'événement de requête GET.
  * @returns {GoogleAppsScript.HTML.HtmlOutput} Les données du match au format JSON.
- */
+*/
+/**
 function doGet(e) {
   // Récupère les données du match comme dans getDataForSidebar
-  const matchData = getDataForSidebar(); // Réutilise ta fonction existante pour récupérer les données !
+  const matchData = getDataForSidebar(); // Réutilise la fonction existante pour récupérer les données !
 
   // Ajoute l'heure de la dernière mise à jour de l'API (optionnel, mais utile)
   matchData.lastUpdated = new Date().toISOString();
@@ -149,4 +150,44 @@ function doGet(e) {
   output.setMimeType(ContentService.MimeType.JSON);
 
   return output;
+}
+*/
+
+/**
+ * Fonction principale pour l'API web et la Web App
+ * Gère 2 cas :
+ * 1. Retourne JSON si appelé avec ?api=json (pour app Android)
+ * 2. Retourne l'interface HTML sinon (pour Web App tablette)
+ * 
+ * @param {GoogleAppsScript.Events.DoGet} e L'événement de requête GET
+ */
+function doGet(e) {
+  // CAS 1 : App Android demande du JSON
+  if (e && e.parameter && e.parameter.api === 'json') {
+    // Récupère les données du match
+    const matchData = getDataForSidebar();
+    
+    // Ajoute l'heure de la dernière mise à jour
+    matchData.lastUpdated = new Date().toISOString();
+    
+    // Convertit en JSON
+    const jsonString = JSON.stringify(matchData);
+    const output = ContentService.createTextOutput(jsonString);
+    output.setMimeType(ContentService.MimeType.JSON);
+    
+    return output;
+  }
+  
+  // CAS 2 : Web App pour tablette (interface HTML)
+  return HtmlService.createHtmlOutputFromFile('WebApp')
+    .setTitle('Feuille de Match Rugby')
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+}
+
+/**
+ * Fonction appelée par la Web App pour récupérer les données du match
+ * (identique à getDataForSidebar, existe pour clarté)
+ */
+function getMatchData() {
+  return getDataForSidebar();
 }
